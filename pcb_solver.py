@@ -27,6 +27,8 @@ def default_config() -> Dict[str, float]:
         "working_panel_length": 622.5,
         "customer_board_width_max": 350.0,
         "customer_board_length_max": 350.0,
+        "customer_board_width_min": 80.0,
+        "customer_board_length_min": 80.0,
         "single_pcb_width_max": 50.0,
         "single_pcb_length_max": 65.0,
         "edge_margin_w": 5.0,
@@ -43,6 +45,9 @@ def default_config() -> Dict[str, float]:
 
 def _almost_le(a: float, b: float, eps: float = 1e-9) -> bool:
     return a <= b + eps
+
+def _almost_ge(a: float, b: float, eps: float = 1e-9) -> bool:
+    return a + eps >= b
 
 def _rects_overlap_1d(a0: float, a1: float, b0: float, b1: float, eps: float = 1e-9) -> bool:
     return (a0 < b1 - eps) and (b0 < a1 - eps)
@@ -71,6 +76,8 @@ def enumerate_layouts(cfg: Dict[str, float]) -> List[Dict]:
     WPL = float(cfg["working_panel_length"])
     CBW = float(cfg["customer_board_width_max"])
     CBL = float(cfg["customer_board_length_max"])
+    CBW_min = float(cfg.get("customer_board_width_min", 0.0))
+    CBL_min = float(cfg.get("customer_board_length_min", 0.0))
     SPW = float(cfg["single_pcb_width_max"])
     SPL = float(cfg["single_pcb_length_max"])
     EW_w = float(cfg["edge_margin_w"])
@@ -95,6 +102,7 @@ def enumerate_layouts(cfg: Dict[str, float]) -> List[Dict]:
 
     for board_rot in board_rot_options:
         CBW_eff, CBL_eff = (CBL, CBW) if board_rot else (CBW, CBL)
+        CBW_min_eff, CBL_min_eff = (CBL_min, CBW_min) if board_rot else (CBW_min, CBL_min)
 
         for single_rot in single_rot_options:
             spw_eff, spl_eff = (SPL, SPW) if single_rot else (SPW, SPL)
@@ -114,6 +122,8 @@ def enumerate_layouts(cfg: Dict[str, float]) -> List[Dict]:
                         continue
 
                     board_w, board_l = single_grid_w, single_grid_l
+                    if not _almost_ge(board_w, CBW_min_eff) or not _almost_ge(board_l, CBL_min_eff):
+                        continue
                     avail_w = WPW - 2.0 * EW_w
                     avail_l = WPL - 2.0 * EW_l
                     if avail_w <= 0 or avail_l <= 0:
@@ -170,6 +180,10 @@ def enumerate_layouts(cfg: Dict[str, float]) -> List[Dict]:
                                 all_ok, failure = False, "Board width exceeds limit"
                             if all_ok and not _almost_le(board_l, (CBW if board_rot else CBL)):  # length
                                 all_ok, failure = False, "Board length exceeds limit"
+                            if all_ok and not _almost_ge(board_w, CBW_min_eff):
+                                all_ok, failure = False, "Board width below minimum"
+                            if all_ok and not _almost_ge(board_l, CBL_min_eff):
+                                all_ok, failure = False, "Board length below minimum"
                             # Board rectangles
                             board_rects = []
                             for bo in board_origins:
@@ -229,13 +243,13 @@ def enumerate_layouts(cfg: Dict[str, float]) -> List[Dict]:
 CSS = """
 :root { --fg:#111; --muted:#666; --bg:#fff; --line:#ddd; --accent:#0b6; }
 * { box-sizing:border-box; font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Arial; }
-body { color:var(--fg); background:var(--bg); margin:0; padding:24px; font-size:150%; }
+body { color:var(--fg); background:var(--bg); margin:0; padding:24px; font-size:100%; }
 h1 { margin:0 0 8px 0; font-size:30px; }
 p.note { color:var(--muted); margin:0 0 16px 0; }
-form { display:grid; grid-template-columns: repeat(4, minmax(220px,1fr)); gap:12px; align-items:end; }
+form { display:grid; grid-template-columns: repeat(4, minmax(220px,1fr)); gap:12px; align-items:start; }
 fieldset { border:1px solid var(--line); padding:12px; border-radius:8px; }
 legend { padding:0 6px; }
-label { display:block; font-size:24px; color:var(--muted); }
+label { display:block; font-size:18px; color:var(--muted); }
 input[type=number] { width:100%; padding:8px; border:1px solid var(--line); border-radius:6px; }
 input[type=checkbox] { transform: translateY(2px); }
 .controls { grid-column: 1 / -1; display:flex; gap:12px; align-items:center; }
@@ -245,10 +259,10 @@ table { width:100%; border-collapse:collapse; margin-top:18px; }
 th, td { border-bottom:1px solid var(--line); padding:8px 6px; text-align:right; font-variant-numeric: tabular-nums; }
 th { background:#f8f8f8; text-align:right; }
 td.l, th.l { text-align:left; }
-.badge { padding:2px 6px; border-radius:12px; border:1px solid var(--line); font-size:24px; color:#333; }
+.badge { padding:2px 6px; border-radius:12px; border:1px solid var(--line); font-size:18px; color:#333; }
 .ok { color:#0a5; }
 .err { color:#b00; }
-.small { font-size:24px; color:var(--muted); }
+.small { font-size:18px; color:var(--muted); }
 pre { background:#f6f6f6; padding:8px; border-radius:6px; overflow:auto; }
 """
 
@@ -273,6 +287,8 @@ def parse_cfg(qs: dict) -> Dict[str, float]:
     d["working_panel_length"]  = parse_float(qs, "WPL", d["working_panel_length"])
     d["customer_board_width_max"]  = parse_float(qs, "CBW", d["customer_board_width_max"])
     d["customer_board_length_max"] = parse_float(qs, "CBL", d["customer_board_length_max"])
+    d["customer_board_width_min"]  = parse_float(qs, "CBWM", d["customer_board_width_min"])
+    d["customer_board_length_min"] = parse_float(qs, "CBLM", d["customer_board_length_min"])
     d["single_pcb_width_max"]  = parse_float(qs, "SPW", d["single_pcb_width_max"])
     d["single_pcb_length_max"] = parse_float(qs, "SPL", d["single_pcb_length_max"])
     d["edge_margin_w"] = parse_float(qs, "EW_w", d["edge_margin_w"])
@@ -315,6 +331,13 @@ def page(cfg: Dict[str, float], rows: List[Dict]) -> str:
     # Form
     h.append("<form method='GET'>")
 
+    # Single PCB (leftmost)
+    h.append("<fieldset><legend>Single PCB</legend>")
+    h.append(input_field("SPW", "Single width (SPW, mm)", cfg["single_pcb_width_max"]))
+    h.append(input_field("SPL", "Single length (SPL, mm)", cfg["single_pcb_length_max"]))
+    h.append(checkbox_field("ARS", "Allow rotate single", cfg["allow_rotate_single_pcb"]))
+    h.append("</fieldset>")
+
     # Panel
     h.append("<fieldset><legend>Working Panel</legend>")
     h.append(input_field("WPW", "Width (WPW, mm)", cfg["working_panel_width"]))
@@ -327,14 +350,9 @@ def page(cfg: Dict[str, float], rows: List[Dict]) -> str:
     h.append("<fieldset><legend>Customer Board Limits</legend>")
     h.append(input_field("CBW", "Max board width (CBW, mm)", cfg["customer_board_width_max"]))
     h.append(input_field("CBL", "Max board length (CBL, mm)", cfg["customer_board_length_max"]))
+    h.append(input_field("CBWM", "Min board width (CBWM, mm)", cfg["customer_board_width_min"]))
+    h.append(input_field("CBLM", "Min board length (CBLM, mm)", cfg["customer_board_length_min"]))
     h.append(checkbox_field("ARB", "Allow rotate board", cfg["allow_rotate_board"]))
-    h.append("</fieldset>")
-
-    # Single PCB
-    h.append("<fieldset><legend>Single PCB</legend>")
-    h.append(input_field("SPW", "Single width (SPW, mm)", cfg["single_pcb_width_max"]))
-    h.append(input_field("SPL", "Single length (SPL, mm)", cfg["single_pcb_length_max"]))
-    h.append(checkbox_field("ARS", "Allow rotate single", cfg["allow_rotate_single_pcb"]))
     h.append("</fieldset>")
 
     # Gaps
@@ -369,17 +387,15 @@ def page(cfg: Dict[str, float], rows: List[Dict]) -> str:
                  "<th>Used area (mm)</th>"
                  "<th>Unused area (mm²)</th>"
                  "<th>Rot</th>"
-                 "<th class='l'>Objective</th>"
                  "</tr>")
         for idx, r in enumerate(rows[: int(cfg["limit"])]):
             star = " ★" if best_primary and r["objective_key"] == best_primary["objective_key"] else ""
-            util = f"{r['utilization']:.6f}"
-            used_w = f"{r['panel_used_w']:.3f}"
-            used_l = f"{r['panel_used_l']:.3f}"
-            board_sz = f"{r['board_w']:.3f}×{r['board_l']:.3f}"
+            util = f"{r['utilization'] * 100:.2f}%"
+            used_w = f"{r['panel_used_w']:.1f}"
+            used_l = f"{r['panel_used_l']:.1f}"
+            board_sz = f"{r['board_w']:.1f}×{r['board_l']:.1f}"
             rot = ("B" if r["board_rot"] else "") + ("S" if r["single_rot"] else "")
             rot = rot if rot else "—"
-            obj = r["objective_key"]
             h.append("<tr>")
             h.append(f"<td class='l'>{idx+1}{star}</td>")
             h.append(f"<td>{util}</td>")
@@ -388,9 +404,8 @@ def page(cfg: Dict[str, float], rows: List[Dict]) -> str:
             h.append(f"<td>{r['nw']}×{r['nl']}</td>")
             h.append(f"<td>{board_sz}</td>")
             h.append(f"<td>{used_w}×{used_l}</td>")
-            h.append(f"<td>{r['unused_area']:.3f}</td>")
+            h.append(f"<td>{r['unused_area']:.0f}</td>")
             h.append(f"<td>{rot}</td>")
-            h.append(f"<td class='l small'>{escape(str(obj))}</td>")
             h.append("</tr>")
             # Details row
             details = {
@@ -399,7 +414,7 @@ def page(cfg: Dict[str, float], rows: List[Dict]) -> str:
                 "all_constraints_satisfied": r["all_constraints_satisfied"],
                 "first_failure": r["first_failure"],
             }
-            h.append(f"<tr><td colspan='10' class='l'><details><summary>Details</summary>"
+            h.append(f"<tr><td colspan='9' class='l'><details><summary>Details</summary>"
                      f"<pre>{escape(json.dumps(details, indent=2))}</pre></details></td></tr>")
         h.append("</table>")
     else:
