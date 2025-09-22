@@ -26,7 +26,7 @@ def default_config() -> Dict[str, float]:
         "working_panel_width": 520.5,
         "working_panel_length": 622.5,
         "customer_board_width_max": 350.0,
-        "customer_board_length_max": 350.0,
+        "customer_board_length_max": 622.5,
         "customer_board_width_min": 80.0,
         "customer_board_length_min": 80.0,
         "single_pcb_width_max": 50.0,
@@ -35,12 +35,12 @@ def default_config() -> Dict[str, float]:
         "edge_margin_l": 5.0,
         "inter_board_gap_w": 5.0,
         "inter_board_gap_l": 1.5,
-        "inter_single_gap_w": 1.0,
-        "inter_single_gap_l": 1.0,
+        "inter_single_gap_w": 0.0,
+        "inter_single_gap_l": 0.0,
         "allow_rotate_board": True,
         "allow_rotate_single_pcb": True,
         "kerf_allowance": 0.0,
-        "limit": 10,  # UI-only: max rows to display
+        "limit": 20,  # UI-only: max rows to display
     }
 
 def _almost_le(a: float, b: float, eps: float = 1e-9) -> bool:
@@ -243,14 +243,14 @@ def enumerate_layouts(cfg: Dict[str, float]) -> List[Dict]:
 CSS = """
 :root { --fg:#111; --muted:#666; --bg:#fff; --line:#ddd; --accent:#0b6; }
 * { box-sizing:border-box; font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Arial; }
-body { color:var(--fg); background:var(--bg); margin:0; padding:24px; font-size:100%; }
-h1 { margin:0 0 8px 0; font-size:30px; }
+body { color:var(--fg); background:var(--bg); margin:0; padding:24px; }
+h1 { margin:0 0 8px 0; font-size:20px; }
 p.note { color:var(--muted); margin:0 0 16px 0; }
 form { display:grid; grid-template-columns: repeat(4, minmax(220px,1fr)); gap:12px; align-items:start; }
 fieldset { border:1px solid var(--line); padding:12px; border-radius:8px; }
 legend { padding:0 6px; }
-label { display:block; font-size:18px; color:var(--muted); }
-input[type=number] { width:100%; padding:8px; border:1px solid var(--line); border-radius:6px; }
+label { display:block; font-size:12px; color:var(--muted); }
+input[type=number] { width:100%; padding:8px; border:1px solid var(--line); border-radius:6px; font-size:200%; }
 input[type=checkbox] { transform: translateY(2px); }
 .controls { grid-column: 1 / -1; display:flex; gap:12px; align-items:center; }
 button { background:var(--accent); color:#fff; border:0; padding:10px 14px; border-radius:6px; cursor:pointer; }
@@ -259,10 +259,10 @@ table { width:100%; border-collapse:collapse; margin-top:18px; }
 th, td { border-bottom:1px solid var(--line); padding:8px 6px; text-align:right; font-variant-numeric: tabular-nums; }
 th { background:#f8f8f8; text-align:right; }
 td.l, th.l { text-align:left; }
-.badge { padding:2px 6px; border-radius:12px; border:1px solid var(--line); font-size:18px; color:#333; }
+.badge { padding:2px 6px; border-radius:12px; border:1px solid var(--line); font-size:12px; color:#333; }
 .ok { color:#0a5; }
 .err { color:#b00; }
-.small { font-size:18px; color:var(--muted); }
+.small { font-size:12px; color:var(--muted); }
 pre { background:#f6f6f6; padding:8px; border-radius:6px; overflow:auto; }
 """
 
@@ -314,6 +314,33 @@ def checkbox_field(name, label, checked: bool):
 <label for="{name}">{escape(label)}</label>
 <input type="checkbox" name="{name}" id="{name}" {"checked" if checked else ""}/>
 </div>"""
+
+def _rotation_priority(row: Dict) -> int:
+    board_rot = row.get("board_rot", False)
+    single_rot = row.get("single_rot", False)
+    if not board_rot and not single_rot:
+        return 0
+    if board_rot and not single_rot:
+        return 1
+    if not board_rot and single_rot:
+        return 2
+    return 3
+
+def deduplicate_rows(rows: List[Dict]) -> List[Dict]:
+    seen_order: List[Tuple[int, int, int, int, int]] = []
+    best: Dict[Tuple[int, int, int, int, int], Dict] = {}
+    for row in rows:
+        key = (row["total_single_pcbs"], row["nbw"], row["nbl"], row["nw"], row["nl"])
+        if key not in best:
+            best[key] = row
+            seen_order.append(key)
+            continue
+
+        current = best[key]
+        if _rotation_priority(row) < _rotation_priority(current):
+            best[key] = row
+
+    return [best[k] for k in seen_order]
 
 def page(cfg: Dict[str, float], rows: List[Dict]) -> str:
     # Summary
@@ -408,14 +435,16 @@ def page(cfg: Dict[str, float], rows: List[Dict]) -> str:
             h.append(f"<td>{rot}</td>")
             h.append("</tr>")
             # Details row
-            details = {
-                "margins": r["margins"],
-                "margin_uniformity": r["margin_uniformity"],
-                "all_constraints_satisfied": r["all_constraints_satisfied"],
-                "first_failure": r["first_failure"],
-            }
-            h.append(f"<tr><td colspan='9' class='l'><details><summary>Details</summary>"
-                     f"<pre>{escape(json.dumps(details, indent=2))}</pre></details></td></tr>")
+            # details = {
+            #     "margins": r["margins"],
+            #     "margin_uniformity": r["margin_uniformity"],
+            #     "all_constraints_satisfied": r["all_constraints_satisfied"],
+            #     "first_failure": r["first_failure"],
+            # }
+            # h.append(
+            #     f"<tr><td colspan='9' class='l'><details><summary>Details</summary>"
+            #     f"<pre>{escape(json.dumps(details, indent=2))}</pre></details></td></tr>"
+            # )
         h.append("</table>")
     else:
         h.append("<p class='small'>No feasible layouts under current constraints.</p>")
@@ -440,6 +469,7 @@ def app(environ, start_response):
         all_rows = enumerate_layouts(cfg)
         # Sort by utilization desc, then primary objective for stable ordering
         all_rows.sort(key=lambda r: (-r["utilization"], r["objective_key"]))
+        all_rows = deduplicate_rows(all_rows)
 
         html = page(cfg, all_rows)
         data = html.encode("utf-8")
