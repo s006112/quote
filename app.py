@@ -12,6 +12,7 @@ Run:
 Open:
   http://127.0.0.1:8000
 """
+import os
 from wsgiref.simple_server import make_server
 from urllib.parse import parse_qs
 from html import escape
@@ -508,7 +509,8 @@ def app(environ, start_response):
 # --------------------------------- Main --------------------------------------
 
 if __name__ == "__main__":
-    host, port = "0.0.0.0", 8000
+    host = "0.0.0.0"
+    port = int(os.environ.get("PORT", "8080"))
     with make_server(host, port, app) as httpd:
         print(f"Serving on http://{host}:{port}")
         httpd.serve_forever()
