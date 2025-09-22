@@ -508,7 +508,7 @@ def app(environ, start_response):
 # --------------------------------- Main --------------------------------------
 
 if __name__ == "__main__":
-    host, port = "127.0.0.1", 8000
+    host, port = "0.0.0.0", 8000
     with make_server(host, port, app) as httpd:
         print(f"Serving on http://{host}:{port}")
         httpd.serve_forever()
