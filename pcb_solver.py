@@ -424,15 +424,11 @@ def page(cfg: Dict[str, float], rows: List[Dict]) -> str:
                  "<th>Board size (mm)</th>"
                  "<th>Panel style</th>"
                  "<th>Panel size (mm)</th>"
-                 "<th>Used area (mm)</th>"
-                 "<th>Unused area (mm²)</th>"
                  "<th>Rot</th>"
                  "</tr>")
         for idx, r in enumerate(rows[: int(cfg["limit"])]):
             star = " ★" if best_primary and r["objective_key"] == best_primary["objective_key"] else ""
             util = f"{r['utilization'] * 100:.2f}%"
-            used_w = f"{r['panel_used_w']:.1f}"
-            used_l = f"{r['panel_used_l']:.1f}"
             board_sz = f"{r['board_w']:.1f}×{r['board_l']:.1f}"
             panel_style = r['panel_style']
             panel_size = f"{r['panel_width']:.1f}×{r['panel_length']:.1f}"
@@ -447,8 +443,6 @@ def page(cfg: Dict[str, float], rows: List[Dict]) -> str:
             h.append(f"<td>{board_sz}</td>")
             h.append(f"<td>{panel_style}</td>")
             h.append(f"<td>{panel_size}</td>")
-            h.append(f"<td>{used_w}×{used_l}</td>")
-            h.append(f"<td>{r['unused_area']:.0f}</td>")
             h.append(f"<td>{rot}</td>")
             h.append("</tr>")
             # Details row
