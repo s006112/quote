@@ -28,14 +28,21 @@ PANEL_OPTIONS: Dict[str, Tuple[float, float]] = {
     "D": (520.5, 415.0),
 }
 
+JUMBO_MULTIPLIER: Dict[str, int] = {
+    "A": 4,
+    "B": 5,
+    "C": 6,
+    "D": 6,
+}
+
 def default_config() -> Dict[str, float]:
     return {
         "customer_board_width_max": 350.0,
         "customer_board_length_max": 622.5,
         "customer_board_width_min": 80.0,
         "customer_board_length_min": 80.0,
-        "single_pcb_width_max": 50.0,
-        "single_pcb_length_max": 65.0,
+        "single_pcb_width_max": 52.0,
+        "single_pcb_length_max": 76.2,
         "edge_margin_w": 5.0,
         "edge_margin_l": 5.0,
         "inter_board_gap_w": 5.0,
@@ -150,6 +157,8 @@ def enumerate_layouts(cfg: Dict[str, float], panel_w: float, panel_l: float, pan
 
                             total_single_pcbs = nbw * nbl * nw * nl
                             util = _utilization(total_single_pcbs, SPW, SPL, WPW, WPL)
+                            jumbo_multiplier = JUMBO_MULTIPLIER.get(panel_style, 1)
+                            pcbs_per_jumbo = total_single_pcbs * jumbo_multiplier
                             unused_area = panel_area - panel_used_w * panel_used_l
                             rotations_count = (1 if board_rot else 0) + (1 if single_rot else 0)
                             left_margin = EW_w
@@ -224,6 +233,7 @@ def enumerate_layouts(cfg: Dict[str, float], panel_w: float, panel_l: float, pan
                                 "panel_style": panel_style,
                                 "panel_width": WPW,
                                 "panel_length": WPL,
+                                "pcbs_per_jumbo": pcbs_per_jumbo,
                                 "margins": {"left": left_margin, "right": right_margin,
                                             "bottom": bottom_margin, "top": top_margin},
                                 "margin_uniformity": mu_score,
@@ -358,16 +368,13 @@ def deduplicate_rows(rows: List[Dict]) -> List[Dict]:
 def page(cfg: Dict[str, float], rows: List[Dict]) -> str:
     # Summary
     total = len(rows)
-    best_primary = None
-    if rows:
-        # Primary objective ranking for reference
-        best_primary = sorted(rows, key=lambda r: r["objective_key"])[0]
+    max_pcbs_jumbo = max((r["pcbs_per_jumbo"] for r in rows), default=None)
 
     # HTML
     h = []
     h.append(f"<html><head><meta charset='utf-8'><title>PCB Panelizer</title><style>{CSS}</style></head><body>")
     h.append("<h1>PCB Panelizer</h1>")
-    h.append("<p class='note'>Edit parameters. Press Calculate. Results sorted by utilization.</p>")
+    h.append("<p class='note'>Edit parameters. Press Calculate. Results ranked by PCBs per Jumbo.</p>")
     # Form
     h.append("<form method='GET'>")
 
@@ -406,28 +413,29 @@ def page(cfg: Dict[str, float], rows: List[Dict]) -> str:
     h.append("<div class='controls'>")
     h.append(input_field("LIMIT", "Max rows", int(cfg.get("limit", 10)), step="1"))
     h.append("<button type='submit'>Calculate</button>")
-    if best_primary:
-        h.append("<span class='badge'>Best by objective shown with ★</span>")
+    if max_pcbs_jumbo is not None:
+        h.append("<span class='badge'>Highest PCBs per Jumbo shown with ★</span>")
     h.append("</div>")
     h.append("</form>")
 
     # Results
     if rows:
-        h.append(f"<p class='small'>Found {total} feasible layouts. Showing top {min(total, cfg['limit'])} by utilization.</p>")
+        h.append(f"<p class='small'>Found {total} feasible layouts. Showing top {min(total, cfg['limit'])} by PCBs per Jumbo.</p>")
         h.append("<table>")
         h.append("<tr>"
                  "<th class='l'>Rank</th>"
-                 "<th>Utilization</th>"
-                 "<th>PCBs</th>"
+                 "<th>PCBs per Jumbo</th>"
+                 "<th>PCBs per Panel</th>"
                  "<th>Boards WxL</th>"
                  "<th>Singles WxL</th>"
                  "<th>Board size (mm)</th>"
                  "<th>Panel style</th>"
                  "<th>Panel size (mm)</th>"
+                 "<th>Utilization</th>"
                  "<th>Rot</th>"
                  "</tr>")
         for idx, r in enumerate(rows[: int(cfg["limit"])]):
-            star = " ★" if best_primary and r["objective_key"] == best_primary["objective_key"] else ""
+            star = " ★" if max_pcbs_jumbo is not None and r["pcbs_per_jumbo"] == max_pcbs_jumbo else ""
             util = f"{r['utilization'] * 100:.2f}%"
             board_sz = f"{r['board_w']:.1f}×{r['board_l']:.1f}"
             panel_style = r['panel_style']
@@ -436,13 +444,14 @@ def page(cfg: Dict[str, float], rows: List[Dict]) -> str:
             rot = rot if rot else "—"
             h.append("<tr>")
             h.append(f"<td class='l'>{idx+1}{star}</td>")
-            h.append(f"<td>{util}</td>")
+            h.append(f"<td>{r['pcbs_per_jumbo']}</td>")
             h.append(f"<td>{r['total_single_pcbs']}</td>")
             h.append(f"<td>{r['nbw']}×{r['nbl']}</td>")
             h.append(f"<td>{r['nw']}×{r['nl']}</td>")
             h.append(f"<td>{board_sz}</td>")
             h.append(f"<td>{panel_style}</td>")
             h.append(f"<td>{panel_size}</td>")
+            h.append(f"<td>{util}</td>")
             h.append(f"<td>{rot}</td>")
             h.append("</tr>")
             # Details row
@@ -453,7 +462,7 @@ def page(cfg: Dict[str, float], rows: List[Dict]) -> str:
             #     "first_failure": r["first_failure"],
             # }
             # h.append(
-            #     f"<tr><td colspan='11' class='l'><details><summary>Details</summary>"
+            #     f"<tr><td colspan='10' class='l'><details><summary>Details</summary>"
             #     f"<pre>{escape(json.dumps(details, indent=2))}</pre></details></td></tr>"
             # )
         h.append("</table>")
@@ -480,8 +489,8 @@ def app(environ, start_response):
         all_rows: List[Dict] = []
         for style, (pw, pl) in PANEL_OPTIONS.items():
             all_rows.extend(enumerate_layouts(cfg, pw, pl, style))
-        # Sort by utilization desc, then primary objective for stable ordering
-        all_rows.sort(key=lambda r: (-r["utilization"], r["objective_key"]))
+        # Sort by PCBs per Jumbo desc, then utilization/objective for stability
+        all_rows.sort(key=lambda r: (-r["pcbs_per_jumbo"], -r["utilization"], r["objective_key"]))
         all_rows = deduplicate_rows(all_rows)
 
         html = page(cfg, all_rows)
