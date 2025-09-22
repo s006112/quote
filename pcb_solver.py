@@ -21,10 +21,15 @@ from typing import Dict, Tuple, List, Optional
 
 # ------------------------------ Core Solver ----------------------------------
 
+PANEL_OPTIONS: Dict[str, Tuple[float, float]] = {
+    "A": (520.5, 622.5),
+    "B": (415.0, 622.5),
+    "C": (347.0, 622.5),
+    "D": (520.5, 415.0),
+}
+
 def default_config() -> Dict[str, float]:
     return {
-        "working_panel_width": 520.5,
-        "working_panel_length": 622.5,
         "customer_board_width_max": 350.0,
         "customer_board_length_max": 622.5,
         "customer_board_width_min": 80.0,
@@ -70,10 +75,10 @@ def _upper_bound_grid(max_len: float, item: float, gap: float) -> int:
 def _utilization(total_single_pcbs: int, spw: float, spl: float, wpw: float, wpl: float) -> float:
     return (total_single_pcbs * spw * spl) / (wpw * wpl) if wpw > 0 and wpl > 0 else 0.0
 
-def enumerate_layouts(cfg: Dict[str, float]) -> List[Dict]:
+def enumerate_layouts(cfg: Dict[str, float], panel_w: float, panel_l: float, panel_style: str) -> List[Dict]:
     # Extract
-    WPW = float(cfg["working_panel_width"])
-    WPL = float(cfg["working_panel_length"])
+    WPW = float(panel_w)
+    WPL = float(panel_l)
     CBW = float(cfg["customer_board_width_max"])
     CBL = float(cfg["customer_board_length_max"])
     CBW_min = float(cfg.get("customer_board_width_min", 0.0))
@@ -216,6 +221,9 @@ def enumerate_layouts(cfg: Dict[str, float]) -> List[Dict]:
                                 "board_rot": board_rot, "single_rot": single_rot,
                                 "board_w": board_w, "board_l": board_l,
                                 "panel_used_w": panel_used_w, "panel_used_l": panel_used_l,
+                                "panel_style": panel_style,
+                                "panel_width": WPW,
+                                "panel_length": WPL,
                                 "margins": {"left": left_margin, "right": right_margin,
                                             "bottom": bottom_margin, "top": top_margin},
                                 "margin_uniformity": mu_score,
@@ -283,8 +291,6 @@ def parse_int(qs: dict, key: str, default: int) -> int:
 
 def parse_cfg(qs: dict) -> Dict[str, float]:
     d = default_config()
-    d["working_panel_width"]   = parse_float(qs, "WPW", d["working_panel_width"])
-    d["working_panel_length"]  = parse_float(qs, "WPL", d["working_panel_length"])
     d["customer_board_width_max"]  = parse_float(qs, "CBW", d["customer_board_width_max"])
     d["customer_board_length_max"] = parse_float(qs, "CBL", d["customer_board_length_max"])
     d["customer_board_width_min"]  = parse_float(qs, "CBWM", d["customer_board_width_min"])
@@ -327,10 +333,17 @@ def _rotation_priority(row: Dict) -> int:
     return 3
 
 def deduplicate_rows(rows: List[Dict]) -> List[Dict]:
-    seen_order: List[Tuple[int, int, int, int, int]] = []
-    best: Dict[Tuple[int, int, int, int, int], Dict] = {}
+    seen_order: List[Tuple[str, int, int, int, int, int]] = []
+    best: Dict[Tuple[str, int, int, int, int, int], Dict] = {}
     for row in rows:
-        key = (row["total_single_pcbs"], row["nbw"], row["nbl"], row["nw"], row["nl"])
+        key = (
+            row.get("panel_style"),
+            row["total_single_pcbs"],
+            row["nbw"],
+            row["nbl"],
+            row["nw"],
+            row["nl"],
+        )
         if key not in best:
             best[key] = row
             seen_order.append(key)
@@ -365,10 +378,8 @@ def page(cfg: Dict[str, float], rows: List[Dict]) -> str:
     h.append(checkbox_field("ARS", "Allow rotate single", cfg["allow_rotate_single_pcb"]))
     h.append("</fieldset>")
 
-    # Panel
-    h.append("<fieldset><legend>Working Panel</legend>")
-    h.append(input_field("WPW", "Width (WPW, mm)", cfg["working_panel_width"]))
-    h.append(input_field("WPL", "Length (WPL, mm)", cfg["working_panel_length"]))
+    # Panel margins
+    h.append("<fieldset><legend>Working Panel Margins</legend>")
     h.append(input_field("EW_w", "Edge margin width (EW_w, mm)", cfg["edge_margin_w"]))
     h.append(input_field("EW_l", "Edge margin length (EW_l, mm)", cfg["edge_margin_l"]))
     h.append("</fieldset>")
@@ -411,6 +422,8 @@ def page(cfg: Dict[str, float], rows: List[Dict]) -> str:
                  "<th>Boards WxL</th>"
                  "<th>Singles WxL</th>"
                  "<th>Board size (mm)</th>"
+                 "<th>Panel style</th>"
+                 "<th>Panel size (mm)</th>"
                  "<th>Used area (mm)</th>"
                  "<th>Unused area (mm²)</th>"
                  "<th>Rot</th>"
@@ -421,6 +434,8 @@ def page(cfg: Dict[str, float], rows: List[Dict]) -> str:
             used_w = f"{r['panel_used_w']:.1f}"
             used_l = f"{r['panel_used_l']:.1f}"
             board_sz = f"{r['board_w']:.1f}×{r['board_l']:.1f}"
+            panel_style = r['panel_style']
+            panel_size = f"{r['panel_width']:.1f}×{r['panel_length']:.1f}"
             rot = ("B" if r["board_rot"] else "") + ("S" if r["single_rot"] else "")
             rot = rot if rot else "—"
             h.append("<tr>")
@@ -430,6 +445,8 @@ def page(cfg: Dict[str, float], rows: List[Dict]) -> str:
             h.append(f"<td>{r['nbw']}×{r['nbl']}</td>")
             h.append(f"<td>{r['nw']}×{r['nl']}</td>")
             h.append(f"<td>{board_sz}</td>")
+            h.append(f"<td>{panel_style}</td>")
+            h.append(f"<td>{panel_size}</td>")
             h.append(f"<td>{used_w}×{used_l}</td>")
             h.append(f"<td>{r['unused_area']:.0f}</td>")
             h.append(f"<td>{rot}</td>")
@@ -442,7 +459,7 @@ def page(cfg: Dict[str, float], rows: List[Dict]) -> str:
             #     "first_failure": r["first_failure"],
             # }
             # h.append(
-            #     f"<tr><td colspan='9' class='l'><details><summary>Details</summary>"
+            #     f"<tr><td colspan='11' class='l'><details><summary>Details</summary>"
             #     f"<pre>{escape(json.dumps(details, indent=2))}</pre></details></td></tr>"
             # )
         h.append("</table>")
@@ -465,8 +482,10 @@ def app(environ, start_response):
 
         cfg = parse_cfg(qs)
 
-        # Compute
-        all_rows = enumerate_layouts(cfg)
+        # Compute across all panel styles
+        all_rows: List[Dict] = []
+        for style, (pw, pl) in PANEL_OPTIONS.items():
+            all_rows.extend(enumerate_layouts(cfg, pw, pl, style))
         # Sort by utilization desc, then primary objective for stable ordering
         all_rows.sort(key=lambda r: (-r["utilization"], r["objective_key"]))
         all_rows = deduplicate_rows(all_rows)
