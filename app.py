@@ -260,33 +260,75 @@ def enumerate_layouts(cfg: Dict[str, float], panel_w: float, panel_l: float, pan
 # ------------------------------ Web Utilities --------------------------------
 
 CSS = """
-:root { --fg:#111; --muted:#666; --bg:#fff; --line:#ddd; --accent:#0b6; }
+:root {
+    --fg:#111;
+    --muted:#666;
+    --bg:#fff;
+    --line:#ddd;
+    --accent:#0b6;
+    --font-body: clamp(0.95rem, 0.65vw + 0.9rem, 1.05rem);
+    --font-heading: clamp(1.6rem, 1.1vw + 1.4rem, 2rem);
+    --font-label: clamp(0.75rem, 0.4vw + 0.7rem, 0.9rem);
+    --font-input: clamp(1rem, 0.9vw + 0.95rem, 1.3rem);
+    --font-small: clamp(0.8rem, 0.45vw + 0.75rem, 1rem);
+    --font-badge: clamp(0.75rem, 0.35vw + 0.7rem, 0.9rem);
+}
 * { box-sizing:border-box; font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Arial; }
-body { color:var(--fg); background:var(--bg); margin:0; padding:24px; }
-h1 { margin:0 0 8px 0; font-size:20px; }
-p.note { color:var(--muted); margin:0 0 16px 0; }
-form { display:grid; grid-template-columns: repeat(4, minmax(220px,1fr)); gap:12px; align-items:start; }
+body { color:var(--fg); background:var(--bg); margin:0; padding:24px; font-size:var(--font-body); line-height:1.55; }
+h1 { margin:0 0 8px 0; font-size:var(--font-heading); line-height:1.2; }
+p.note { color:var(--muted); margin:0 0 16px 0; font-size:var(--font-small); }
+form { display:grid; grid-template-columns: repeat(4, minmax(220px,1fr)); gap:12px; align-items:start; font-size:inherit; }
 fieldset { border:1px solid var(--line); padding:12px; border-radius:8px; }
-legend { padding:0 6px; }
-label { display:block; font-size:12px; color:var(--muted); }
-input[type=number] { width:100%; padding:8px; border:1px solid var(--line); border-radius:6px; font-size:200%; }
+legend { padding:0 6px; font-size:var(--font-label); }
+label { display:block; font-size:var(--font-label); color:var(--muted); }
+input[type=number] { width:100%; padding:8px; border:1px solid var(--line); border-radius:6px; font-size:var(--font-input); line-height:1.45; }
 input[type=checkbox] { transform: translateY(2px); }
-.controls { grid-column: 1 / -1; display:flex; gap:12px; align-items:center; }
-button { background:var(--accent); color:#fff; border:0; padding:10px 14px; border-radius:6px; cursor:pointer; }
+.controls { grid-column: 1 / -1; display:flex; gap:12px; align-items:center; font-size:inherit; }
+button { background:var(--accent); color:#fff; border:0; padding:10px 14px; border-radius:6px; cursor:pointer; font-size:var(--font-body); line-height:1.3; }
 button.secondary { background:#333; }
 table { width:100%; border-collapse:collapse; margin-top:18px; }
-th, td { border-bottom:1px solid var(--line); padding:8px 6px; text-align:right; font-variant-numeric: tabular-nums; }
+th, td { border-bottom:1px solid var(--line); padding:8px 6px; text-align:right; font-variant-numeric: tabular-nums; font-size:calc(var(--font-body) * 0.95); }
 th { background:#f8f8f8; text-align:right; }
 td.l, th.l { text-align:left; }
-.badge { padding:2px 6px; border-radius:12px; border:1px solid var(--line); font-size:12px; color:#333; }
+.badge { padding:2px 6px; border-radius:12px; border:1px solid var(--line); font-size:var(--font-badge); color:#333; }
 .ok { color:#0a5; }
 .err { color:#b00; }
-.small { font-size:12px; color:var(--muted); }
-pre { background:#f6f6f6; padding:8px; border-radius:6px; overflow:auto; }
+.small { font-size:var(--font-small); color:var(--muted); }
+pre { background:#f6f6f6; padding:8px; border-radius:6px; overflow:auto; font-size:var(--font-small); line-height:1.4; }
+@media (max-width: 1024px) {
+    :root {
+        --font-body: clamp(0.95rem, 1vw + 0.85rem, 1.1rem);
+        --font-heading: clamp(1.55rem, 1.6vw + 1.2rem, 2.05rem);
+        --font-input: clamp(1rem, 1.2vw + 0.9rem, 1.35rem);
+    }
+}
+@media (max-width: 640px) {
+    :root {
+        --font-body: clamp(1rem, 2vw + 0.75rem, 1.15rem);
+        --font-heading: clamp(1.7rem, 3.5vw + 1.2rem, 2.2rem);
+        --font-label: clamp(0.82rem, 1.5vw + 0.65rem, 0.95rem);
+        --font-input: clamp(1.05rem, 2.5vw + 0.8rem, 1.4rem);
+        --font-small: clamp(0.9rem, 1.8vw + 0.7rem, 1.05rem);
+    }
+    th, td { font-size:var(--font-body); }
+}
 """
 
 def parse_bool(v: str) -> bool:
-    return v.lower() in ("1", "true", "on", "yes")
+    if isinstance(v, str):
+        return v.lower() in ("1", "true", "on", "yes")
+    return bool(v)
+
+
+def parse_checkbox(qs: dict, key: str, default: bool) -> bool:
+    if key in qs:
+        values = qs.get(key, [])
+        raw = values[0] if values else "on"
+        raw = raw if raw is not None else "on"
+        return parse_bool(raw if raw != "" else "on")
+    if not qs:
+        return default
+    return False
 
 def parse_float(qs: dict, key: str, default: float) -> float:
     try:
@@ -314,8 +356,8 @@ def parse_cfg(qs: dict) -> Dict[str, float]:
     d["inter_board_gap_l"] = parse_float(qs, "CL", d["inter_board_gap_l"])
     d["inter_single_gap_w"] = parse_float(qs, "SW", d["inter_single_gap_w"])
     d["inter_single_gap_l"] = parse_float(qs, "SL", d["inter_single_gap_l"])
-    d["allow_rotate_board"] = parse_bool(qs.get("ARB", ["true"])[0])
-    d["allow_rotate_single_pcb"] = parse_bool(qs.get("ARS", ["true"])[0])
+    d["allow_rotate_board"] = parse_checkbox(qs, "ARB", d["allow_rotate_board"])
+    d["allow_rotate_single_pcb"] = parse_checkbox(qs, "ARS", d["allow_rotate_single_pcb"])
     d["kerf_allowance"] = parse_float(qs, "KERF", d["kerf_allowance"])
     d["limit"] = parse_int(qs, "LIMIT", d["limit"])
     return d
