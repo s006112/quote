@@ -1,0 +1,447 @@
+#!/usr/bin/env python3
+"""
+Web UI for brute-force PCB panelization.
+
+- Single file. Standard library only.
+- Edit all parameters in the form. Defaults pre-filled.
+- Press "Calculate" to enumerate ALL feasible layouts.
+- Results sorted by utilization (desc). Primary objective and tie-breakers shown.
+
+Run:
+  python webui_pcb_panelizer.py
+Open:
+  http://127.0.0.1:8000
+"""
+from wsgiref.simple_server import make_server
+from urllib.parse import parse_qs
+from html import escape
+import json
+import math
+from typing import Dict, Tuple, List, Optional
+
+# ------------------------------ Core Solver ----------------------------------
+
+def default_config() -> Dict[str, float]:
+    return {
+        "working_panel_width": 520.5,
+        "working_panel_length": 622.5,
+        "customer_board_width_max": 350.0,
+        "customer_board_length_max": 350.0,
+        "single_pcb_width_max": 50.0,
+        "single_pcb_length_max": 65.0,
+        "edge_margin_w": 5.0,
+        "edge_margin_l": 5.0,
+        "inter_board_gap_w": 5.0,
+        "inter_board_gap_l": 1.5,
+        "inter_single_gap_w": 1.0,
+        "inter_single_gap_l": 1.0,
+        "allow_rotate_board": True,
+        "allow_rotate_single_pcb": True,
+        "kerf_allowance": 0.0,
+        "limit": 10,  # UI-only: max rows to display
+    }
+
+def _almost_le(a: float, b: float, eps: float = 1e-9) -> bool:
+    return a <= b + eps
+
+def _rects_overlap_1d(a0: float, a1: float, b0: float, b1: float, eps: float = 1e-9) -> bool:
+    return (a0 < b1 - eps) and (b0 < a1 - eps)
+
+def _pairwise_no_overlap(rects: List[Tuple[float, float, float, float]], eps: float = 1e-9) -> bool:
+    n = len(rects)
+    for i in range(n):
+        xi0, yi0, xi1, yi1 = rects[i]
+        for j in range(i + 1, n):
+            xj0, yj0, xj1, yj1 = rects[j]
+            if _rects_overlap_1d(xi0, xi1, xj0, xj1, eps) and _rects_overlap_1d(yi0, yi1, yj0, yj1, eps):
+                return False
+    return True
+
+def _upper_bound_grid(max_len: float, item: float, gap: float) -> int:
+    if item <= 0:
+        return 0
+    return max(0, int(math.floor((max_len + gap) / (item + gap))))
+
+def _utilization(total_single_pcbs: int, spw: float, spl: float, wpw: float, wpl: float) -> float:
+    return (total_single_pcbs * spw * spl) / (wpw * wpl) if wpw > 0 and wpl > 0 else 0.0
+
+def enumerate_layouts(cfg: Dict[str, float]) -> List[Dict]:
+    # Extract
+    WPW = float(cfg["working_panel_width"])
+    WPL = float(cfg["working_panel_length"])
+    CBW = float(cfg["customer_board_width_max"])
+    CBL = float(cfg["customer_board_length_max"])
+    SPW = float(cfg["single_pcb_width_max"])
+    SPL = float(cfg["single_pcb_length_max"])
+    EW_w = float(cfg["edge_margin_w"])
+    EW_l = float(cfg["edge_margin_l"])
+    CW = float(cfg["inter_board_gap_w"])
+    CL = float(cfg["inter_board_gap_l"])
+    SW = float(cfg["inter_single_gap_w"])
+    SL = float(cfg["inter_single_gap_l"])
+    allow_rotate_board = bool(cfg.get("allow_rotate_board", False))
+    allow_rotate_single = bool(cfg.get("allow_rotate_single_pcb", False))
+    kerf = float(cfg.get("kerf_allowance", 0.0))
+
+    # Inflate gaps
+    CWi, CLi = CW + kerf, CL + kerf
+    SWi, SLi = SW + kerf, SL + kerf
+
+    panel_area = WPW * WPL
+
+    layouts: List[Dict] = []
+    board_rot_options = [False, True] if allow_rotate_board else [False]
+    single_rot_options = [False, True] if allow_rotate_single else [False]
+
+    for board_rot in board_rot_options:
+        CBW_eff, CBL_eff = (CBL, CBW) if board_rot else (CBW, CBL)
+
+        for single_rot in single_rot_options:
+            spw_eff, spl_eff = (SPL, SPW) if single_rot else (SPW, SPL)
+
+            ub_nw = _upper_bound_grid(CBW_eff, spw_eff, SWi)
+            ub_nl = _upper_bound_grid(CBL_eff, spl_eff, SLi)
+            if ub_nw == 0 or ub_nl == 0:
+                continue
+
+            for nw in range(1, ub_nw + 1):
+                single_grid_w = nw * spw_eff + (nw - 1) * SWi
+                if not _almost_le(single_grid_w, CBW_eff):
+                    continue
+                for nl in range(1, ub_nl + 1):
+                    single_grid_l = nl * spl_eff + (nl - 1) * SLi
+                    if not _almost_le(single_grid_l, CBL_eff):
+                        continue
+
+                    board_w, board_l = single_grid_w, single_grid_l
+                    avail_w = WPW - 2.0 * EW_w
+                    avail_l = WPL - 2.0 * EW_l
+                    if avail_w <= 0 or avail_l <= 0:
+                        continue
+
+                    ub_nbw = _upper_bound_grid(avail_w, board_w, CWi)
+                    ub_nbl = _upper_bound_grid(avail_l, board_l, CLi)
+                    if ub_nbw == 0 or ub_nbl == 0:
+                        continue
+
+                    for nbw in range(1, ub_nbw + 1):
+                        panel_used_w = nbw * board_w + (nbw - 1) * CWi + 2.0 * EW_w
+                        if not _almost_le(panel_used_w, WPW):
+                            continue
+                        for nbl in range(1, ub_nbl + 1):
+                            panel_used_l = nbl * board_l + (nbl - 1) * CLi + 2.0 * EW_l
+                            if not _almost_le(panel_used_l, WPL):
+                                continue
+
+                            total_single_pcbs = nbw * nbl * nw * nl
+                            util = _utilization(total_single_pcbs, SPW, SPL, WPW, WPL)
+                            unused_area = panel_area - panel_used_w * panel_used_l
+                            rotations_count = (1 if board_rot else 0) + (1 if single_rot else 0)
+                            left_margin = EW_w
+                            bottom_margin = EW_l
+                            right_margin = WPW - panel_used_w
+                            top_margin = WPL - panel_used_l
+                            mu_score = abs(left_margin - right_margin) + abs(bottom_margin - top_margin)
+
+                            # Placements (for first N rows we display summary; full JSON available)
+                            board_origins = []
+                            x0, y0 = EW_w, EW_l
+                            for j in range(nbl):
+                                y = y0 + j * (board_l + CLi)
+                                for i in range(nbw):
+                                    x = x0 + i * (board_w + CWi)
+                                    board_origins.append({"x": x, "y": y, "rotated": board_rot})
+
+                            single_origins = []
+                            sx0, sy0 = 0.0, 0.0
+                            for jl in range(nl):
+                                sy = sy0 + jl * ((SPL if single_rot else SPL) if single_rot else spl_eff)  # safe
+                                # correct step is spl_eff
+                                sy = sy0 + jl * (spl_eff + SLi)
+                                for iw in range(nw):
+                                    sx = sx0 + iw * (spw_eff + SWi)
+                                    single_origins.append({"x": sx, "y": sy, "rotated": single_rot})
+
+                            # Validation
+                            all_ok = True
+                            failure: Optional[str] = None
+                            # Board limit under rotation
+                            if not _almost_le(board_w, (CBL if board_rot else CBW)):  # width
+                                all_ok, failure = False, "Board width exceeds limit"
+                            if all_ok and not _almost_le(board_l, (CBW if board_rot else CBL)):  # length
+                                all_ok, failure = False, "Board length exceeds limit"
+                            # Board rectangles
+                            board_rects = []
+                            for bo in board_origins:
+                                x, y = bo["x"], bo["y"]
+                                board_rects.append((x, y, x + board_w, y + board_l))
+                                if x < 0 or y < 0 or (x + board_w) > WPW or (y + board_l) > WPL:
+                                    all_ok, failure = False, "Board out of panel bounds"
+                                    break
+                            if all_ok and not _pairwise_no_overlap(board_rects):
+                                all_ok, failure = False, "Boards overlap"
+                            # Singles inside local board
+                            if all_ok:
+                                spw_e, spl_e = ((SPL, SPW) if single_rot else (SPW, SPL))
+                                single_rects = []
+                                for so in single_origins:
+                                    sx, sy = so["x"], so["y"]
+                                    single_rects.append((sx, sy, sx + spw_e, sy + spl_e))
+                                    if sx < 0 or sy < 0 or (sx + spw_e) > board_w or (sy + spl_e) > board_l:
+                                        all_ok, failure = False, "Single out of board bounds"
+                                        break
+                                if all_ok and not _pairwise_no_overlap(single_rects):
+                                    all_ok, failure = False, "Singles overlap"
+
+                            layouts.append({
+                                "total_single_pcbs": total_single_pcbs,
+                                "utilization": util,
+                                "unused_area": unused_area,
+                                "nbw": nbw, "nbl": nbl,
+                                "nw": nw, "nl": nl,
+                                "board_rot": board_rot, "single_rot": single_rot,
+                                "board_w": board_w, "board_l": board_l,
+                                "panel_used_w": panel_used_w, "panel_used_l": panel_used_l,
+                                "margins": {"left": left_margin, "right": right_margin,
+                                            "bottom": bottom_margin, "top": top_margin},
+                                "margin_uniformity": mu_score,
+                                "rotations_count": rotations_count,
+                                "placements": {
+                                    "boards": board_origins,
+                                    "singles_per_board": single_origins
+                                },
+                                "all_constraints_satisfied": all_ok,
+                                "first_failure": failure,
+                                # Primary objective sort key (for reference)
+                                "objective_key": (
+                                    -total_single_pcbs,          # maximize
+                                    -util,                       # maximize
+                                    unused_area,                 # minimize
+                                    mu_score,                    # minimize
+                                    rotations_count,             # minimize
+                                ),
+                            })
+
+    return layouts
+
+# ------------------------------ Web Utilities --------------------------------
+
+CSS = """
+:root { --fg:#111; --muted:#666; --bg:#fff; --line:#ddd; --accent:#0b6; }
+* { box-sizing:border-box; font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Arial; }
+body { color:var(--fg); background:var(--bg); margin:0; padding:24px; font-size:150%; }
+h1 { margin:0 0 8px 0; font-size:30px; }
+p.note { color:var(--muted); margin:0 0 16px 0; }
+form { display:grid; grid-template-columns: repeat(4, minmax(220px,1fr)); gap:12px; align-items:end; }
+fieldset { border:1px solid var(--line); padding:12px; border-radius:8px; }
+legend { padding:0 6px; }
+label { display:block; font-size:24px; color:var(--muted); }
+input[type=number] { width:100%; padding:8px; border:1px solid var(--line); border-radius:6px; }
+input[type=checkbox] { transform: translateY(2px); }
+.controls { grid-column: 1 / -1; display:flex; gap:12px; align-items:center; }
+button { background:var(--accent); color:#fff; border:0; padding:10px 14px; border-radius:6px; cursor:pointer; }
+button.secondary { background:#333; }
+table { width:100%; border-collapse:collapse; margin-top:18px; }
+th, td { border-bottom:1px solid var(--line); padding:8px 6px; text-align:right; font-variant-numeric: tabular-nums; }
+th { background:#f8f8f8; text-align:right; }
+td.l, th.l { text-align:left; }
+.badge { padding:2px 6px; border-radius:12px; border:1px solid var(--line); font-size:24px; color:#333; }
+.ok { color:#0a5; }
+.err { color:#b00; }
+.small { font-size:24px; color:var(--muted); }
+pre { background:#f6f6f6; padding:8px; border-radius:6px; overflow:auto; }
+"""
+
+def parse_bool(v: str) -> bool:
+    return v.lower() in ("1", "true", "on", "yes")
+
+def parse_float(qs: dict, key: str, default: float) -> float:
+    try:
+        return float(qs.get(key, [default])[0])
+    except Exception:
+        return default
+
+def parse_int(qs: dict, key: str, default: int) -> int:
+    try:
+        return int(qs.get(key, [default])[0])
+    except Exception:
+        return default
+
+def parse_cfg(qs: dict) -> Dict[str, float]:
+    d = default_config()
+    d["working_panel_width"]   = parse_float(qs, "WPW", d["working_panel_width"])
+    d["working_panel_length"]  = parse_float(qs, "WPL", d["working_panel_length"])
+    d["customer_board_width_max"]  = parse_float(qs, "CBW", d["customer_board_width_max"])
+    d["customer_board_length_max"] = parse_float(qs, "CBL", d["customer_board_length_max"])
+    d["single_pcb_width_max"]  = parse_float(qs, "SPW", d["single_pcb_width_max"])
+    d["single_pcb_length_max"] = parse_float(qs, "SPL", d["single_pcb_length_max"])
+    d["edge_margin_w"] = parse_float(qs, "EW_w", d["edge_margin_w"])
+    d["edge_margin_l"] = parse_float(qs, "EW_l", d["edge_margin_l"])
+    d["inter_board_gap_w"] = parse_float(qs, "CW", d["inter_board_gap_w"])
+    d["inter_board_gap_l"] = parse_float(qs, "CL", d["inter_board_gap_l"])
+    d["inter_single_gap_w"] = parse_float(qs, "SW", d["inter_single_gap_w"])
+    d["inter_single_gap_l"] = parse_float(qs, "SL", d["inter_single_gap_l"])
+    d["allow_rotate_board"] = parse_bool(qs.get("ARB", ["true"])[0])
+    d["allow_rotate_single_pcb"] = parse_bool(qs.get("ARS", ["true"])[0])
+    d["kerf_allowance"] = parse_float(qs, "KERF", d["kerf_allowance"])
+    d["limit"] = parse_int(qs, "LIMIT", d["limit"])
+    return d
+
+def input_field(name, label, value, step="0.1"):
+    return f"""<div>
+<label for="{name}">{escape(label)}</label>
+<input type="number" step="{step}" name="{name}" id="{name}" value="{value}"/>
+</div>"""
+
+def checkbox_field(name, label, checked: bool):
+    return f"""<div>
+<label for="{name}">{escape(label)}</label>
+<input type="checkbox" name="{name}" id="{name}" {"checked" if checked else ""}/>
+</div>"""
+
+def page(cfg: Dict[str, float], rows: List[Dict]) -> str:
+    # Summary
+    total = len(rows)
+    best_primary = None
+    if rows:
+        # Primary objective ranking for reference
+        best_primary = sorted(rows, key=lambda r: r["objective_key"])[0]
+
+    # HTML
+    h = []
+    h.append(f"<html><head><meta charset='utf-8'><title>PCB Panelizer</title><style>{CSS}</style></head><body>")
+    h.append("<h1>PCB Panelizer</h1>")
+    h.append("<p class='note'>Edit parameters. Press Calculate. Results sorted by utilization.</p>")
+    # Form
+    h.append("<form method='GET'>")
+
+    # Panel
+    h.append("<fieldset><legend>Working Panel</legend>")
+    h.append(input_field("WPW", "Width (WPW, mm)", cfg["working_panel_width"]))
+    h.append(input_field("WPL", "Length (WPL, mm)", cfg["working_panel_length"]))
+    h.append(input_field("EW_w", "Edge margin width (EW_w, mm)", cfg["edge_margin_w"]))
+    h.append(input_field("EW_l", "Edge margin length (EW_l, mm)", cfg["edge_margin_l"]))
+    h.append("</fieldset>")
+
+    # Customer board
+    h.append("<fieldset><legend>Customer Board Limits</legend>")
+    h.append(input_field("CBW", "Max board width (CBW, mm)", cfg["customer_board_width_max"]))
+    h.append(input_field("CBL", "Max board length (CBL, mm)", cfg["customer_board_length_max"]))
+    h.append(checkbox_field("ARB", "Allow rotate board", cfg["allow_rotate_board"]))
+    h.append("</fieldset>")
+
+    # Single PCB
+    h.append("<fieldset><legend>Single PCB</legend>")
+    h.append(input_field("SPW", "Single width (SPW, mm)", cfg["single_pcb_width_max"]))
+    h.append(input_field("SPL", "Single length (SPL, mm)", cfg["single_pcb_length_max"]))
+    h.append(checkbox_field("ARS", "Allow rotate single", cfg["allow_rotate_single_pcb"]))
+    h.append("</fieldset>")
+
+    # Gaps
+    h.append("<fieldset><legend>Gaps</legend>")
+    h.append(input_field("CW", "Inter-board gap W (CW, mm)", cfg["inter_board_gap_w"]))
+    h.append(input_field("CL", "Inter-board gap L (CL, mm)", cfg["inter_board_gap_l"]))
+    h.append(input_field("SW", "Inter-single gap W (SW, mm)", cfg["inter_single_gap_w"]))
+    h.append(input_field("SL", "Inter-single gap L (SL, mm)", cfg["inter_single_gap_l"]))
+    h.append(input_field("KERF", "Kerf allowance (adds to all gaps, mm)", cfg["kerf_allowance"], step="0.01"))
+    h.append("</fieldset>")
+
+    # Controls
+    h.append("<div class='controls'>")
+    h.append(input_field("LIMIT", "Max rows", int(cfg.get("limit", 10)), step="1"))
+    h.append("<button type='submit'>Calculate</button>")
+    if best_primary:
+        h.append("<span class='badge'>Best by objective shown with ★</span>")
+    h.append("</div>")
+    h.append("</form>")
+
+    # Results
+    if rows:
+        h.append(f"<p class='small'>Found {total} feasible layouts. Showing top {min(total, cfg['limit'])} by utilization.</p>")
+        h.append("<table>")
+        h.append("<tr>"
+                 "<th class='l'>Rank</th>"
+                 "<th>Utilization</th>"
+                 "<th>PCBs</th>"
+                 "<th>Boards WxL</th>"
+                 "<th>Singles WxL</th>"
+                 "<th>Board size (mm)</th>"
+                 "<th>Used area (mm)</th>"
+                 "<th>Unused area (mm²)</th>"
+                 "<th>Rot</th>"
+                 "<th class='l'>Objective</th>"
+                 "</tr>")
+        for idx, r in enumerate(rows[: int(cfg["limit"])]):
+            star = " ★" if best_primary and r["objective_key"] == best_primary["objective_key"] else ""
+            util = f"{r['utilization']:.6f}"
+            used_w = f"{r['panel_used_w']:.3f}"
+            used_l = f"{r['panel_used_l']:.3f}"
+            board_sz = f"{r['board_w']:.3f}×{r['board_l']:.3f}"
+            rot = ("B" if r["board_rot"] else "") + ("S" if r["single_rot"] else "")
+            rot = rot if rot else "—"
+            obj = r["objective_key"]
+            h.append("<tr>")
+            h.append(f"<td class='l'>{idx+1}{star}</td>")
+            h.append(f"<td>{util}</td>")
+            h.append(f"<td>{r['total_single_pcbs']}</td>")
+            h.append(f"<td>{r['nbw']}×{r['nbl']}</td>")
+            h.append(f"<td>{r['nw']}×{r['nl']}</td>")
+            h.append(f"<td>{board_sz}</td>")
+            h.append(f"<td>{used_w}×{used_l}</td>")
+            h.append(f"<td>{r['unused_area']:.3f}</td>")
+            h.append(f"<td>{rot}</td>")
+            h.append(f"<td class='l small'>{escape(str(obj))}</td>")
+            h.append("</tr>")
+            # Details row
+            details = {
+                "margins": r["margins"],
+                "margin_uniformity": r["margin_uniformity"],
+                "all_constraints_satisfied": r["all_constraints_satisfied"],
+                "first_failure": r["first_failure"],
+            }
+            h.append(f"<tr><td colspan='10' class='l'><details><summary>Details</summary>"
+                     f"<pre>{escape(json.dumps(details, indent=2))}</pre></details></td></tr>")
+        h.append("</table>")
+    else:
+        h.append("<p class='small'>No feasible layouts under current constraints.</p>")
+
+    h.append("</body></html>")
+    return "".join(h)
+
+# ------------------------------ WSGI Handler ---------------------------------
+
+def app(environ, start_response):
+    try:
+        if environ["REQUEST_METHOD"] == "POST":
+            size = int(environ.get("CONTENT_LENGTH", "0") or 0)
+            body = environ["wsgi.input"].read(size).decode("utf-8") if size > 0 else ""
+            qs = parse_qs(body)
+        else:
+            qs = parse_qs(environ.get("QUERY_STRING", ""))
+
+        cfg = parse_cfg(qs)
+
+        # Compute
+        all_rows = enumerate_layouts(cfg)
+        # Sort by utilization desc, then primary objective for stable ordering
+        all_rows.sort(key=lambda r: (-r["utilization"], r["objective_key"]))
+
+        html = page(cfg, all_rows)
+        data = html.encode("utf-8")
+        start_response("200 OK", [("Content-Type", "text/html; charset=utf-8"),
+                                  ("Content-Length", str(len(data)))])
+        return [data]
+    except Exception as e:
+        msg = f"<pre>{escape(repr(e))}</pre>"
+        data = msg.encode("utf-8")
+        start_response("500 Internal Server Error", [("Content-Type", "text/html; charset=utf-8"),
+                                                     ("Content-Length", str(len(data)))])
+        return [data]
+
+# --------------------------------- Main --------------------------------------
+
+if __name__ == "__main__":
+    host, port = "127.0.0.1", 8000
+    with make_server(host, port, app) as httpd:
+        print(f"Serving on http://{host}:{port}")
+        httpd.serve_forever()
