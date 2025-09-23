@@ -314,6 +314,9 @@ pre { background:#f6f6f6; padding:8px; border-radius:6px; overflow:auto; font-si
 }
 """
 
+ICON_FILENAME = "lt.png"
+ICON_PATH = os.path.join(os.path.dirname(__file__), ICON_FILENAME)
+
 def parse_bool(v: str) -> bool:
     if isinstance(v, str):
         return v.lower() in ("1", "true", "on", "yes")
@@ -415,9 +418,11 @@ def page(cfg: Dict[str, float], rows: List[Dict]) -> str:
 
     # HTML
     h = []
-    h.append(f"<html><head><meta charset='utf-8'><title>PCB Panelizer</title><style>{CSS}</style></head><body>")
-    h.append("<h1>PCB Panelizer</h1>")
-    h.append("<p class='note'>Edit parameters. Press Calculate. Results ranked by PCBs per Jumbo.</p>")
+    h.append("<html><head><meta charset='utf-8'><title>PCB Panelizer</title>")
+    h.append("<link rel='icon' type='image/png' href='/lt.png'>")
+    h.append(f"<style>{CSS}</style></head><body>")
+    h.append("<h1>PCB Panelizer by LT</h1>")
+#    h.append("<p class='note'>Edit parameters. Press Calculate. Results ranked by PCBs per Jumbo.</p>")
     # Form
     h.append("<form method='GET'>")
 
@@ -443,13 +448,13 @@ def page(cfg: Dict[str, float], rows: List[Dict]) -> str:
     h.append(checkbox_field("ARB", "Allow rotate board", cfg["allow_rotate_board"]))
     h.append("</fieldset>")
 
-    # Gaps
+    # V-Cut Gaps
     h.append("<fieldset><legend>Gaps</legend>")
     h.append(input_field("CW", "Inter-board gap W (CW, mm)", cfg["inter_board_gap_w"]))
     h.append(input_field("CL", "Inter-board gap L (CL, mm)", cfg["inter_board_gap_l"]))
     h.append(input_field("SW", "Inter-single gap W (SW, mm)", cfg["inter_single_gap_w"]))
     h.append(input_field("SL", "Inter-single gap L (SL, mm)", cfg["inter_single_gap_l"]))
-    h.append(input_field("KERF", "Kerf allowance (adds to all gaps, mm)", cfg["kerf_allowance"], step="0.01"))
+    h.append(input_field("KERF", "Kerf (adds to all gaps, mm)", cfg["kerf_allowance"], step="0.1"))
     h.append("</fieldset>")
 
     # Controls
@@ -519,7 +524,23 @@ def page(cfg: Dict[str, float], rows: List[Dict]) -> str:
 
 def app(environ, start_response):
     try:
-        if environ["REQUEST_METHOD"] == "POST":
+        method = environ.get("REQUEST_METHOD", "GET").upper()
+        path = environ.get("PATH_INFO", "") or "/"
+        if path in (f"/{ICON_FILENAME}", "/favicon.ico"):
+            try:
+                with open(ICON_PATH, "rb") as fh:
+                    data = fh.read()
+            except FileNotFoundError:
+                start_response("404 Not Found", [("Content-Type", "text/plain; charset=utf-8"),
+                                                 ("Content-Length", "0")])
+                return [b""]
+            headers = [("Content-Type", "image/png"), ("Content-Length", str(len(data)))]
+            start_response("200 OK", headers)
+            if method == "HEAD":
+                return [b""]
+            return [data]
+
+        if method == "POST":
             size = int(environ.get("CONTENT_LENGTH", "0") or 0)
             body = environ["wsgi.input"].read(size).decode("utf-8") if size > 0 else ""
             qs = parse_qs(body)
