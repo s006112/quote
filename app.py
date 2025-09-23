@@ -472,15 +472,15 @@ def page(cfg: Dict[str, float], rows: List[Dict]) -> str:
         h.append("<table>")
         h.append("<tr>"
                  "<th class='l'>Rank</th>"
-                 "<th>PCBs per Jumbo</th>"
-                 "<th>PCBs per Panel</th>"
-                 "<th>Boards WxL</th>"
-                 "<th>Singles WxL</th>"
+                 "<th>PCBs/Jumbo</th>"
+                 "<th>PCBs/Panel</th>"
+                 "<th>Panel WxL</th>"
+                 "<th>Board WxL</th>"
                  "<th>Board size (mm)</th>"
                  "<th>Panel style</th>"
                  "<th>Panel size (mm)</th>"
                  "<th>Utilization</th>"
-                 "<th>Rot</th>"
+                 "<th>Rotation</th>"
                  "</tr>")
         for idx, r in enumerate(rows[: int(cfg["limit"])]):
             star = " ★" if max_pcbs_jumbo is not None and r["pcbs_per_jumbo"] == max_pcbs_jumbo else ""
