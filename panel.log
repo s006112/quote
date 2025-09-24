@@ -1,0 +1,46 @@
+35.206.251.101 - - [24/Sep/2025 22:33:22] "GET / HTTP/1.1" 200 8978
+35.206.251.101 - - [24/Sep/2025 22:33:22] "GET /lt.png HTTP/1.1" 200 2313
+35.206.251.101 - - [24/Sep/2025 22:33:23] "GET / HTTP/1.1" 200 8978
+35.206.251.101 - - [24/Sep/2025 22:33:23] "GET /lt.png HTTP/1.1" 200 2313
+Serving on http://0.0.0.0:8080
+Traceback (most recent call last):
+  File "/opt/panel/app.py", line 579, in <module>
+    httpd.serve_forever()
+  File "/usr/lib/python3.10/socketserver.py", line 232, in serve_forever
+    ready = selector.select(poll_interval)
+  File "/usr/lib/python3.10/selectors.py", line 416, in select
+    fd_event_list = self._selector.poll(timeout)
+KeyboardInterrupt
+35.206.251.101 - - [24/Sep/2025 22:33:47] "GET / HTTP/1.1" 200 8978
+35.206.251.101 - - [24/Sep/2025 22:33:47] "GET /lt.png HTTP/1.1" 200 2313
+Serving on http://0.0.0.0:8080
+Traceback (most recent call last):
+  File "/opt/panel/app.py", line 579, in <module>
+    httpd.serve_forever()
+  File "/usr/lib/python3.10/socketserver.py", line 232, in serve_forever
+    ready = selector.select(poll_interval)
+  File "/usr/lib/python3.10/selectors.py", line 416, in select
+    fd_event_list = self._selector.poll(timeout)
+KeyboardInterrupt
+35.206.251.101 - - [24/Sep/2025 22:37:59] "GET / HTTP/1.1" 200 8978
+35.206.251.101 - - [24/Sep/2025 22:38:00] "GET /lt.png HTTP/1.1" 200 2313
+Terminated
+Wed Sep 24 22:38:54 UTC 2025 app.py crashed, restarting...
+35.206.251.101 - - [24/Sep/2025 22:38:59] "GET / HTTP/1.1" 200 8978
+35.206.251.101 - - [24/Sep/2025 22:38:59] "GET /lt.png HTTP/1.1" 200 2313
+35.206.251.101 - - [24/Sep/2025 22:39:00] "GET / HTTP/1.1" 200 8978
+35.206.251.101 - - [24/Sep/2025 22:39:01] "GET /lt.png HTTP/1.1" 200 2313
+35.206.251.101 - - [24/Sep/2025 22:39:01] "GET / HTTP/1.1" 200 8978
+35.206.251.101 - - [24/Sep/2025 22:39:02] "GET /lt.png HTTP/1.1" 200 2313
+35.206.251.101 - - [24/Sep/2025 22:39:02] "GET / HTTP/1.1" 200 8978
+35.206.251.101 - - [24/Sep/2025 22:39:02] "GET /lt.png HTTP/1.1" 200 2313
+35.206.251.101 - - [24/Sep/2025 22:39:03] "GET / HTTP/1.1" 200 8978
+35.206.251.101 - - [24/Sep/2025 22:39:03] "GET /lt.png HTTP/1.1" 200 2313
+35.206.251.101 - - [24/Sep/2025 22:39:03] "GET / HTTP/1.1" 200 8978
+35.206.251.101 - - [24/Sep/2025 22:39:04] "GET / HTTP/1.1" 200 8978
+35.206.251.101 - - [24/Sep/2025 22:39:04] "GET /lt.png HTTP/1.1" 200 2313
+35.206.251.101 - - [24/Sep/2025 22:39:04] "GET / HTTP/1.1" 200 8978
+120.229.146.55 - - [24/Sep/2025 22:39:54] "GET / HTTP/1.1" 200 8978
+35.206.251.101 - - [24/Sep/2025 22:39:54] "GET / HTTP/1.1" 200 8978
+120.229.146.55 - - [24/Sep/2025 22:39:59] "GET / HTTP/1.1" 200 8978
+35.206.251.101 - - [24/Sep/2025 22:42:14] "GET / HTTP/1.1" 200 8978
