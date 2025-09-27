@@ -1,0 +1,16 @@
+:root { --fg:#111; --bg:#fff; --muted:#666; --accent:#1b6ef3; --bad:#a33; }
+*{box-sizing:border-box} body{margin:16px;font:14px/1.4 system-ui,Arial,sans-serif;color:var(--fg);background:var(--bg)}
+h1,h2,h3{margin:8px 0} header{margin-bottom:8px}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:12px}
+label{display:flex;flex-direction:column;gap:6px}
+input,select,button,table{font:inherit}
+input,select{padding:8px;border:1px solid #ccc;border-radius:6px}
+button{padding:10px 14px;border:0;border-radius:6px;background:var(--accent);color:#fff;cursor:pointer}
+button:hover{opacity:.9}
+section{margin:14px 0;padding:12px;border:1px solid #eee;border-radius:8px}
+.alert{border:1px solid var(--bad);color:var(--bad);padding:8px;border-radius:6px;margin:10px 0}
+table{border-collapse:collapse;width:100%}
+th,td{border:1px solid #ddd;padding:6px;text-align:right}
+th:first-child,td:first-child{text-align:left}
+.mono{font-family:ui-monospace,Consolas,monospace}
+.actions{margin:8px 0}

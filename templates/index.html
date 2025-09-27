@@ -1,0 +1,195 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>PCB Quote (Internal)</title>
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link href="{{ url_for('static', filename='style.css') }}" rel="stylesheet">
+</head>
+<body>
+<header><h1>PCB Quotation — Internal</h1></header>
+
+{% if error_msgs and error_msgs|length %}
+<div class="alert">
+  <ul>
+    {% for m in error_msgs %}<li>{{ m }}</li>{% endfor %}
+  </ul>
+</div>
+{% endif %}
+
+<form method="post" novalidate>
+  <section>
+    <h2>Board Basics</h2>
+    <div class="grid">
+      <label>Width (mm)
+        <input name="width" type="number" step="0.01" value="{{ values.width }}">
+      </label>
+      <label>Height (mm)
+        <input name="height" type="number" step="0.01" value="{{ values.height }}">
+      </label>
+      <label>Layers
+        <input name="layers" type="number" step="1" value="{{ values.layers }}">
+      </label>
+      <label>Quantities (comma-separated)
+        <input name="qty_tiers" type="text" value="{{ values.qty_tiers }}">
+      </label>
+    </div>
+  </section>
+
+  <section>
+    <h2>Panelization</h2>
+    <div class="grid">
+      <label>Boards per panel
+        <input name="panel_boards" type="number" step="1" value="{{ values.panel_boards }}">
+      </label>
+      <label>Panel area (cm²)
+        <input name="panel_area_cm2" type="number" step="0.1" value="{{ values.panel_area_cm2 }}">
+      </label>
+    </div>
+  </section>
+
+  <section>
+    <h2>Materials & Finish</h2>
+    <div class="grid">
+      <label>Material
+        <select name="material">
+          {% for m in ["FR-4 TG170","Rogers 4350B"] %}
+          <option value="{{ m }}" {% if values.material==m %}selected{% endif %}>{{ m }}</option>
+          {% endfor %}
+        </select>
+      </label>
+      <label>Thickness (mm)
+        <input name="thickness_mm" type="number" step="0.01" value="{{ values.thickness_mm }}">
+      </label>
+      <label>Outer Cu (oz)
+        <input name="outer_oz" type="number" step="0.25" value="{{ values.outer_oz }}">
+      </label>
+      <label>Inner Cu (oz) (optional)
+        <input name="inner_oz" type="number" step="0.25" value="{{ values.inner_oz }}">
+      </label>
+      <label>Finish
+        <select name="finish">
+          {% for f in ["HASL_LF","ENIG","ENEPIG","OSP","IMM_SN","IMM_AG"] %}
+          <option value="{{ f }}" {% if values.finish==f %}selected{% endif %}>{{ f }}</option>
+          {% endfor %}
+        </select>
+      </label>
+    </div>
+  </section>
+
+  <section>
+    <h2>Fabrication Rules</h2>
+    <div class="grid">
+      <label>Min track (mm)
+        <input name="min_track_mm" type="number" step="0.01" value="{{ values.min_track_mm }}">
+      </label>
+      <label>Min space (mm)
+        <input name="min_space_mm" type="number" step="0.01" value="{{ values.min_space_mm }}">
+      </label>
+      <label>Min finished hole (mm)
+        <input name="min_hole_mm" type="number" step="0.01" value="{{ values.min_hole_mm }}">
+      </label>
+      <label>Via type
+        <select name="via_type">
+          {% for v in ["thru","blind","buried","micro"] %}
+          <option value="{{ v }}" {% if values.via_type==v %}selected{% endif %}>{{ v }}</option>
+          {% endfor %}
+        </select>
+      </label>
+    </div>
+  </section>
+
+  <section>
+    <h2>QA & Logistics</h2>
+    <div class="grid">
+      <label>IPC class
+        <select name="ipc_class">
+          {% for c in ["2","3"] %}
+          <option value="{{ c }}" {% if values.ipc_class==c %}selected{% endif %}>{{ c }}</option>
+          {% endfor %}
+        </select>
+      </label>
+      <label>E-test
+        <select name="etest">
+          {% for e in ["none","flying_probe","fixture"] %}
+          <option value="{{ e }}" {% if values.etest==e %}selected{% endif %}>{{ e }}</option>
+          {% endfor %}
+        </select>
+      </label>
+      <label>Lead time
+        <select name="lead_time_class">
+          {% for lt in ["economy","standard","express"] %}
+          <option value="{{ lt }}" {% if values.lead_time_class==lt %}selected{% endif %}>{{ lt }}</option>
+          {% endfor %}
+        </select>
+      </label>
+      <label>Ship zone
+        <select name="ship_zone">
+          {% for z in ["ASIA","EU","NA","OTHER"] %}
+          <option value="{{ z }}" {% if values.ship_zone==z %}selected{% endif %}>{{ z }}</option>
+          {% endfor %}
+        </select>
+      </label>
+    </div>
+  </section>
+
+  <section>
+    <h2>Impedance</h2>
+    <div class="grid">
+      <label>Controlled impedance
+        <select name="impedance_enabled">
+          {% for yn in ["no","yes"] %}
+          <option value="{{ yn }}" {% if values.impedance_enabled==yn %}selected{% endif %}>{{ yn }}</option>
+          {% endfor %}
+        </select>
+      </label>
+      <label>Impedance nets (%)
+        <input name="impedance_nets_pct" type="number" step="1" value="{{ values.impedance_nets_pct }}">
+      </label>
+      <label>Tolerance (%)
+        <input name="impedance_tol_pct" type="number" step="1" value="{{ values.impedance_tol_pct }}">
+      </label>
+    </div>
+  </section>
+
+  <div class="actions">
+    <button type="submit">Calculate</button>
+  </div>
+</form>
+
+{% if result %}
+<hr>
+<section>
+  <h2>Live Summary</h2>
+  <div class="grid">
+    <div>
+      <h3>Breakdown</h3>
+      <ul class="mono">
+        <li>Material: {{ result.breakdown.material }}</li>
+        <li>Process: {{ result.breakdown.process }}</li>
+        <li>QA: {{ result.breakdown.qa }}</li>
+        <li>Overhead: {{ result.breakdown.overhead }}</li>
+        <li>Risk: {{ result.breakdown.risk }}</li>
+        <li>Panels needed: {{ result.breakdown.panels_needed }}</li>
+        <li>Yield (%): {{ result.breakdown.yield_pct_effective }}</li>
+        <li>COGS: {{ result.cogs }}</li>
+      </ul>
+    </div>
+    <div>
+      <h3>Tier Prices</h3>
+      <table>
+        <thead><tr><th>Qty</th><th>Unit</th><th>Total</th></tr></thead>
+        <tbody>
+        {% for qty, data in result.tiers.items()|sort %}
+          <tr><td>{{ qty }}</td><td>{{ data.unit_price }}</td><td>{{ data.total }}</td></tr>
+        {% endfor %}
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+{% endif %}
+
+<footer><small>Minimal internal tool. Defaults are editable.</small></footer>
+</body>
+</html>
