@@ -4,7 +4,7 @@
     "width": 50.0,
     "height": 50.0,
     "layers": 4,
-    "qty_tiers": "10,50,100",
+    "qty_tiers": "10,50,100,500,1000",
     "panel_boards": 12,
     "panel_area_cm2": 2000.0,
     "material": "FR-4 TG170",

@@ -8,7 +8,10 @@ input,select,button,table{font:inherit}
 input,select{padding:8px;border:1px solid #ccc;border-radius:6px}
 button{padding:10px 14px;border:0;border-radius:6px;background:var(--accent);color:#fff;cursor:pointer}
 button:hover{opacity:.9}
-section{margin:12px 0;padding:10px 0}
+section{margin:12px 0}
+form section{display:flex;align-items:flex-start;gap:12px;flex-wrap:wrap;padding:0}
+form section h2{margin:0;min-width:160px}
+form section .grid{flex:1 1 320px}
 .alert{border:1px solid var(--bad);color:var(--bad);padding:8px;border-radius:6px;margin:10px 0}
 table{border-collapse:collapse;width:100%}
 th,td{border:1px solid #ddd;padding:6px;text-align:right}

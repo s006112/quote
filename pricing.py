@@ -42,11 +42,11 @@ class Params:
 
 def _tier_discount(q: int) -> float:
     # Simple monotone discount curve
-    if q >= 1000: return 0.80
-    if q >= 500:  return 0.85
-    if q >= 200:  return 0.90
-    if q >= 100:  return 0.94
-    if q >= 50:   return 0.97
+    if q >= 1000: return 0.95
+    if q >= 500:  return 0.96
+    if q >= 200:  return 0.97
+    if q >= 100:  return 0.98
+    if q >= 50:   return 0.99
     return 1.00
 
 def _yield_penalty(inp: Inputs) -> float:
