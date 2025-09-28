@@ -70,9 +70,6 @@ def _make_inputs() -> Inputs:
         etest=request.form.get("etest", df["etest"]),
         lead_time_class=request.form.get("lead_time_class", df["lead_time_class"]),
         ship_zone=request.form.get("ship_zone", df["ship_zone"]),
-        impedance_enabled=(request.form.get("impedance_enabled", df["impedance_enabled"]) in ["yes", "on", "true", "True"]),
-        impedance_nets_pct=_to_int("impedance_nets_pct", df["impedance_nets_pct"]),
-        impedance_tol_pct=_to_int("impedance_tol_pct", df["impedance_tol_pct"]),
     )
 
 def _make_params() -> Params:

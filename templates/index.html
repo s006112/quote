@@ -53,7 +53,7 @@
     <div class="grid">
       <label>Material
         <select name="material">
-          {% for m in ["FR-4 TG170","Rogers 4350B"] %}
+          {% for m in ["FR-4 KB6160A","Rogers 4350B"] %}
           <option value="{{ m }}" {% if values.material==m %}selected{% endif %}>{{ m }}</option>
           {% endfor %}
         </select>
@@ -133,25 +133,6 @@
     </div>
   </section>
 
-  <section>
-    <h2>Impedance</h2>
-    <div class="grid">
-      <label>Controlled impedance
-        <select name="impedance_enabled">
-          {% for yn in ["no","yes"] %}
-          <option value="{{ yn }}" {% if values.impedance_enabled==yn %}selected{% endif %}>{{ yn }}</option>
-          {% endfor %}
-        </select>
-      </label>
-      <label>Impedance nets (%)
-        <input name="impedance_nets_pct" type="number" step="1" value="{{ values.impedance_nets_pct }}">
-      </label>
-      <label>Tolerance (%)
-        <input name="impedance_tol_pct" type="number" step="1" value="{{ values.impedance_tol_pct }}">
-      </label>
-    </div>
-  </section>
-
   <div class="actions">
     <button type="submit">Calculate</button>
   </div>
@@ -178,7 +159,7 @@
     <div>
       <h3>Tier Prices</h3>
       <table>
-        <thead><tr><th>Qty</th><th>Unit</th><th>Total</th></tr></thead>
+        <thead><tr><th>Qty</th><th>Unit Price</th><th>Total</th></tr></thead>
         <tbody>
         {% for qty, data in result.tiers.items()|sort %}
           <tr><td>{{ qty }}</td><td>{{ data.unit_price }}</td><td>{{ data.total }}</td></tr>

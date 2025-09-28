@@ -23,9 +23,6 @@ class Inputs:
     etest: str     # 'none'|'flying_probe'|'fixture'
     lead_time_class: str # 'economy'|'standard'|'express'
     ship_zone: str
-    impedance_enabled: bool
-    impedance_nets_pct: int
-    impedance_tol_pct: int
 
 @dataclass
 class Params:
@@ -55,7 +52,6 @@ def _yield_penalty(inp: Inputs) -> float:
     if inp.outer_oz >= 2.0:         penalty *= 0.97
     if inp.via_type != "thru":      penalty *= 0.94
     if inp.ipc_class == "3":        penalty *= 0.97
-    if inp.impedance_enabled and inp.impedance_tol_pct < 8: penalty *= 0.97
     return penalty
 
 def _derive_ops(inp: Inputs, area_board_cm2: float) -> dict:
@@ -107,7 +103,7 @@ def price_quote(inp: Inputs, prm: Params) -> dict:
     base = material_cost + process_cost + qa_cost
     oh = base * (prm.overheads_pct / 100.0)
 
-    risk_base = base if (inp.impedance_enabled or inp.via_type != "thru" or inp.ipc_class == "3") else 0.0
+    risk_base = base if (inp.via_type != "thru" or inp.ipc_class == "3") else 0.0
     risk = risk_base * (prm.risk_buffer_pct / 100.0)
 
     mult = prm.lead_time_mult.get(inp.lead_time_class, 1.0) * prm.scarcity_mult.get(inp.material, 1.0)

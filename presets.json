@@ -4,10 +4,10 @@
     "width": 50.0,
     "height": 50.0,
     "layers": 4,
-    "qty_tiers": "10,50,100,500,1000",
+    "qty_tiers": "10,50,100",
     "panel_boards": 12,
     "panel_area_cm2": 2000.0,
-    "material": "FR-4 TG170",
+    "material": "FR-4 KB6160A",
     "thickness_mm": 1.6,
     "outer_oz": 1.0,
     "inner_oz": 0.5,
@@ -19,16 +19,13 @@
     "ipc_class": "2",
     "etest": "flying_probe",
     "lead_time_class": "standard",
-    "ship_zone": "ASIA",
-    "impedance_enabled": "no",
-    "impedance_nets_pct": 20,
-    "impedance_tol_pct": 10
+    "ship_zone": "ASIA"
   },
   "costing_params": {
     "labor_rates": {"fab": 25.0, "test": 22.0},
     "machine_rates": {"lamination": 80.0, "drill_per_hit": 0.015, "routing_per_mm": 0.01, "imaging_per_pass": 12.0, "aoi_per_panel": 6.0},
     "material_prices": {
-      "FR-4 TG170": 12.5,
+      "FR-4 KB6160A": 110,
       "Rogers 4350B": 45.0,
       "ENIG_gold_per_um_cm2": 0.00008
     },
@@ -36,8 +33,8 @@
     "yield_baseline_pct": 94.0,
     "risk_buffer_pct": 2.0,
     "customer_discount_pct": 0.0,
-    "target_margin_pct": 18.0,
+    "target_margin_pct": 0.0,
     "lead_time_mult": {"economy": 0.9, "standard": 1.0, "express": 1.25},
-    "scarcity_mult": {"FR-4 TG170": 1.0, "Rogers 4350B": 1.15}
+    "scarcity_mult": {"FR-4 KB6160A": 1.0, "Rogers 4350B": 1.0}
   }
 }
