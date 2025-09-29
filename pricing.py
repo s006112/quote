@@ -77,10 +77,10 @@ def price_quote(inp: Inputs, prm: Params) -> dict:
 
     # Material cost
     mat_unit = prm.material_prices.get(inp.material, 15.0)
-    material_cost = mat_unit * (inp.panel_area_cm2 / 100.0) * panels_needed
+    laminate_cost = mat_unit * (inp.panel_area_cm2 / 100.0) * panels_needed
     gold_um = 0.1 if inp.finish == "ENIG" else 0.0
     gold_cost = prm.material_prices["ENIG_gold_per_um_cm2"] * gold_um * area_board_cm2 * boards_needed * 0.45
-    material_cost += gold_cost
+    material_cost = laminate_cost + gold_cost
 
     # Process cost
     mr = prm.machine_rates
@@ -117,9 +117,29 @@ def price_quote(inp: Inputs, prm: Params) -> dict:
         tiers[q] = {"unit_price": round(price / q, 4), "total": round(price, 2)}
 
     breakdown = {
-        "material": round(material_cost, 2),
-        "process": round(process_cost, 2),
-        "qa": round(qa_cost, 2),
+        "material": {
+            "total": round(material_cost, 2),
+            "components": {
+                "laminate": round(laminate_cost, 2),
+                "finish_gold": round(gold_cost, 2)
+            }
+        },
+        "process": {
+            "total": round(process_cost, 2),
+            "components": {
+                "drill": round(drill_cost, 2),
+                "imaging": round(image_cost, 2),
+                "lamination": round(lam_cost, 2),
+                "routing": round(routing_cost, 2)
+            }
+        },
+        "qa": {
+            "total": round(qa_cost, 2),
+            "components": {
+                "aoi": round(aoi_cost, 2),
+                "etest": round(etest_cost, 2)
+            }
+        },
         "overhead": round(oh, 2),
         "risk": round(risk, 2),
         "panels_needed": panels_needed,
