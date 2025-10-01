@@ -45,6 +45,8 @@ def _make_inputs() -> Inputs:
         material=request.form.get("material", df["material"]),
         finish=request.form.get("finish", df["finish"]),
         film_cost=_to_float("film_cost", df["film_cost"]),
+        masking_cost=_to_float("masking_cost", df["masking_cost"]),
+        silkscreen_cost=_to_float("silkscreen_cost", df["silkscreen_cost"]),
         etching_cost=_to_float("etching_cost", df["etching_cost"]),
         via_type=request.form.get("via_type", df["via_type"]),
         ipc_class=request.form.get("ipc_class", df["ipc_class"]),

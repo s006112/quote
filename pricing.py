@@ -12,6 +12,8 @@ class Inputs:
     finish: str
     film_cost: float
     etching_cost: float
+    masking_cost: float
+    silkscreen_cost: float
     via_type: str  # 'thru'|'blind'|'buried'|'micro'
     ipc_class: str # '2'|'3'
     etest: str     # 'none'|'flying_probe'|'fixture'
@@ -61,8 +63,10 @@ def price_quote(inp: Inputs, prm: Params) -> dict:
     finish_cost = prm.finish_costs.get(inp.finish, 0.0)
     film_cost = inp.film_cost
     etching_cost = inp.etching_cost
+    masking_cost = inp.masking_cost
+    silkscreen_cost = inp.silkscreen_cost
     material_cost = laminate_cost + film_cost
-    treatment_cost = finish_cost + etching_cost
+    treatment_cost = finish_cost + etching_cost + masking_cost + silkscreen_cost
 
     # Process cost
     mr = prm.machine_rates
@@ -107,7 +111,9 @@ def price_quote(inp: Inputs, prm: Params) -> dict:
             "total": round(treatment_cost, 2),
             "components": {
                 "finish": round(finish_cost, 2),
-                "etching": round(etching_cost, 2)
+                "etching": round(etching_cost, 2),
+                "masking": round(masking_cost, 2),
+                "silkscreen": round(silkscreen_cost, 2)
             }
         },
         "process": {

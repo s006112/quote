@@ -64,8 +64,14 @@
               {% endfor %}
             </select>
           </label>
-          <label>Etching cost
+          <label>Etching
             <input name="etching_cost" type="number" step="0.01" value="{{ values.etching_cost }}">
+          </label>
+          <label>Masking
+            <input name="masking_cost" type="number" step="0.01" value="{{ values.masking_cost }}">
+          </label>
+          <label>Silkscreen
+            <input name="silkscreen_cost" type="number" step="0.01" value="{{ values.silkscreen_cost }}">
           </label>
         </div>
       </section>
@@ -144,6 +150,8 @@
               <ul>
                 <li>Finish: {{ result.breakdown.treatment.components.finish }}</li>
                 <li>Etching: {{ result.breakdown.treatment.components.etching }}</li>
+                <li>Masking: {{ result.breakdown.treatment.components.masking }}</li>
+                <li>Silkscreen: {{ result.breakdown.treatment.components.silkscreen }}</li>
               </ul>
             </li>            
             <li>Process: {{ result.breakdown.process.total }}
