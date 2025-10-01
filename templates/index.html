@@ -58,18 +58,12 @@
           {% endfor %}
         </select>
       </label>
-      <label>Thickness (mm)
-        <input name="thickness_mm" type="number" step="0.01" value="{{ values.thickness_mm }}">
-      </label>
       <label>Outer Cu (oz)
         <input name="outer_oz" type="number" step="0.25" value="{{ values.outer_oz }}">
       </label>
-      <label>Inner Cu (oz) (optional)
-        <input name="inner_oz" type="number" step="0.25" value="{{ values.inner_oz }}">
-      </label>
       <label>Finish
         <select name="finish">
-          {% for f in ["HASL_LF","ENIG","ENEPIG","OSP","IMM_SN","IMM_AG"] %}
+          {% for f in ["HASL","ENIG","OSP"] %}
           <option value="{{ f }}" {% if values.finish==f %}selected{% endif %}>{{ f }}</option>
           {% endfor %}
         </select>

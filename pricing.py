@@ -11,9 +11,7 @@ class Inputs:
     panel_boards: int
     panel_area_cm2: float
     material: str
-    thickness_mm: float
     outer_oz: float
-    inner_oz: float | None
     finish: str
     min_track_mm: float
     min_space_mm: float

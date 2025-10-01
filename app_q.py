@@ -30,15 +30,10 @@ def _validate(d: dict[str, Any]) -> list[str]:
     if not (5 <= d["width"] <= 650): errs.append("Width must be 5–650 mm.")
     if not (5 <= d["height"] <= 650): errs.append("Height must be 5–650 mm.")
     if not (1 <= d["layers"] <= 40): errs.append("Layers must be 1–40.")
-    if d["thickness_mm"] <= 0: errs.append("Thickness must be > 0.")
     if d["panel_boards"] < 1: errs.append("Boards per panel must be >= 1.")
     if d["panel_area_cm2"] < 50: errs.append("Panel area must be >= 50 cm².")
-    if d["min_hole_mm"] < d["thickness_mm"]/10.0:
-        errs.append("Finished hole violates 10:1 aspect ratio.")
     if d["outer_oz"] < 0.25 or d["outer_oz"] > 3.0:
         errs.append("Outer copper must be 0.25–3 oz.")
-    if d["inner_oz"] is not None and (d["inner_oz"] < 0.25 or d["inner_oz"] > 3.0):
-        errs.append("Inner copper must be 0.25–3 oz.")
     return errs
 
 def _make_inputs() -> Inputs:
@@ -59,9 +54,7 @@ def _make_inputs() -> Inputs:
         panel_boards=_to_int("panel_boards", df["panel_boards"]),
         panel_area_cm2=_to_float("panel_area_cm2", df["panel_area_cm2"]),
         material=request.form.get("material", df["material"]),
-        thickness_mm=_to_float("thickness_mm", df["thickness_mm"]),
         outer_oz=_to_float("outer_oz", df["outer_oz"]),
-        inner_oz=float(request.form.get("inner_oz", df["inner_oz"])) if request.form.get("inner_oz", "") else None,
         finish=request.form.get("finish", df["finish"]),
         min_track_mm=_to_float("min_track_mm", df["min_track_mm"]),
         min_space_mm=_to_float("min_space_mm", df["min_space_mm"]),
@@ -113,9 +106,7 @@ def index():
                            result=result)
 
 if __name__ == "__main__":
-    host = os.environ.get("APP_Q_HOST", os.environ.get("HOST", "0.0.0.0"))
-    port_env = os.environ.get("APP_Q_PORT") or os.environ.get("PORT_Q")
-    port = int(port_env) if port_env else 5000
-    with make_server(host, port, app) as httpd:
-        print(f"Serving on http://{host}:{port}")
-        httpd.serve_forever()
+    host = os.environ.get("HOST", "127.0.0.1")
+    port = int(os.environ.get("PORT", "5000"))
+    debug = os.environ.get("DEBUG", "0") in ["1", "true", "True"]
+    app.run(host=host, port=port, debug=debug)
