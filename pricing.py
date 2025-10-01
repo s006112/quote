@@ -8,6 +8,7 @@ class Inputs:
     layers: int
     panel_boards: int
     direct_pth_holes: int
+    cnc_pth_holes: int
     material: str
     finish: str
     film_cost: float
@@ -77,7 +78,8 @@ def price_quote(inp: Inputs, prm: Params) -> dict:
     lam_cost = mr["lamination"] * ops["lam_cycles"]
     routing_cost = mr["routing_per_mm"] * ops["route_mm"]
     direct_pth_cost = mr.get("direct_pth_per_hole", 0.0) * max(0, inp.direct_pth_holes) * boards_per_panel
-    process_cost = drill_cost + image_cost + lam_cost + routing_cost + direct_pth_cost
+    cnc_pth_cost = mr.get("cnc_pth_per_hole", 0.0) * max(0, inp.cnc_pth_holes) * boards_per_panel
+    process_cost = drill_cost + image_cost + lam_cost + routing_cost + direct_pth_cost + cnc_pth_cost
 
     # Sewage cost
     sewage_water = inp.sewage_water
@@ -130,6 +132,7 @@ def price_quote(inp: Inputs, prm: Params) -> dict:
                 "imaging": round(image_cost, 1),
                 "lamination": round(lam_cost, 1),
                 "direct_pth": round(direct_pth_cost, 1),
+                "cnc_pth": round(cnc_pth_cost, 1),
                 "routing": round(routing_cost, 1)
             }
         },

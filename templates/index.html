@@ -99,7 +99,10 @@
             </select>
           </label>
           <label>直 PTH
-            <input name="f_holes" type="number" step="1" min="0" value="{{ values.direct_pth_holes }}">
+            <input name="direct_pth_holes" type="number" step="1" min="0" value="{{ values.direct_pth_holes }}">
+          </label>
+          <label>CNC 钻孔
+            <input name="cnc_pth_holes" type="number" step="1" min="0" value="{{ values.cnc_pth_holes }}">
           </label>
         </div>
       </section>
@@ -171,7 +174,8 @@
                 <li>Drill: {{ result.breakdown.process.components.drill }}</li>
                 <li>Imaging: {{ result.breakdown.process.components.imaging }}</li>
                 <li>Lamination: {{ result.breakdown.process.components.lamination }}</li>
-                <li>Direct PTH: {{ result.breakdown.process.components.direct_pth }}</li>
+                <li>直 PTH: {{ result.breakdown.process.components.direct_pth }}</li>
+                <li>CNC 钻孔: {{ result.breakdown.process.components.cnc_pth }}</li>
                 <li>Routing: {{ result.breakdown.process.components.routing }}</li>
               </ul>
             </li>

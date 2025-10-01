@@ -32,6 +32,7 @@ def _validate(d: dict[str, Any]) -> list[str]:
     if not (1 <= d["layers"] <= 40): errs.append("Layers must be 1–40.")
     if d["panel_boards"] < 1: errs.append("Boards per panel must be >= 1.")
     if d.get("direct_pth_holes", 0) < 0: errs.append("Direct PTH holes must be >= 0.")
+    if d.get("cnc_pth_holes", 0) < 0: errs.append("CNC PTH holes must be >= 0.")
     return errs
 
 def _make_inputs() -> Inputs:
@@ -42,6 +43,7 @@ def _make_inputs() -> Inputs:
         layers=_to_int("layers", df["layers"]),
         panel_boards=_to_int("panel_boards", df["panel_boards"]),
         direct_pth_holes=_to_int("direct_pth_holes", df["direct_pth_holes"]),
+        cnc_pth_holes=_to_int("cnc_pth_holes", df["cnc_pth_holes"]),
         material=request.form.get("material", df["material"]),
         finish=request.form.get("finish", df["finish"]),
         film_cost=_to_float("film_cost", df["film_cost"]),
