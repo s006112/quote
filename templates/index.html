@@ -114,29 +114,8 @@
       </section>
 
       <section>
-        <h2>QA & Logistics</h2>
+        <h2>Logistics</h2>
         <div class="grid">
-          <label>IPC class
-            <select name="ipc_class">
-              {% for c in ["2","3"] %}
-              <option value="{{ c }}" {% if values.ipc_class==c %}selected{% endif %}>{{ c }}</option>
-              {% endfor %}
-            </select>
-          </label>
-          <label>E-test
-            <select name="etest">
-              {% for e in ["none","flying_probe","fixture"] %}
-              <option value="{{ e }}" {% if values.etest==e %}selected{% endif %}>{{ e }}</option>
-              {% endfor %}
-            </select>
-          </label>
-          <label>Lead time
-            <select name="lead_time_class">
-              {% for lt in ["economy","standard","express"] %}
-              <option value="{{ lt }}" {% if values.lead_time_class==lt %}selected{% endif %}>{{ lt }}</option>
-              {% endfor %}
-            </select>
-          </label>
           <label>Ship zone
             <select name="ship_zone">
               {% for z in ["ASIA","EU","NA","OTHER"] %}
@@ -189,10 +168,10 @@
                 <li>Electricity: {{ result.breakdown.sewage.components.electricity }}</li>
               </ul>
             </li>
-            <li>QA: {{ result.breakdown.qa.total }}
+            <li>Logistics: {{ result.breakdown.logistics.adjustment }}
               <ul>
-                <li>AOI: {{ result.breakdown.qa.components.aoi }}</li>
-                <li>E-test: {{ result.breakdown.qa.components.etest }}</li>
+                <li>Ship zone: {{ result.breakdown.logistics.ship_zone }}</li>
+                <li>Zone factor: {{ result.breakdown.logistics.factor }}</li>
               </ul>
             </li>
             <li>Overhead: {{ result.breakdown.overhead }}</li>

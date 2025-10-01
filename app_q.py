@@ -57,16 +57,12 @@ def _make_inputs() -> Inputs:
         sewage_water=_to_float("sewage_water", df["sewage_water"]),
         sewage_electricity=_to_float("sewage_electricity", df["sewage_electricity"]),
         via_type=request.form.get("via_type", df["via_type"]),
-        ipc_class=request.form.get("ipc_class", df["ipc_class"]),
-        etest=request.form.get("etest", df["etest"]),
-        lead_time_class=request.form.get("lead_time_class", df["lead_time_class"]),
         ship_zone=request.form.get("ship_zone", df["ship_zone"]),
     )
 
 def _make_params() -> Params:
     p = PRESETS["costing_params"]
     return Params(
-        labor_rates=p["labor_rates"],
         machine_rates=p["machine_rates"],
         material_prices=p["material_prices"],
         finish_costs=p["finish_costs"],
@@ -75,7 +71,7 @@ def _make_params() -> Params:
         risk_buffer_pct=p["risk_buffer_pct"],
         customer_discount_pct=p["customer_discount_pct"],
         target_margin_pct=p["target_margin_pct"],
-        lead_time_mult=p["lead_time_mult"]
+        ship_zone_factor=p["ship_zone_factor"]
     )
 
 @app.route("/", methods=["GET", "POST"])

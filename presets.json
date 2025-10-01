@@ -18,19 +18,11 @@
     "sewage_water": 30.0,
     "sewage_electricity": 2.0,
     "via_type": "thru",
-    "ipc_class": "2",
-    "etest": "flying_probe",
-    "lead_time_class": "standard",
     "ship_zone": "ASIA"
 
   },
   "costing_params": {
-    "labor_rates": {
-      "fab": 25.0,
-      "test": 22.0
-    },
     "machine_rates": {
-      "aoi_per_panel": 6.0,
       "direct_pth_per_hole": 0.0017,
       "cnc_pth_per_hole": 0.0034
     },
@@ -48,10 +40,11 @@
     "risk_buffer_pct": 2.0,
     "customer_discount_pct": 0.0,
     "target_margin_pct": 0.0,
-    "lead_time_mult": {
-      "economy": 0.9,
-      "standard": 1.0,
-      "express": 1.25
+    "ship_zone_factor": {
+      "ASIA": 1.0,
+      "EU": 1.05,
+      "NA": 1.08,
+      "OTHER": 1.1
     }
   }
 }

@@ -20,14 +20,10 @@ class Inputs:
     sewage_water: float
     sewage_electricity: float
     via_type: str  # 'thru'|'blind'|'buried'|'micro'
-    ipc_class: str # '2'|'3'
-    etest: str     # 'none'|'flying_probe'|'fixture'
-    lead_time_class: str # 'economy'|'standard'|'express'
     ship_zone: str
 
 @dataclass
 class Params:
-    labor_rates: dict
     machine_rates: dict
     material_prices: dict
     finish_costs: dict
@@ -36,12 +32,11 @@ class Params:
     risk_buffer_pct: float
     customer_discount_pct: float
     target_margin_pct: float
-    lead_time_mult: dict
+    ship_zone_factor: dict
 
 def _yield_penalty(inp: Inputs) -> float:
     penalty = 1.0
     if inp.via_type != "thru":      penalty *= 0.94
-    if inp.ipc_class == "3":        penalty *= 0.97
     return penalty
 
 def price_quote(inp: Inputs, prm: Params) -> dict:
@@ -73,24 +68,17 @@ def price_quote(inp: Inputs, prm: Params) -> dict:
     sewage_electricity = inp.sewage_electricity
     sewage_cost = sewage_water + sewage_electricity
 
-    # QA cost
-    aoi_cost = mr["aoi_per_panel"]
-    if inp.etest == "flying_probe":
-        etest_cost = prm.labor_rates["test"] * 0.15
-    elif inp.etest == "fixture":
-        etest_cost = prm.labor_rates["test"] * 0.30
-    else:
-        etest_cost = 0.0
-    qa_cost = aoi_cost + etest_cost
-
-    base = material_cost + treatment_cost + process_cost + sewage_cost + qa_cost
+    base = material_cost + treatment_cost + process_cost + sewage_cost
     oh = base * (prm.overheads_pct / 100.0)
 
-    risk_base = base if (inp.via_type != "thru" or inp.ipc_class == "3") else 0.0
+    risk_base = base if inp.via_type != "thru" else 0.0
     risk = risk_base * (prm.risk_buffer_pct / 100.0)
 
-    mult = prm.lead_time_mult.get(inp.lead_time_class, 1.0)
-    cogs = mult * base + oh + risk
+    cogs_pre_ship = base + oh + risk
+    zone_factor = prm.ship_zone_factor.get(inp.ship_zone, 1.0)
+    logistics_cost = cogs_pre_ship * (zone_factor - 1)
+    cogs = cogs_pre_ship + logistics_cost
+
     price_total = cogs * (1 + prm.target_margin_pct / 100.0)
     price_total *= (1 - prm.customer_discount_pct / 100.0)
     unit_price_board = price_total / boards_per_panel if boards_per_panel else 0.0
@@ -128,12 +116,10 @@ def price_quote(inp: Inputs, prm: Params) -> dict:
                 "electricity": round(sewage_electricity, 2)
             }
         },
-        "qa": {
-            "total": round(qa_cost, 2),
-            "components": {
-                "aoi": round(aoi_cost, 2),
-                "etest": round(etest_cost, 2)
-            }
+        "logistics": {
+            "ship_zone": inp.ship_zone,
+            "factor": round(zone_factor, 3),
+            "adjustment": round(logistics_cost, 2)
         },
         "overhead": round(oh, 2),
         "risk": round(risk, 2),
