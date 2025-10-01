@@ -77,18 +77,6 @@
       </section>
 
       <section>
-        <h2>Sewage</h2>
-        <div class="grid">
-          <label>Water
-            <input name="sewage_water" type="number" step="1" value="{{ values.sewage_water }}">
-          </label>
-          <label>Electricity
-            <input name="sewage_electricity" type="number" step="1" value="{{ values.sewage_electricity }}">
-          </label>
-        </div>
-      </section>
-
-      <section>
         <h2>Process</h2>
         <div class="grid">
           <label>Via type
@@ -103,6 +91,24 @@
           </label>
           <label>CNC 钻孔
             <input name="cnc_pth_holes" type="number" step="1" min="0" value="{{ values.cnc_pth_holes }}">
+          </label>
+          <label>开料
+            <input name="cutting_cost" type="number" step="1" min="0" value="{{ values.cutting_cost }}">
+          </label>
+          <label>锣板/冲板
+            <input name="routing_cost" type="number" step="1" min="0" value="{{ values.routing_cost }}">
+          </label>
+        </div>
+      </section>
+
+      <section>
+        <h2>Sewage</h2>
+        <div class="grid">
+          <label>Water
+            <input name="sewage_water" type="number" step="1" value="{{ values.sewage_water }}">
+          </label>
+          <label>Electricity
+            <input name="sewage_electricity" type="number" step="1" value="{{ values.sewage_electricity }}">
           </label>
         </div>
       </section>
@@ -173,6 +179,8 @@
               <ul>
                 <li>直 PTH: {{ result.breakdown.process.components.direct_pth }}</li>
                 <li>CNC 钻孔: {{ result.breakdown.process.components.cnc_pth }}</li>
+                <li>开料: {{ result.breakdown.process.components.cutting }}</li>
+                <li>锣板/冲板: {{ result.breakdown.process.components.routing }}</li>
               </ul>
             </li>
             <li>Sewage: {{ result.breakdown.sewage.total }}

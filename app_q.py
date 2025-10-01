@@ -33,6 +33,8 @@ def _validate(d: dict[str, Any]) -> list[str]:
     if d["panel_boards"] < 1: errs.append("Boards per panel must be >= 1.")
     if d.get("direct_pth_holes", 0) < 0: errs.append("Direct PTH holes must be >= 0.")
     if d.get("cnc_pth_holes", 0) < 0: errs.append("CNC PTH holes must be >= 0.")
+    if d.get("cutting_cost", 0.0) < 0: errs.append("Cutting cost must be >= 0.")
+    if d.get("routing_cost", 0.0) < 0: errs.append("Routing cost must be >= 0.")
     return errs
 
 def _make_inputs() -> Inputs:
@@ -50,6 +52,8 @@ def _make_inputs() -> Inputs:
         masking_cost=_to_float("masking_cost", df["masking_cost"]),
         silkscreen_cost=_to_float("silkscreen_cost", df["silkscreen_cost"]),
         etching_cost=_to_float("etching_cost", df["etching_cost"]),
+        cutting_cost=_to_float("cutting_cost", df["cutting_cost"]),
+        routing_cost=_to_float("routing_cost", df["routing_cost"]),
         sewage_water=_to_float("sewage_water", df["sewage_water"]),
         sewage_electricity=_to_float("sewage_electricity", df["sewage_electricity"]),
         via_type=request.form.get("via_type", df["via_type"]),

@@ -13,6 +13,8 @@
     "masking_cost": 12.0,
     "silkscreen_cost": 2.0,
     "etching_cost": 3.0,
+    "cutting_cost": 8.0,
+    "routing_cost": 18.0,
     "sewage_water": 30.0,
     "sewage_electricity": 2.0,
     "via_type": "thru",
