@@ -30,7 +30,6 @@ class Params:
     customer_discount_pct: float
     target_margin_pct: float
     lead_time_mult: dict
-    scarcity_mult: dict
 
 def _yield_penalty(inp: Inputs) -> float:
     penalty = 1.0
@@ -87,7 +86,7 @@ def price_quote(inp: Inputs, prm: Params) -> dict:
     risk_base = base if (inp.via_type != "thru" or inp.ipc_class == "3") else 0.0
     risk = risk_base * (prm.risk_buffer_pct / 100.0)
 
-    mult = prm.lead_time_mult.get(inp.lead_time_class, 1.0) * prm.scarcity_mult.get(inp.material, 1.0)
+    mult = prm.lead_time_mult.get(inp.lead_time_class, 1.0)
     cogs = mult * base + oh + risk
     price_total = cogs * (1 + prm.target_margin_pct / 100.0)
     price_total *= (1 - prm.customer_discount_pct / 100.0)

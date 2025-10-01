@@ -64,8 +64,7 @@ def _make_params() -> Params:
         risk_buffer_pct=p["risk_buffer_pct"],
         customer_discount_pct=p["customer_discount_pct"],
         target_margin_pct=p["target_margin_pct"],
-        lead_time_mult=p["lead_time_mult"],
-        scarcity_mult=p["scarcity_mult"]
+        lead_time_mult=p["lead_time_mult"]
     )
 
 @app.route("/", methods=["GET", "POST"])
