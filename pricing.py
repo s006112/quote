@@ -42,44 +42,27 @@ def _yield_penalty(inp: Inputs) -> float:
     if inp.ipc_class == "3":        penalty *= 0.97
     return penalty
 
-def _derive_ops(inp: Inputs, area_board_cm2: float) -> dict:
-    # Heuristic counts; replace with CAM-driven values later
-    drill_hits = max(200, int(area_board_cm2 * 6 * (1 if inp.via_type=='thru' else 1.6)))
-    layer_pairs = (inp.layers // 2)
-    lam_cycles = max(1, layer_pairs)
-    imaging_passes = inp.layers * 2
-    route_mm = (inp.width*2 + inp.height*2) * 10  # perimeter in mm
-    nets = max(300, int(area_board_cm2 * 5))
-    bga_count = 0
-    return dict(drill_hits=drill_hits, layer_pairs=layer_pairs, lam_cycles=lam_cycles,
-                imaging_passes=imaging_passes, route_mm=route_mm, nets=nets, bga_count=bga_count)
-
 def price_quote(inp: Inputs, prm: Params) -> dict:
-    area_board_cm2 = (inp.width * inp.height) / 100.0
     yld = (prm.yield_baseline_pct / 100.0) * _yield_penalty(inp)
     boards_per_panel = max(1, inp.panel_boards)
 
-    ops = _derive_ops(inp, area_board_cm2)
-
     # Material cost
     laminate_cost = prm.material_prices.get(inp.material, 15.0)
-    finish_cost = prm.finish_costs.get(inp.finish, 0.0)
     film_cost = inp.film_cost
+    material_cost = laminate_cost + film_cost
+
+    # Treatment cost
     etching_cost = inp.etching_cost
     masking_cost = inp.masking_cost
     silkscreen_cost = inp.silkscreen_cost
-    material_cost = laminate_cost + film_cost
+    finish_cost = prm.finish_costs.get(inp.finish, 0.0)
     treatment_cost = finish_cost + etching_cost + masking_cost + silkscreen_cost
 
     # Process cost
     mr = prm.machine_rates
-    drill_cost = mr["drill_per_hit"] * ops["drill_hits"]
-    image_cost = mr["imaging_per_pass"] * ops["imaging_passes"]
-    lam_cost = mr["lamination"] * ops["lam_cycles"]
-    routing_cost = mr["routing_per_mm"] * ops["route_mm"]
     direct_pth_cost = mr.get("direct_pth_per_hole", 0.0) * max(0, inp.direct_pth_holes) * boards_per_panel
     cnc_pth_cost = mr.get("cnc_pth_per_hole", 0.0) * max(0, inp.cnc_pth_holes) * boards_per_panel
-    process_cost = drill_cost + image_cost + lam_cost + routing_cost + direct_pth_cost + cnc_pth_cost
+    process_cost = direct_pth_cost + cnc_pth_cost
 
     # Sewage cost
     sewage_water = inp.sewage_water
@@ -128,12 +111,8 @@ def price_quote(inp: Inputs, prm: Params) -> dict:
         "process": {
             "total": round(process_cost, 1),
             "components": {
-                "drill": round(drill_cost, 1),
-                "imaging": round(image_cost, 1),
-                "lamination": round(lam_cost, 1),
                 "direct_pth": round(direct_pth_cost, 1),
-                "cnc_pth": round(cnc_pth_cost, 1),
-                "routing": round(routing_cost, 1)
+                "cnc_pth": round(cnc_pth_cost, 1)
             }
         },
         "sewage": {
