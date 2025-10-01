@@ -119,25 +119,22 @@
         <div>
           <h3>Breakdown</h3>
           <ul class="mono">
-            <li>Material
+            <li>Material: {{ result.breakdown.material.total }}
               <ul>
-                <li>Total: {{ result.breakdown.material.total }}</li>
                 <li>Laminate: {{ result.breakdown.material.components.laminate }}</li>
                 <li>Finish: {{ result.breakdown.material.components.finish }}</li>
               </ul>
             </li>
-            <li>Process
+            <li>Process: {{ result.breakdown.process.total }}
               <ul>
-                <li>Total: {{ result.breakdown.process.total }}</li>
                 <li>Drill: {{ result.breakdown.process.components.drill }}</li>
                 <li>Imaging: {{ result.breakdown.process.components.imaging }}</li>
                 <li>Lamination: {{ result.breakdown.process.components.lamination }}</li>
                 <li>Routing: {{ result.breakdown.process.components.routing }}</li>
               </ul>
             </li>
-            <li>QA
+            <li>QA: {{ result.breakdown.qa.total }}
               <ul>
-                <li>Total: {{ result.breakdown.qa.total }}</li>
                 <li>AOI: {{ result.breakdown.qa.components.aoi }}</li>
                 <li>E-test: {{ result.breakdown.qa.components.etest }}</li>
               </ul>
