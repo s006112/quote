@@ -64,11 +64,14 @@
               {% endfor %}
             </select>
           </label>
+          <label>Etching cost
+            <input name="etching_cost" type="number" step="0.01" value="{{ values.etching_cost }}">
+          </label>
         </div>
       </section>
 
       <section>
-        <h2>Fabrication</h2>
+        <h2>Process</h2>
         <div class="grid">
           <label>Via type
             <select name="via_type">
@@ -134,14 +137,13 @@
             <li>Material: {{ result.breakdown.material.total }}
               <ul>
                 <li>Laminate: {{ result.breakdown.material.components.laminate }}</li>
-                <li>Finish: {{ result.breakdown.material.components.finish }}</li>
                 <li>Film: {{ result.breakdown.material.components.film }}</li>
               </ul>
             </li>
-            <li>Treatment:
+            <li>Treatment: {{ result.breakdown.treatment.total }}
               <ul>
-                <li>Layers: {{ values.layers }}</li>
-                <li>Finish: {{ values.finish }}</li>
+                <li>Finish: {{ result.breakdown.treatment.components.finish }}</li>
+                <li>Etching: {{ result.breakdown.treatment.components.etching }}</li>
               </ul>
             </li>            
             <li>Process: {{ result.breakdown.process.total }}
