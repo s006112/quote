@@ -68,7 +68,7 @@ def _derive_ops(inp: Inputs, area_board_cm2: float) -> dict:
 
 def price_quote(inp: Inputs, prm: Params) -> dict:
     area_board_cm2 = (inp.width * inp.height) / 100.0
-    boards_needed = sum(inp.qty_tiers)
+    boards_needed = max(inp.qty_tiers) if inp.qty_tiers else 0
     yld = (prm.yield_baseline_pct / 100.0) * _yield_penalty(inp)
     boards_per_panel = max(1, inp.panel_boards)
     panels_needed = math.ceil(boards_needed / (boards_per_panel * yld))

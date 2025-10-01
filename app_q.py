@@ -113,9 +113,9 @@ def index():
                            result=result)
 
 if __name__ == "__main__":
-    host = "0.0.0.0"
-    port = int(os.environ.get("PORT", "5000"))
+    host = os.environ.get("APP_Q_HOST", os.environ.get("HOST", "0.0.0.0"))
+    port_env = os.environ.get("APP_Q_PORT") or os.environ.get("PORT_Q")
+    port = int(port_env) if port_env else 5000
     with make_server(host, port, app) as httpd:
         print(f"Serving on http://{host}:{port}")
         httpd.serve_forever()
-
