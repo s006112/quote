@@ -1,6 +1,7 @@
 from __future__ import annotations
 import json, os
 from typing import Any
+from wsgiref.simple_server import make_server
 from flask import Flask, render_template, request
 
 from pricing import Inputs, Params, price_quote
@@ -112,7 +113,9 @@ def index():
                            result=result)
 
 if __name__ == "__main__":
-    host = os.environ.get("HOST", "127.0.0.1")
+    host = "0.0.0.0"
     port = int(os.environ.get("PORT", "5000"))
-    debug = os.environ.get("DEBUG", "0") in ["1", "true", "True"]
-    app.run(host=host, port=port, debug=debug)
+    with make_server(host, port, app) as httpd:
+        print(f"Serving on http://{host}:{port}")
+        httpd.serve_forever()
+
