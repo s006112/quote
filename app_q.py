@@ -48,6 +48,8 @@ def _make_inputs() -> Inputs:
         masking_cost=_to_float("masking_cost", df["masking_cost"]),
         silkscreen_cost=_to_float("silkscreen_cost", df["silkscreen_cost"]),
         etching_cost=_to_float("etching_cost", df["etching_cost"]),
+        sewage_water=_to_float("sewage_water", df["sewage_water"]),
+        sewage_electricity=_to_float("sewage_electricity", df["sewage_electricity"]),
         via_type=request.form.get("via_type", df["via_type"]),
         ipc_class=request.form.get("ipc_class", df["ipc_class"]),
         etest=request.form.get("etest", df["etest"]),

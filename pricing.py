@@ -14,6 +14,8 @@ class Inputs:
     etching_cost: float
     masking_cost: float
     silkscreen_cost: float
+    sewage_water: float
+    sewage_electricity: float
     via_type: str  # 'thru'|'blind'|'buried'|'micro'
     ipc_class: str # '2'|'3'
     etest: str     # 'none'|'flying_probe'|'fixture'
@@ -77,6 +79,11 @@ def price_quote(inp: Inputs, prm: Params) -> dict:
     direct_pth_cost = mr.get("direct_pth_per_hole", 0.0) * max(0, inp.direct_pth_holes) * boards_per_panel
     process_cost = drill_cost + image_cost + lam_cost + routing_cost + direct_pth_cost
 
+    # Sewage cost
+    sewage_water = inp.sewage_water
+    sewage_electricity = inp.sewage_electricity
+    sewage_cost = sewage_water + sewage_electricity
+
     # QA cost
     aoi_cost = mr["aoi_per_panel"]
     if inp.etest == "flying_probe":
@@ -87,7 +94,7 @@ def price_quote(inp: Inputs, prm: Params) -> dict:
         etest_cost = 0.0
     qa_cost = aoi_cost + etest_cost
 
-    base = material_cost + treatment_cost + process_cost + qa_cost
+    base = material_cost + treatment_cost + process_cost + sewage_cost + qa_cost
     oh = base * (prm.overheads_pct / 100.0)
 
     risk_base = base if (inp.via_type != "thru" or inp.ipc_class == "3") else 0.0
@@ -124,6 +131,13 @@ def price_quote(inp: Inputs, prm: Params) -> dict:
                 "lamination": round(lam_cost, 1),
                 "direct_pth": round(direct_pth_cost, 1),
                 "routing": round(routing_cost, 1)
+            }
+        },
+        "sewage": {
+            "total": round(sewage_cost, 2),
+            "components": {
+                "water": round(sewage_water, 2),
+                "electricity": round(sewage_electricity, 2)
             }
         },
         "qa": {
