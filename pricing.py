@@ -7,6 +7,7 @@ class Inputs:
     height: float
     layers: int
     panel_boards: int
+    direct_pth_holes: int
     material: str
     finish: str
     via_type: str  # 'thru'|'blind'|'buried'|'micro'
@@ -64,7 +65,8 @@ def price_quote(inp: Inputs, prm: Params) -> dict:
     image_cost = mr["imaging_per_pass"] * ops["imaging_passes"]
     lam_cost = mr["lamination"] * ops["lam_cycles"]
     routing_cost = mr["routing_per_mm"] * ops["route_mm"]
-    process_cost = drill_cost + image_cost + lam_cost + routing_cost
+    direct_pth_cost = mr.get("direct_pth_per_hole", 0.0) * max(0, inp.direct_pth_holes) * boards_per_panel
+    process_cost = drill_cost + image_cost + lam_cost + routing_cost + direct_pth_cost
 
     # QA cost
     aoi_cost = mr["aoi_per_panel"]
@@ -97,12 +99,13 @@ def price_quote(inp: Inputs, prm: Params) -> dict:
             }
         },
         "process": {
-            "total": round(process_cost, 2),
+            "total": round(process_cost, 1),
             "components": {
-                "drill": round(drill_cost, 2),
-                "imaging": round(image_cost, 2),
-                "lamination": round(lam_cost, 2),
-                "routing": round(routing_cost, 2)
+                "drill": round(drill_cost, 1),
+                "imaging": round(image_cost, 1),
+                "lamination": round(lam_cost, 1),
+                "direct_pth": round(direct_pth_cost, 1),
+                "routing": round(routing_cost, 1)
             }
         },
         "qa": {

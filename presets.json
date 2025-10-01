@@ -4,7 +4,8 @@
     "width": 50.0,
     "height": 50.0,
     "layers": 2,
-    "panel_boards": 12,
+    "panel_boards": 240,
+    "direct_pth_holes": 40,
     "material": "FR-4 KB6160A",
     "finish": "HASL",
     "via_type": "thru",
@@ -12,6 +13,7 @@
     "etest": "flying_probe",
     "lead_time_class": "standard",
     "ship_zone": "ASIA"
+
   },
   "costing_params": {
     "labor_rates": {
@@ -23,7 +25,8 @@
       "drill_per_hit": 0.015,
       "routing_per_mm": 0.01,
       "imaging_per_pass": 12.0,
-      "aoi_per_panel": 6.0
+      "aoi_per_panel": 6.0,
+      "direct_pth_per_hole": 0.0017
     },
     "material_prices": {
       "FR-4 KB6160A": 110,
