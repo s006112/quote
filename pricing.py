@@ -27,6 +27,7 @@ class Params:
     labor_rates: dict
     machine_rates: dict
     material_prices: dict
+    finish_costs: dict
     overheads_pct: float
     yield_baseline_pct: float
     risk_buffer_pct: float
@@ -76,9 +77,9 @@ def price_quote(inp: Inputs, prm: Params) -> dict:
     # Material cost
     mat_unit = prm.material_prices.get(inp.material, 15.0)
     laminate_cost = mat_unit * (inp.panel_area_cm2 / 100.0) * panels_needed
-    gold_um = 0.1 if inp.finish == "ENIG" else 0.0
-    gold_cost = prm.material_prices["ENIG_gold_per_um_cm2"] * gold_um * area_board_cm2 * boards_needed * 0.45
-    material_cost = laminate_cost + gold_cost
+    finish_cost_per_panel = prm.finish_costs.get(inp.finish, 0.0)
+    finish_cost = finish_cost_per_panel * panels_needed
+    material_cost = laminate_cost + finish_cost
 
     # Process cost
     mr = prm.machine_rates
@@ -119,7 +120,7 @@ def price_quote(inp: Inputs, prm: Params) -> dict:
             "total": round(material_cost, 2),
             "components": {
                 "laminate": round(laminate_cost, 2),
-                "finish_gold": round(gold_cost, 2)
+                "finish": round(finish_cost, 2)
             }
         },
         "process": {

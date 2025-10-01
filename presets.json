@@ -24,8 +24,12 @@
     "machine_rates": {"lamination": 80.0, "drill_per_hit": 0.015, "routing_per_mm": 0.01, "imaging_per_pass": 12.0, "aoi_per_panel": 6.0},
     "material_prices": {
       "FR-4 KB6160A": 110,
-      "Rogers 4350B": 45.0,
-      "ENIG_gold_per_um_cm2": 0.00008
+      "Rogers 4350B": 45.0
+    },
+    "finish_costs": {
+      "HASL": 20.0,
+      "ENIG": 30.0,
+      "OSP": 10.0
     },
     "overheads_pct": 12.0,
     "yield_baseline_pct": 94.0,

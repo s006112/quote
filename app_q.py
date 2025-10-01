@@ -72,6 +72,7 @@ def _make_params() -> Params:
         labor_rates=p["labor_rates"],
         machine_rates=p["machine_rates"],
         material_prices=p["material_prices"],
+        finish_costs=p["finish_costs"],
         overheads_pct=p["overheads_pct"],
         yield_baseline_pct=p["yield_baseline_pct"],
         risk_buffer_pct=p["risk_buffer_pct"],
