@@ -27,20 +27,8 @@
       <label>Height (mm)
         <input name="height" type="number" step="0.01" value="{{ values.height }}">
       </label>
-      <label>Layers
-        <input name="layers" type="number" step="1" value="{{ values.layers }}">
-      </label>
-    </div>
-  </section>
-
-  <section>
-    <h2>Panelization</h2>
-    <div class="grid">
       <label>Boards per panel
         <input name="panel_boards" type="number" step="1" value="{{ values.panel_boards }}">
-      </label>
-      <label>Panel area (cm²)
-        <input name="panel_area_cm2" type="number" step="0.1" value="{{ values.panel_area_cm2 }}">
       </label>
     </div>
   </section>
@@ -55,8 +43,8 @@
           {% endfor %}
         </select>
       </label>
-      <label>Outer Cu (oz)
-        <input name="outer_oz" type="number" step="0.25" value="{{ values.outer_oz }}">
+      <label>Layers
+        <input name="layers" type="number" step="1" value="{{ values.layers }}">
       </label>
       <label>Finish
         <select name="finish">

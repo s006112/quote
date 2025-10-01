@@ -7,9 +7,7 @@ class Inputs:
     height: float
     layers: int
     panel_boards: int
-    panel_area_cm2: float
     material: str
-    outer_oz: float
     finish: str
     min_track_mm: float
     min_space_mm: float
@@ -37,7 +35,6 @@ class Params:
 def _yield_penalty(inp: Inputs) -> float:
     penalty = 1.0
     if inp.min_track_mm < 0.1:      penalty *= 0.97
-    if inp.outer_oz >= 2.0:         penalty *= 0.97
     if inp.via_type != "thru":      penalty *= 0.94
     if inp.ipc_class == "3":        penalty *= 0.97
     return penalty

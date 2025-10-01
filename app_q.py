@@ -31,9 +31,6 @@ def _validate(d: dict[str, Any]) -> list[str]:
     if not (5 <= d["height"] <= 650): errs.append("Height must be 5–650 mm.")
     if not (1 <= d["layers"] <= 40): errs.append("Layers must be 1–40.")
     if d["panel_boards"] < 1: errs.append("Boards per panel must be >= 1.")
-    if d["panel_area_cm2"] < 50: errs.append("Panel area must be >= 50 cm².")
-    if d["outer_oz"] < 0.25 or d["outer_oz"] > 3.0:
-        errs.append("Outer copper must be 0.25–3 oz.")
     return errs
 
 def _make_inputs() -> Inputs:
@@ -43,9 +40,7 @@ def _make_inputs() -> Inputs:
         height=_to_float("height", df["height"]),
         layers=_to_int("layers", df["layers"]),
         panel_boards=_to_int("panel_boards", df["panel_boards"]),
-        panel_area_cm2=_to_float("panel_area_cm2", df["panel_area_cm2"]),
         material=request.form.get("material", df["material"]),
-        outer_oz=_to_float("outer_oz", df["outer_oz"]),
         finish=request.form.get("finish", df["finish"]),
         min_track_mm=_to_float("min_track_mm", df["min_track_mm"]),
         min_space_mm=_to_float("min_space_mm", df["min_space_mm"]),
