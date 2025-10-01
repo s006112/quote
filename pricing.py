@@ -10,6 +10,7 @@ class Inputs:
     direct_pth_holes: int
     material: str
     finish: str
+    film_cost: float
     via_type: str  # 'thru'|'blind'|'buried'|'micro'
     ipc_class: str # '2'|'3'
     etest: str     # 'none'|'flying_probe'|'fixture'
@@ -57,7 +58,8 @@ def price_quote(inp: Inputs, prm: Params) -> dict:
     # Material cost
     laminate_cost = prm.material_prices.get(inp.material, 15.0)
     finish_cost = prm.finish_costs.get(inp.finish, 0.0)
-    material_cost = laminate_cost + finish_cost
+    film_cost = inp.film_cost
+    material_cost = laminate_cost + finish_cost + film_cost
 
     # Process cost
     mr = prm.machine_rates
@@ -95,7 +97,8 @@ def price_quote(inp: Inputs, prm: Params) -> dict:
             "total": round(material_cost, 2),
             "components": {
                 "laminate": round(laminate_cost, 2),
-                "finish": round(finish_cost, 2)
+                "finish": round(finish_cost, 2),
+                "film": round(film_cost, 2)
             }
         },
         "process": {
