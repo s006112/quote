@@ -38,19 +38,10 @@ def _validate(d: dict[str, Any]) -> list[str]:
 
 def _make_inputs() -> Inputs:
     df = PRESETS["defaults"]
-    qty_raw = request.form.get("qty_tiers", df["qty_tiers"]).strip()
-    qty_tiers = []
-    for tok in qty_raw.replace(" ", "").split(","):
-        if tok:
-            n = int(tok)
-            if n <= 0: raise ValueError("Quantities must be positive")
-            qty_tiers.append(n)
-
     return Inputs(
         width=_to_float("width", df["width"]),
         height=_to_float("height", df["height"]),
         layers=_to_int("layers", df["layers"]),
-        qty_tiers=qty_tiers,
         panel_boards=_to_int("panel_boards", df["panel_boards"]),
         panel_area_cm2=_to_float("panel_area_cm2", df["panel_area_cm2"]),
         material=request.form.get("material", df["material"]),

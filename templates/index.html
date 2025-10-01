@@ -30,9 +30,6 @@
       <label>Layers
         <input name="layers" type="number" step="1" value="{{ values.layers }}">
       </label>
-      <label>Quantities (comma-separated)
-        <input name="qty_tiers" type="text" value="{{ values.qty_tiers }}">
-      </label>
     </div>
   </section>
 
@@ -165,21 +162,19 @@
         </li>
         <li>Overhead: {{ result.breakdown.overhead }}</li>
         <li>Risk: {{ result.breakdown.risk }}</li>
-        <li>Panels needed: {{ result.breakdown.panels_needed }}</li>
+        <li>Panels: {{ result.breakdown.panels_assumed }}</li>
+        <li>Boards per run: {{ result.breakdown.boards_per_run }}</li>
         <li>Yield (%): {{ result.breakdown.yield_pct_effective }}</li>
         <li>COGS: {{ result.cogs }}</li>
       </ul>
     </div>
     <div>
-      <h3>Tier Prices</h3>
-      <table>
-        <thead><tr><th>Qty</th><th>Unit Price</th><th>Total</th></tr></thead>
-        <tbody>
-        {% for qty, data in result.tiers.items()|sort %}
-          <tr><td>{{ qty }}</td><td>{{ data.unit_price }}</td><td>{{ data.total }}</td></tr>
-        {% endfor %}
-        </tbody>
-      </table>
+      <h3>Panel Pricing</h3>
+      <ul class="mono">
+        <li>Sell price (panel): {{ result.price_total }}</li>
+        <li>COGS (panel): {{ result.cogs }}</li>
+        <li>Unit price (board): {{ result.unit_price_board }}</li>
+      </ul>
     </div>
   </div>
 </section>
