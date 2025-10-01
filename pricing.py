@@ -17,6 +17,10 @@ class Inputs:
     silkscreen_cost: float
     cutting_cost: float
     routing_cost: float
+    e_test_cost: float
+    v_cut_cost: float
+    fqc_cost: float
+    package_cost: float
     sewage_water: float
     sewage_electricity: float
     via_type: str  # 'thru'|'blind'|'buried'|'micro'
@@ -61,7 +65,20 @@ def price_quote(inp: Inputs, prm: Params) -> dict:
     cnc_pth_cost = mr.get("cnc_pth_per_hole", 0.0) * max(0, inp.cnc_pth_holes) * boards_per_panel
     cutting_cost = max(0.0, inp.cutting_cost)
     routing_cost = max(0.0, inp.routing_cost)
-    process_cost = direct_pth_cost + cnc_pth_cost + cutting_cost + routing_cost
+    e_test_cost = max(0.0, inp.e_test_cost)
+    v_cut_cost = max(0.0, inp.v_cut_cost)
+    fqc_cost = max(0.0, inp.fqc_cost)
+    package_cost = max(0.0, inp.package_cost)
+    process_cost = (
+        direct_pth_cost +
+        cnc_pth_cost +
+        cutting_cost +
+        routing_cost +
+        e_test_cost +
+        v_cut_cost +
+        fqc_cost +
+        package_cost
+    )
 
     # Sewage cost
     sewage_water = inp.sewage_water
@@ -106,7 +123,11 @@ def price_quote(inp: Inputs, prm: Params) -> dict:
                 "direct_pth": round(direct_pth_cost, 1),
                 "cnc_pth": round(cnc_pth_cost, 1),
                 "cutting": round(cutting_cost, 1),
-                "routing": round(routing_cost, 1)
+                "routing": round(routing_cost, 1),
+                "e_test": round(e_test_cost, 1),
+                "v_cut": round(v_cut_cost, 1),
+                "fqc": round(fqc_cost, 1),
+                "package": round(package_cost, 1)
             }
         },
         "sewage": {
