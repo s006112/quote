@@ -9,9 +9,6 @@ class Inputs:
     panel_boards: int
     material: str
     finish: str
-    min_track_mm: float
-    min_space_mm: float
-    min_hole_mm: float
     via_type: str  # 'thru'|'blind'|'buried'|'micro'
     ipc_class: str # '2'|'3'
     etest: str     # 'none'|'flying_probe'|'fixture'
@@ -33,7 +30,6 @@ class Params:
 
 def _yield_penalty(inp: Inputs) -> float:
     penalty = 1.0
-    if inp.min_track_mm < 0.1:      penalty *= 0.97
     if inp.via_type != "thru":      penalty *= 0.94
     if inp.ipc_class == "3":        penalty *= 0.97
     return penalty
