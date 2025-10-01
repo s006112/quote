@@ -58,32 +58,28 @@ def price_quote(inp: Inputs, prm: Params) -> dict:
     area_board_cm2 = (inp.width * inp.height) / 100.0
     yld = (prm.yield_baseline_pct / 100.0) * _yield_penalty(inp)
     boards_per_panel = max(1, inp.panel_boards)
-    panels_assumed = 1
-    boards_per_run = boards_per_panel * panels_assumed
 
     ops = _derive_ops(inp, area_board_cm2)
 
     # Material cost
-    mat_unit = prm.material_prices.get(inp.material, 15.0)
-    laminate_cost = mat_unit * (inp.panel_area_cm2 / 100.0) * panels_assumed
-    finish_cost_per_panel = prm.finish_costs.get(inp.finish, 0.0)
-    finish_cost = finish_cost_per_panel * panels_assumed
+    laminate_cost = prm.material_prices.get(inp.material, 15.0)
+    finish_cost = prm.finish_costs.get(inp.finish, 0.0)
     material_cost = laminate_cost + finish_cost
 
     # Process cost
     mr = prm.machine_rates
-    drill_cost = mr["drill_per_hit"] * ops["drill_hits"] * panels_assumed
-    image_cost = mr["imaging_per_pass"] * ops["imaging_passes"] * panels_assumed
-    lam_cost = mr["lamination"] * ops["lam_cycles"] * panels_assumed
-    routing_cost = mr["routing_per_mm"] * ops["route_mm"] * panels_assumed
+    drill_cost = mr["drill_per_hit"] * ops["drill_hits"]
+    image_cost = mr["imaging_per_pass"] * ops["imaging_passes"]
+    lam_cost = mr["lamination"] * ops["lam_cycles"]
+    routing_cost = mr["routing_per_mm"] * ops["route_mm"]
     process_cost = drill_cost + image_cost + lam_cost + routing_cost
 
     # QA cost
-    aoi_cost = mr["aoi_per_panel"] * panels_assumed
+    aoi_cost = mr["aoi_per_panel"]
     if inp.etest == "flying_probe":
-        etest_cost = prm.labor_rates["test"] * 0.15 * panels_assumed
+        etest_cost = prm.labor_rates["test"] * 0.15
     elif inp.etest == "fixture":
-        etest_cost = prm.labor_rates["test"] * 0.30 * panels_assumed
+        etest_cost = prm.labor_rates["test"] * 0.30
     else:
         etest_cost = 0.0
     qa_cost = aoi_cost + etest_cost
@@ -98,7 +94,7 @@ def price_quote(inp: Inputs, prm: Params) -> dict:
     cogs = mult * base + oh + risk
     price_total = cogs * (1 + prm.target_margin_pct / 100.0)
     price_total *= (1 - prm.customer_discount_pct / 100.0)
-    unit_price_board = price_total / boards_per_run if boards_per_run else 0.0
+    unit_price_board = price_total / boards_per_panel if boards_per_panel else 0.0
 
     breakdown = {
         "material": {
@@ -126,8 +122,7 @@ def price_quote(inp: Inputs, prm: Params) -> dict:
         },
         "overhead": round(oh, 2),
         "risk": round(risk, 2),
-        "panels_assumed": panels_assumed,
-        "boards_per_run": boards_per_run,
+        "boards_per_panel": boards_per_panel,
         "yield_pct_effective": round(yld * 100.0, 2)
     }
     return {
