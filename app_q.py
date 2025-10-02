@@ -1,7 +1,7 @@
 from __future__ import annotations
 import json, os
 from dataclasses import fields
-from typing import Any
+from typing import Any, get_type_hints
 from flask import Flask, render_template, request
 
 from pricing import Inputs, Params, price_quote
@@ -11,9 +11,11 @@ app = Flask(__name__)
 with open(os.path.join(os.path.dirname(__file__), "presets.json"), "r", encoding="utf-8") as f:
     PRESETS = json.load(f)
 
+DEFAULTS = PRESETS["defaults"]
+INPUT_TYPE_HINTS = get_type_hints(Inputs)
+PARAM_TYPE_HINTS = get_type_hints(Params)
+
 INPUT_FIELD_NAMES = tuple(f.name for f in fields(Inputs))
-INPUT_FIELD_SET = set(INPUT_FIELD_NAMES)
-PARAM_FIELD_SET = {f.name for f in fields(Params)}
 
 def _to_float(name: str, default: float) -> float:
     v = request.form.get(name, str(default)).strip()
@@ -46,55 +48,48 @@ def _validate(d: dict[str, Any]) -> list[str]:
     return errs
 
 def _make_inputs() -> Inputs:
-    df = PRESETS["defaults"]
-    return Inputs(
-        width=_to_float("width", df["width"]),
-        height=_to_float("height", df["height"]),
-        layers=_to_int("layers", df["layers"]),
-        panel_boards=_to_int("panel_boards", df["panel_boards"]),
-        direct_pth_holes=_to_int("direct_pth_holes", df["direct_pth_holes"]),
-        cnc_pth_holes=_to_int("cnc_pth_holes", df["cnc_pth_holes"]),
-        material=request.form.get("material", df["material"]),
-        finish=request.form.get("finish", df["finish"]),
-        film_cost=_to_float("film_cost", df["film_cost"]),
-        masking_cost=_to_float("masking_cost", df["masking_cost"]),
-        silkscreen_cost=_to_float("silkscreen_cost", df["silkscreen_cost"]),
-        etching_cost=_to_float("etching_cost", df["etching_cost"]),
-        cutting_cost=_to_float("cutting_cost", df["cutting_cost"]),
-        routing_cost=_to_float("routing_cost", df["routing_cost"]),
-        e_test_cost=_to_float("e_test_cost", df["e_test_cost"]),
-        v_cut_cost=_to_float("v_cut_cost", df["v_cut_cost"]),
-        fqc_cost=_to_float("fqc_cost", df["fqc_cost"]),
-        package_cost=_to_float("package_cost", df["package_cost"]),
-        sewage_water=_to_float("sewage_water", df["sewage_water"]),
-        sewage_electricity=_to_float("sewage_electricity", df["sewage_electricity"]),
-        ship_zone=request.form.get("ship_zone", df["ship_zone"]),
-    )
+    payload: dict[str, Any] = {}
+    for name, hint in INPUT_TYPE_HINTS.items():
+        default = DEFAULTS[name]
+        if hint is int:
+            payload[name] = _to_int(name, int(default))
+        elif hint is float:
+            payload[name] = _to_float(name, float(default))
+        else:
+            payload[name] = request.form.get(name, str(default))
+    return Inputs(**payload)
 
 def _make_params() -> Params:
-    df = PRESETS["defaults"]
-    return Params(
-        machine_rates=df.get("machine_rates", {}),
-        material_prices=df.get("material_prices", {}),
-        finish_costs=df.get("finish_costs", {}),
-        overheads_pct=_to_float("overheads_pct", df.get("overheads_pct", 0.0)),
-        yield_pct=_to_float("yield_pct", df.get("yield_pct", 0.0)),
-        customer_discount_pct=df.get("customer_discount_pct", 0.0),
-        target_margin_pct=df.get("target_margin_pct", 0.0),
-        ship_zone_factor=df.get("ship_zone_factor", {})
-    )
+    payload: dict[str, Any] = {}
+    for name, hint in PARAM_TYPE_HINTS.items():
+        default = DEFAULTS.get(name)
+        if hint is float and default is not None:
+            payload[name] = _to_float(name, float(default))
+        elif hint is int and default is not None:
+            payload[name] = _to_int(name, int(default))
+        else:
+            value = default
+            if isinstance(value, dict):
+                value = value.copy()
+            payload[name] = value
+    return Params(**payload)
 
 @app.route("/", methods=["GET", "POST"])
 def index():
-    df = PRESETS["defaults"]
     param_defaults = {
-        k: v for k, v in df.items()
-        if k in PARAM_FIELD_SET and k not in INPUT_FIELD_SET and isinstance(v, (int, float))
+        name: DEFAULTS[name]
+        for name, hint in PARAM_TYPE_HINTS.items()
+        if hint in (int, float) and name in DEFAULTS
     }
-    error_msgs, result = [], None
-    form_defaults = {k: df[k] for k in INPUT_FIELD_NAMES if k in df}
+    form_defaults = {
+        name: DEFAULTS[name]
+        for name in INPUT_FIELD_NAMES 
+        if name in DEFAULTS
+    }
     form_values = {k: request.form.get(k, str(v)) for k, v in form_defaults.items()}
     param_values = {k: request.form.get(k, str(v)) for k, v in param_defaults.items()}
+
+    error_msgs, result = [], None
 
     if request.method == "POST":
         try:
