@@ -19,7 +19,7 @@
     </div>
     {% endif %}
 
-    <form method="post" novalidate>
+    <form id="quote-form" method="post" novalidate>
       <section>
         <h2>Board Basics</h2>
         <div class="grid">
@@ -140,76 +140,137 @@
         </div>
       </section>
 
-      <div class="actions">
-        <button type="submit">Calculate</button>
-      </div>
     </form>
   </div>
 
   <aside class="page-summary">
     <section class="summary-card">
       <h2>Live Summary</h2>
-      {% if result %}
-      <div class="grid">
-        <div>
-          <h3>Breakdown</h3>
-          <ul class="mono">
-            <li>Material: {{ result.breakdown.material.total }}
-              <ul>
-                <li>{{ values.material or 'Laminate' }}: {{ result.breakdown.material.components.laminate }}</li>
-                <li>干膜: {{ result.breakdown.material.components.film }}</li>
-              </ul>
-            </li>
-            <li>Treatment: {{ result.breakdown.treatment.total }}
-              <ul>
-                <li>{{ values.finish or 'Finish' }}: {{ result.breakdown.treatment.components.finish }}</li>
-                <li>蚀刻: {{ result.breakdown.treatment.components.etching }}</li>
-                <li>阻焊: {{ result.breakdown.treatment.components.masking }}</li>
-                <li>文字丝印: {{ result.breakdown.treatment.components.silkscreen }}</li>
-              </ul>
-            </li>            
-            <li>Process: {{ result.breakdown.process.total }}
-              <ul>
-                <li>直 PTH: {{ result.breakdown.process.components.direct_pth }}</li>
-                <li>CNC 钻孔: {{ result.breakdown.process.components.cnc_pth }}</li>
-                <li>开料: {{ result.breakdown.process.components.cutting }}</li>
-                <li>锣板/冲板: {{ result.breakdown.process.components.routing }}</li>
-                <li>E-test: {{ result.breakdown.process.components.e_test }}</li>
-                <li>V-cut: {{ result.breakdown.process.components.v_cut }}</li>
-                <li>FQC: {{ result.breakdown.process.components.fqc }}</li>
-                <li>包装: {{ result.breakdown.process.components.package }}</li>
-              </ul>
-            </li>
-            <li>Sewage: {{ result.breakdown.sewage.total }}
-              <ul>
-                <li>Water: {{ result.breakdown.sewage.components.water }}</li>
-                <li>Electricity: {{ result.breakdown.sewage.components.electricity }}</li>
-              </ul>
-            </li>
-            <li>Others: {{ result.breakdown.others.total }}
-              <ul>
-                <li>Overhead: {{ result.breakdown.others.overhead }}</li>
-                <li>產出 (%): {{ result.breakdown.others.yield_pct }}</li>
-                <li>地区: {{ result.breakdown.others.factor }}</li>
-                <li>运输: {{ result.breakdown.others.logistic }}</li>
-              </ul>
-            </li>
-            <li>开料件数: {{ result.breakdown.boards_per_panel }}</li>
-          </ul>
-          <ul class="mono">
-            <li>Panel Cost: {{ result.cogs }}</li>
-            <li>Unit Cost: {{ result.cogs_unit }}</li>
-            <li>Unit price: {{ result.price_unit }}</li>
-          </ul>
+      <div id="live-summary">
+        {% if result %}
+        <div class="grid">
+          <div>
+            <h3>Breakdown</h3>
+            <ul class="mono">
+              <li>Material: {{ result.breakdown.material.total }}
+                <ul>
+                  <li>{{ values.material or 'Laminate' }}: {{ result.breakdown.material.components.laminate }}</li>
+                  <li>干膜: {{ result.breakdown.material.components.film }}</li>
+                </ul>
+              </li>
+              <li>Treatment: {{ result.breakdown.treatment.total }}
+                <ul>
+                  <li>{{ values.finish or 'Finish' }}: {{ result.breakdown.treatment.components.finish }}</li>
+                  <li>蚀刻: {{ result.breakdown.treatment.components.etching }}</li>
+                  <li>阻焊: {{ result.breakdown.treatment.components.masking }}</li>
+                  <li>文字丝印: {{ result.breakdown.treatment.components.silkscreen }}</li>
+                </ul>
+              </li>            
+              <li>Process: {{ result.breakdown.process.total }}
+                <ul>
+                  <li>直 PTH: {{ result.breakdown.process.components.direct_pth }}</li>
+                  <li>CNC 钻孔: {{ result.breakdown.process.components.cnc_pth }}</li>
+                  <li>开料: {{ result.breakdown.process.components.cutting }}</li>
+                  <li>锣板/冲板: {{ result.breakdown.process.components.routing }}</li>
+                  <li>E-test: {{ result.breakdown.process.components.e_test }}</li>
+                  <li>V-cut: {{ result.breakdown.process.components.v_cut }}</li>
+                  <li>FQC: {{ result.breakdown.process.components.fqc }}</li>
+                  <li>包装: {{ result.breakdown.process.components.package }}</li>
+                </ul>
+              </li>
+              <li>Sewage: {{ result.breakdown.sewage.total }}
+                <ul>
+                  <li>Water: {{ result.breakdown.sewage.components.water }}</li>
+                  <li>Electricity: {{ result.breakdown.sewage.components.electricity }}</li>
+                </ul>
+              </li>
+              <li>Others: {{ result.breakdown.others.total }}
+                <ul>
+                  <li>Overhead: {{ result.breakdown.others.overhead }}</li>
+                  <li>產出 (%): {{ result.breakdown.others.yield_pct }}</li>
+                  <li>地区: {{ result.breakdown.others.factor }}</li>
+                  <li>运输: {{ result.breakdown.others.logistic }}</li>
+                </ul>
+              </li>
+              <li>开料件数: {{ result.breakdown.boards_per_panel }}</li>
+            </ul>
+            <ul class="mono">
+              <li>Panel Cost: {{ result.cogs }}</li>
+              <li>Unit Cost: {{ result.cogs_unit }}</li>
+              <li>Unit price: {{ result.price_unit }}</li>
+            </ul>
+          </div>
         </div>
+        {% else %}
+        <p class="summary-placeholder">Fill out the form to see pricing details here.</p>
+        {% endif %}
       </div>
-      {% else %}
-      <p class="summary-placeholder">Fill out the form to see pricing details here.</p>
-      {% endif %}
     </section>
   </aside>
 </div>
 
-<footer><small>Minimal internal tool. Defaults are editable.</small></footer>
+<script>
+(function () {
+  const form = document.getElementById('quote-form');
+  const summary = document.getElementById('live-summary');
+  if (!form || !summary) {
+    return;
+  }
+
+  let controller;
+
+  const submitForm = () => {
+    const formData = new FormData(form);
+    const payload = new URLSearchParams();
+    for (const [key, value] of formData.entries()) {
+      payload.append(key, value);
+    }
+
+    if (controller) {
+      controller.abort();
+    }
+    controller = new AbortController();
+
+    fetch(form.action || window.location.pathname, {
+      method: 'POST',
+      body: payload,
+      headers: { 'X-Requested-With': 'fetch' },
+      signal: controller.signal,
+    })
+      .then((response) => response.text())
+      .then((htmlText) => {
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(htmlText, 'text/html');
+        const newSummary = doc.getElementById('live-summary');
+        if (newSummary) {
+          summary.innerHTML = newSummary.innerHTML;
+        }
+      })
+      .catch((error) => {
+        if (error.name === 'AbortError') {
+          return;
+        }
+        console.error('Failed to refresh summary', error);
+      });
+  };
+
+  const debouncedSubmit = (() => {
+    let timeoutId;
+    return () => {
+      clearTimeout(timeoutId);
+      timeoutId = setTimeout(submitForm, 200);
+    };
+  })();
+
+  form.addEventListener('input', debouncedSubmit);
+  form.addEventListener('change', debouncedSubmit);
+  form.addEventListener('submit', (event) => {
+    event.preventDefault();
+    submitForm();
+  });
+
+  submitForm();
+})();
+</script>
 </body>
 </html>
