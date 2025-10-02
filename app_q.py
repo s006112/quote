@@ -68,28 +68,26 @@ def _make_inputs() -> Inputs:
     )
 
 def _make_params() -> Params:
-    p = PRESETS["costing_params"]
+    df = PRESETS["defaults"]
+    p = df.get("costing_params", {})
     return Params(
-        machine_rates=p["machine_rates"],
-        material_prices=p["material_prices"],
-        finish_costs=p["finish_costs"],
-        overheads_pct=_to_float("overheads_pct", p["overheads_pct"]),
-        yield_pct=_to_float("yield_pct", p["yield_pct"]),
-        customer_discount_pct=p["customer_discount_pct"],
-        target_margin_pct=p["target_margin_pct"],
-        ship_zone_factor=p["ship_zone_factor"]
+        machine_rates=p.get("machine_rates", {}),
+        material_prices=p.get("material_prices", {}),
+        finish_costs=p.get("finish_costs", {}),
+        overheads_pct=_to_float("overheads_pct", df.get("overheads_pct", 0.0)),
+        yield_pct=_to_float("yield_pct", df.get("yield_pct", 0.0)),
+        customer_discount_pct=p.get("customer_discount_pct", 0.0),
+        target_margin_pct=p.get("target_margin_pct", 0.0),
+        ship_zone_factor=p.get("ship_zone_factor", {})
     )
 
 @app.route("/", methods=["GET", "POST"])
 def index():
     df = PRESETS["defaults"]
-    pf = PRESETS["costing_params"]
+    param_defaults = {k: df[k] for k in ("overheads_pct", "yield_pct") if k in df}
     error_msgs, result = [], None
-    form_values = {k: request.form.get(k, str(v)) for k, v in df.items()}
-    param_defaults = {
-        "overheads_pct": pf.get("overheads_pct", 0.0),
-        "yield_pct": pf.get("yield_pct", 0.0),
-    }
+    form_defaults = {k: v for k, v in df.items() if k != "costing_params"}
+    form_values = {k: request.form.get(k, str(v)) for k, v in form_defaults.items()}
     param_values = {k: request.form.get(k, str(v)) for k, v in param_defaults.items()}
 
     if request.method == "POST":
@@ -105,7 +103,7 @@ def index():
             error_msgs = [str(e)]
 
     return render_template("index.html",
-                           defaults=df,
+                           defaults=form_defaults,
                            values=form_values,
                            params_defaults=param_defaults,
                            params_values=param_values,
