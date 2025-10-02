@@ -1,27 +1,32 @@
 #!/bin/bash
-# /opt/panel/run.sh
+# Launcher for panel services. Works with cron @reboot entry.
 
-cd /opt/panel
-log_file="panel.log"
+set -u
+
+script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+cd "$script_dir"
+
+log_file="${script_dir}/panel.log"
 
 start_app() {
     local script="$1"
     shift
     local label="$script"
+    local -a env_vars=("$@")
+
     while true; do
-        echo "$(date) ${label} launch initiated." >>"$log_file"
-        if [ "$#" -gt 0 ]; then
-            env "$@" /usr/bin/python3 "$script" >>"$log_file" 2>&1
+        echo "$(date -Iseconds) ${label} launch initiated." >>"$log_file"
+        if [ "${#env_vars[@]}" -gt 0 ]; then
+            env "${env_vars[@]}" /usr/bin/python3 "$script" >>"$log_file" 2>&1
         else
             /usr/bin/python3 "$script" >>"$log_file" 2>&1
         fi
-        relaunch_time=$(date -d '+3 seconds' '+%Y-%m-%d %H:%M:%S')
-        echo "$(date) ${label} crashed, relaunch scheduled at ${relaunch_time}." >>"$log_file"
+        echo "$(date -Iseconds) ${label} crashed, relaunching in 3s." >>"$log_file"
         sleep 3
     done
 }
 
-start_app "app.py" PORT=8080 &
-start_app "app_q.py" APP_Q_PORT=5000 &
+start_app "app.py" HOST=0.0.0.0 PORT=8080 &
+start_app "app_q.py" HOST=0.0.0.0 PORT=5000 &
 
 wait
