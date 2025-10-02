@@ -7,7 +7,7 @@
     "panel_boards": 240,
     "direct_pth_holes": 125,
     "cnc_pth_holes": 125,
-    "material": "FR-4 KB6160A",
+    "material": "KB6160A",
     "finish": "HASL",
     "film_cost": 12.0,
     "masking_cost": 12.0,
@@ -31,7 +31,7 @@
       "cnc_pth_per_hole": 0.0034
     },
     "material_prices": {
-      "FR-4 KB6160A": 110,
+      "KB6160A": 110,
       "Rogers 4350B": 45.0
     },
     "finish_costs": {

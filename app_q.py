@@ -16,6 +16,9 @@ INPUT_TYPE_HINTS = get_type_hints(Inputs)
 PARAM_TYPE_HINTS = get_type_hints(Params)
 
 INPUT_FIELD_NAMES = tuple(f.name for f in fields(Inputs))
+MATERIAL_OPTIONS = tuple(DEFAULTS["material_prices"].keys())
+FINISH_OPTIONS = tuple(DEFAULTS["finish_costs"].keys())
+SHIP_ZONE_OPTIONS = tuple(DEFAULTS["ship_zone_factor"].keys())
 
 def _to_float(name: str, default: float) -> float:
     v = request.form.get(name, str(default)).strip()
@@ -108,6 +111,9 @@ def index():
                            values=form_values,
                            params_defaults=param_defaults,
                            params_values=param_values,
+                           material_options=MATERIAL_OPTIONS,
+                           finish_options=FINISH_OPTIONS,
+                           ship_zone_options=SHIP_ZONE_OPTIONS,
                            error_msgs=error_msgs,
                            result=result)
 
