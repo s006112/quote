@@ -1,7 +1,7 @@
 #!/bin/bash
-# /opt/panel2/run.sh
+# /opt/quote/run.sh
 
-cd /opt/panel || exit 1
+cd /opt/quote || exit 1
 log_file="panel.log"
 
 user_site="/home/s00611272/.local/lib/python3.10/site-packages"
