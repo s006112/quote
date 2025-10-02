@@ -57,7 +57,7 @@
           <label>Layers
             <input name="layers" type="number" step="1" value="{{ values.layers }}">
           </label>
-          <label>Finish
+          <label>表面处理
             <select name="finish">
               {% for f in finish_options %}
               <option value="{{ f }}" {% if values.finish==f %}selected{% endif %}>{{ f }}</option>
@@ -100,7 +100,7 @@
           <label>FQC
             <input name="fqc_cost" type="number" step="0.1" min="0" value="{{ values.fqc_cost }}">
           </label>
-          <label>Package
+          <label>包裝
             <input name="package_cost" type="number" step="0.1" min="0" value="{{ values.package_cost }}">
           </label>
         </div>
@@ -124,10 +124,13 @@
           <label>Overheads (%)
             <input name="overheads_pct" type="number" step="1" min="0" value="{{ params_values.overheads_pct }}">
           </label>
-          <label>Yield (%)
+          <label>產出 (%)
             <input name="yield_pct" type="number" step="1" min="0" max="100" value="{{ params_values.yield_pct }}">
           </label>
-          <label>Ship zone
+          <label>利润 (%)
+            <input name="margin_pct" type="number" step="1" min="0" value="{{ params_values.margin_pct }}">
+          </label>
+          <label>目的地
             <select name="ship_zone">
               {% for z in ship_zone_options %}
               <option value="{{ z }}" {% if values.ship_zone==z %}selected{% endif %}>{{ z }}</option>
@@ -154,7 +157,7 @@
             <li>Material: {{ result.breakdown.material.total }}
               <ul>
                 <li>{{ values.material or 'Laminate' }}: {{ result.breakdown.material.components.laminate }}</li>
-                <li>Film: {{ result.breakdown.material.components.film }}</li>
+                <li>干膜: {{ result.breakdown.material.components.film }}</li>
               </ul>
             </li>
             <li>Treatment: {{ result.breakdown.treatment.total }}
@@ -186,9 +189,9 @@
             <li>Others: {{ result.breakdown.others.total }}
               <ul>
                 <li>Overhead: {{ result.breakdown.others.overhead }}</li>
-                <li>Yield (%): {{ result.breakdown.others.yield_pct }}</li>
-                <li>Zone factor: {{ result.breakdown.others.factor }}</li>
-                <li>Logistics: {{ result.breakdown.others.logistic }}</li>
+                <li>產出 (%): {{ result.breakdown.others.yield_pct }}</li>
+                <li>地区: {{ result.breakdown.others.factor }}</li>
+                <li>运输: {{ result.breakdown.others.logistic }}</li>
               </ul>
             </li>
             <li>开料件数: {{ result.breakdown.boards_per_panel }}</li>
