@@ -39,7 +39,7 @@
       "OSP": 10.0
     },
     "overheads_pct": 12.0,
-    "yield_baseline_pct": 94.0,
+    "yield_pct": 94.0,
     "customer_discount_pct": 0.0,
     "target_margin_pct": 0.0,
     "ship_zone_factor": {

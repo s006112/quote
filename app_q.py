@@ -73,8 +73,8 @@ def _make_params() -> Params:
         machine_rates=p["machine_rates"],
         material_prices=p["material_prices"],
         finish_costs=p["finish_costs"],
-        overheads_pct=p["overheads_pct"],
-        yield_baseline_pct=p["yield_baseline_pct"],
+        overheads_pct=_to_float("overheads_pct", p["overheads_pct"]),
+        yield_pct=_to_float("yield_pct", p["yield_pct"]),
         customer_discount_pct=p["customer_discount_pct"],
         target_margin_pct=p["target_margin_pct"],
         ship_zone_factor=p["ship_zone_factor"]
@@ -83,8 +83,14 @@ def _make_params() -> Params:
 @app.route("/", methods=["GET", "POST"])
 def index():
     df = PRESETS["defaults"]
+    pf = PRESETS["costing_params"]
     error_msgs, result = [], None
     form_values = {k: request.form.get(k, str(v)) for k, v in df.items()}
+    param_defaults = {
+        "overheads_pct": pf.get("overheads_pct", 0.0),
+        "yield_pct": pf.get("yield_pct", 0.0),
+    }
+    param_values = {k: request.form.get(k, str(v)) for k, v in param_defaults.items()}
 
     if request.method == "POST":
         try:
@@ -101,6 +107,8 @@ def index():
     return render_template("index.html",
                            defaults=df,
                            values=form_values,
+                           params_defaults=param_defaults,
+                           params_values=param_values,
                            error_msgs=error_msgs,
                            result=result)
 

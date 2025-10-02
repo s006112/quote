@@ -31,7 +31,7 @@ class Params:
     material_prices: dict
     finish_costs: dict
     overheads_pct: float
-    yield_baseline_pct: float
+    yield_pct: float
     customer_discount_pct: float
     target_margin_pct: float
     ship_zone_factor: dict
@@ -83,9 +83,7 @@ def price_quote(inp: Inputs, prm: Params) -> dict:
     # Other cost
     oh = base * max(prm.overheads_pct, 0.0) / 100.0
 
-    yield_baseline_pct = max(prm.yield_baseline_pct, 0.0)
-    yield_loss_pct = max(0.0, (100.0 - yield_baseline_pct) / 100.0)
-    yld = base * yield_loss_pct
+    yld = base * (100.0 - (yield_pct := min(max(prm.yield_pct, 0.0), 100.0))) / 100.0
 
     cogs_pre_logistics = base + oh + yld
 
@@ -145,7 +143,7 @@ def price_quote(inp: Inputs, prm: Params) -> dict:
             "factor": round(zone_factor, 3),
             "logistic": round(logistics_cost, 2),
             "overhead": round(oh, 2),
-            "yield_pct_effective": round(yield_baseline_pct, 2)
+            "yield_pct": round(yield_pct, 2)
         },
         
         "boards_per_panel": boards_per_panel

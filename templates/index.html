@@ -121,6 +121,12 @@
       <section>
         <h2>Others</h2>
         <div class="grid">
+          <label>Overheads (%)
+            <input name="overheads_pct" type="number" step="1" min="0" value="{{ params_values.overheads_pct }}">
+          </label>
+          <label>Yield (%)
+            <input name="yield_pct" type="number" step="1" min="0" max="100" value="{{ params_values.yield_pct }}">
+          </label>
           <label>Ship zone
             <select name="ship_zone">
               {% for z in ["ASIA","EU","NA","OTHER"] %}
@@ -182,7 +188,7 @@
                 <li>Ship zone: {{ result.breakdown.others.ship_zone }}</li>
                 <li>Logistics: {{ result.breakdown.others.logistic }}</li>
                 <li>Overhead: {{ result.breakdown.others.overhead }}</li>
-                <li>Yield baseline (%): {{ result.breakdown.others.yield_pct_effective }}</li>
+                <li>Yield (%): {{ result.breakdown.others.yield_pct }}</li>
                 <li>Zone factor: {{ result.breakdown.others.factor }}</li>
               </ul>
             </li>
