@@ -37,7 +37,7 @@ class Params:
     ship_zone_factor: dict
 
 def price_quote(inp: Inputs, prm: Params) -> dict:
-    yld = prm.yield_baseline_pct / 100.0
+    
     boards_per_panel = max(1, inp.panel_boards)
 
     # Material cost
@@ -79,12 +79,24 @@ def price_quote(inp: Inputs, prm: Params) -> dict:
     sewage_cost = sewage_water + sewage_electricity
 
     base = material_cost + treatment_cost + process_cost + sewage_cost
-    oh = base * (prm.overheads_pct / 100.0)
 
-    cogs_pre_ship = base + oh
+    # Other cost
+    oh = base * max(prm.overheads_pct, 0.0) / 100.0
+
+    yield_baseline_pct = max(prm.yield_baseline_pct, 0.0)
+    yield_loss_pct = max(0.0, (100.0 - yield_baseline_pct) / 100.0)
+    yld = base * yield_loss_pct
+
+    cogs_pre_logistics = base + oh + yld
+
     zone_factor = prm.ship_zone_factor.get(inp.ship_zone, 1.0)
-    logistics_cost = cogs_pre_ship * (zone_factor - 1)
-    cogs = cogs_pre_ship + logistics_cost
+    logistics_multiplier = max(zone_factor - 1.0, 0.0)
+    logistics_cost = cogs_pre_logistics * logistics_multiplier
+
+    other_cost = logistics_cost + oh + yld
+
+    # Total
+    cogs = cogs_pre_logistics + logistics_cost
 
     price_total = cogs * (1 + prm.target_margin_pct / 100.0)
     price_total *= (1 - prm.customer_discount_pct / 100.0)
@@ -128,11 +140,12 @@ def price_quote(inp: Inputs, prm: Params) -> dict:
             }
         },
         "others": {
+            "total": round(other_cost, 2),
             "ship_zone": inp.ship_zone,
             "factor": round(zone_factor, 3),
             "logistic": round(logistics_cost, 2),
             "overhead": round(oh, 2),
-            "yield_pct_effective": round(yld * 100.0, 2)
+            "yield_pct_effective": round(yield_baseline_pct, 2)
         },
         
         "boards_per_panel": boards_per_panel

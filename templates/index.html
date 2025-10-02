@@ -177,10 +177,12 @@
                 <li>Electricity: {{ result.breakdown.sewage.components.electricity }}</li>
               </ul>
             </li>
-            <li>Others: {{ result.breakdown.others.logistic }}
+            <li>Others: {{ result.breakdown.others.total }}
               <ul>
+                <li>Ship zone: {{ result.breakdown.others.ship_zone }}</li>
+                <li>Logistics: {{ result.breakdown.others.logistic }}</li>
                 <li>Overhead: {{ result.breakdown.others.overhead }}</li>
-                <li>Yield (%): {{ result.breakdown.others.yield_pct_effective }}</li>
+                <li>Yield baseline (%): {{ result.breakdown.others.yield_pct_effective }}</li>
                 <li>Zone factor: {{ result.breakdown.others.factor }}</li>
               </ul>
             </li>
