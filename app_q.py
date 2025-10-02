@@ -2,11 +2,14 @@ from __future__ import annotations
 import json, os
 from dataclasses import fields
 from typing import Any, get_type_hints
-from flask import Flask, render_template, request
+from flask import Flask, render_template, request, send_file
 
 from pricing import Inputs, Params, price_quote
 
 app = Flask(__name__)
+
+ICON_FILENAME = "lt.png"
+ICON_PATH = os.path.join(os.path.dirname(__file__), ICON_FILENAME)
 
 with open(os.path.join(os.path.dirname(__file__), "presets.json"), "r", encoding="utf-8") as f:
     PRESETS = json.load(f)
@@ -116,6 +119,12 @@ def index():
                            ship_zone_options=SHIP_ZONE_OPTIONS,
                            error_msgs=error_msgs,
                            result=result)
+
+
+@app.route("/lt.png")
+@app.route("/favicon.ico")
+def serve_icon():
+    return send_file(ICON_PATH, mimetype="image/png")
 
 if __name__ == "__main__":
     host = os.environ.get("HOST", "0.0.0.0")
