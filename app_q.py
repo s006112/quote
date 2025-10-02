@@ -1,7 +1,7 @@
 from __future__ import annotations
 import json, os
+from dataclasses import fields
 from typing import Any
-from wsgiref.simple_server import make_server
 from flask import Flask, render_template, request
 
 from pricing import Inputs, Params, price_quote
@@ -10,6 +10,10 @@ app = Flask(__name__)
 
 with open(os.path.join(os.path.dirname(__file__), "presets.json"), "r", encoding="utf-8") as f:
     PRESETS = json.load(f)
+
+INPUT_FIELD_NAMES = tuple(f.name for f in fields(Inputs))
+INPUT_FIELD_SET = set(INPUT_FIELD_NAMES)
+PARAM_FIELD_SET = {f.name for f in fields(Params)}
 
 def _to_float(name: str, default: float) -> float:
     v = request.form.get(name, str(default)).strip()
@@ -69,24 +73,26 @@ def _make_inputs() -> Inputs:
 
 def _make_params() -> Params:
     df = PRESETS["defaults"]
-    p = df.get("costing_params", {})
     return Params(
-        machine_rates=p.get("machine_rates", {}),
-        material_prices=p.get("material_prices", {}),
-        finish_costs=p.get("finish_costs", {}),
+        machine_rates=df.get("machine_rates", {}),
+        material_prices=df.get("material_prices", {}),
+        finish_costs=df.get("finish_costs", {}),
         overheads_pct=_to_float("overheads_pct", df.get("overheads_pct", 0.0)),
         yield_pct=_to_float("yield_pct", df.get("yield_pct", 0.0)),
-        customer_discount_pct=p.get("customer_discount_pct", 0.0),
-        target_margin_pct=p.get("target_margin_pct", 0.0),
-        ship_zone_factor=p.get("ship_zone_factor", {})
+        customer_discount_pct=df.get("customer_discount_pct", 0.0),
+        target_margin_pct=df.get("target_margin_pct", 0.0),
+        ship_zone_factor=df.get("ship_zone_factor", {})
     )
 
 @app.route("/", methods=["GET", "POST"])
 def index():
     df = PRESETS["defaults"]
-    param_defaults = {k: df[k] for k in ("overheads_pct", "yield_pct") if k in df}
+    param_defaults = {
+        k: v for k, v in df.items()
+        if k in PARAM_FIELD_SET and k not in INPUT_FIELD_SET and isinstance(v, (int, float))
+    }
     error_msgs, result = [], None
-    form_defaults = {k: v for k, v in df.items() if k != "costing_params"}
+    form_defaults = {k: df[k] for k in INPUT_FIELD_NAMES if k in df}
     form_values = {k: request.form.get(k, str(v)) for k, v in form_defaults.items()}
     param_values = {k: request.form.get(k, str(v)) for k, v in param_defaults.items()}
 

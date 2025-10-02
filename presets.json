@@ -22,30 +22,28 @@
     "sewage_water": 30.0,
     "sewage_electricity": 2.0,
     "ship_zone": "ASIA",
+    "machine_rates": {
+      "direct_pth_per_hole": 0.0017,
+      "cnc_pth_per_hole": 0.0034
+    },
+    "material_prices": {
+      "FR-4 KB6160A": 110,
+      "Rogers 4350B": 45.0
+    },
+    "finish_costs": {
+      "HASL": 20.0,
+      "ENIG": 30.0,
+      "OSP": 10.0
+    },
+    "customer_discount_pct": 0.0,
+    "target_margin_pct": 0.0,
     "overheads_pct": 12.0,
     "yield_pct": 94.0,
-    "costing_params": {
-      "machine_rates": {
-        "direct_pth_per_hole": 0.0017,
-        "cnc_pth_per_hole": 0.0034
-      },
-      "material_prices": {
-        "FR-4 KB6160A": 110,
-        "Rogers 4350B": 45.0
-      },
-      "finish_costs": {
-        "HASL": 20.0,
-        "ENIG": 30.0,
-        "OSP": 10.0
-      },
-      "customer_discount_pct": 0.0,
-      "target_margin_pct": 0.0,
-      "ship_zone_factor": {
-        "ASIA": 1.0,
-        "EU": 1.05,
-        "NA": 1.08,
-        "OTHER": 1.1
-      }
+    "ship_zone_factor": {
+      "ASIA": 1.0,
+      "EU": 1.05,
+      "NA": 1.08,
+      "OTHER": 1.1
     }
   }
 }
