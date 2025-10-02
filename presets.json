@@ -22,8 +22,7 @@
     "sewage_water": 30.0,
     "sewage_electricity": 2.0,
     "ship_zone": "ASIA",
-    "customer_discount_pct": 0.0,
-    "target_margin_pct": 0.0,
+    "margin_pct": 5.0,
     "overheads_pct": 10.0,
     "yield_pct": 98.0,
 

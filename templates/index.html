@@ -192,15 +192,11 @@
               </ul>
             </li>
             <li>开料件数: {{ result.breakdown.boards_per_panel }}</li>
-            <li>COGS: {{ result.cogs }}</li>
           </ul>
-        </div>
-        <div>
-          <h3>Panel Pricing</h3>
           <ul class="mono">
-            <li>Sell price (panel): {{ result.price_total }}</li>
-            <li>COGS (panel): {{ result.cogs }}</li>
-            <li>Unit price (board): {{ result.unit_price_board }}</li>
+            <li>Panel Cost: {{ result.cogs }}</li>
+            <li>Unit Cost: {{ result.cogs_unit }}</li>
+            <li>Unit price: {{ result.price_unit }}</li>
           </ul>
         </div>
       </div>

@@ -32,8 +32,7 @@ class Params:
     finish_costs: dict
     overheads_pct: float
     yield_pct: float
-    customer_discount_pct: float
-    target_margin_pct: float
+    margin_pct: float
     ship_zone_factor: dict
 
 def price_quote(inp: Inputs, prm: Params) -> dict:
@@ -96,10 +95,9 @@ def price_quote(inp: Inputs, prm: Params) -> dict:
     # Total
     cogs = cogs_pre_logistics + logistics_cost
 
-    price_total = cogs * (1 + prm.target_margin_pct / 100.0)
-    price_total *= (1 - prm.customer_discount_pct / 100.0)
-    unit_price_board = price_total / boards_per_panel if boards_per_panel else 0.0
-
+    cogs_unit = cogs / boards_per_panel if boards_per_panel else 0.0
+    price_unit = cogs_unit * (1 + prm.margin_pct / 100.0)
+    
     breakdown = {
         "material": {
             "total": round(material_cost, 2),
@@ -150,7 +148,7 @@ def price_quote(inp: Inputs, prm: Params) -> dict:
     }
     return {
         "cogs": round(cogs, 2),
-        "price_total": round(price_total, 2),
-        "unit_price_board": round(unit_price_board, 4),
+        "cogs_unit": round(cogs_unit, 4),
+        "price_unit": round(price_unit, 4),
         "breakdown": breakdown
     }
