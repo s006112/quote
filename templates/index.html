@@ -29,7 +29,7 @@
           <label>Height (mm)
             <input name="height" type="number" step="1" value="{{ values.height }}">
           </label>
-          <label>Boards per panel
+          <label>开料件数
             <input name="panel_boards" type="number" step="1" value="{{ values.panel_boards }}">
           </label>
         </div>
@@ -64,13 +64,13 @@
               {% endfor %}
             </select>
           </label>
-          <label>Etching
+          <label>蚀刻
             <input name="etching_cost" type="number" step="1" value="{{ values.etching_cost }}">
           </label>
-          <label>Masking
+          <label>阻焊
             <input name="masking_cost" type="number" step="1" value="{{ values.masking_cost }}">
           </label>
-          <label>Silkscreen
+          <label>文字丝印
             <input name="silkscreen_cost" type="number" step="1" value="{{ values.silkscreen_cost }}">
           </label>
         </div>
@@ -79,13 +79,6 @@
       <section>
         <h2>Process</h2>
         <div class="grid">
-          <label>Via type
-            <select name="via_type">
-              {% for v in ["thru","blind","buried","micro"] %}
-              <option value="{{ v }}" {% if values.via_type==v %}selected{% endif %}>{{ v }}</option>
-              {% endfor %}
-            </select>
-          </label>
           <label>直 PTH
             <input name="direct_pth_holes" type="number" step="1" min="0" value="{{ values.direct_pth_holes }}">
           </label>
@@ -126,7 +119,7 @@
       </section>
 
       <section>
-        <h2>Logistics</h2>
+        <h2>Others</h2>
         <div class="grid">
           <label>Ship zone
             <select name="ship_zone">
@@ -161,9 +154,9 @@
             <li>Treatment: {{ result.breakdown.treatment.total }}
               <ul>
                 <li>Finish: {{ result.breakdown.treatment.components.finish }}</li>
-                <li>Etching: {{ result.breakdown.treatment.components.etching }}</li>
-                <li>Masking: {{ result.breakdown.treatment.components.masking }}</li>
-                <li>Silkscreen: {{ result.breakdown.treatment.components.silkscreen }}</li>
+                <li>蚀刻: {{ result.breakdown.treatment.components.etching }}</li>
+                <li>阻焊: {{ result.breakdown.treatment.components.masking }}</li>
+                <li>文字丝印: {{ result.breakdown.treatment.components.silkscreen }}</li>
               </ul>
             </li>            
             <li>Process: {{ result.breakdown.process.total }}
@@ -175,7 +168,7 @@
                 <li>E-test: {{ result.breakdown.process.components.e_test }}</li>
                 <li>V-cut: {{ result.breakdown.process.components.v_cut }}</li>
                 <li>FQC: {{ result.breakdown.process.components.fqc }}</li>
-                <li>Package: {{ result.breakdown.process.components.package }}</li>
+                <li>包装: {{ result.breakdown.process.components.package }}</li>
               </ul>
             </li>
             <li>Sewage: {{ result.breakdown.sewage.total }}
@@ -184,16 +177,14 @@
                 <li>Electricity: {{ result.breakdown.sewage.components.electricity }}</li>
               </ul>
             </li>
-            <li>Logistics: {{ result.breakdown.logistics.adjustment }}
+            <li>Others: {{ result.breakdown.others.logistic }}
               <ul>
-                <li>Ship zone: {{ result.breakdown.logistics.ship_zone }}</li>
-                <li>Zone factor: {{ result.breakdown.logistics.factor }}</li>
+                <li>Overhead: {{ result.breakdown.others.overhead }}</li>
+                <li>Yield (%): {{ result.breakdown.others.yield_pct_effective }}</li>
+                <li>Zone factor: {{ result.breakdown.others.factor }}</li>
               </ul>
             </li>
-            <li>Overhead: {{ result.breakdown.overhead }}</li>
-            <li>Risk: {{ result.breakdown.risk }}</li>
-            <li>Boards per panel: {{ result.breakdown.boards_per_panel }}</li>
-            <li>Yield (%): {{ result.breakdown.yield_pct_effective }}</li>
+            <li>开料件数: {{ result.breakdown.boards_per_panel }}</li>
             <li>COGS: {{ result.cogs }}</li>
           </ul>
         </div>

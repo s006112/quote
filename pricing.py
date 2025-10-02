@@ -23,7 +23,6 @@ class Inputs:
     package_cost: float
     sewage_water: float
     sewage_electricity: float
-    via_type: str  # 'thru'|'blind'|'buried'|'micro'
     ship_zone: str
 
 @dataclass
@@ -33,18 +32,12 @@ class Params:
     finish_costs: dict
     overheads_pct: float
     yield_baseline_pct: float
-    risk_buffer_pct: float
     customer_discount_pct: float
     target_margin_pct: float
     ship_zone_factor: dict
 
-def _yield_penalty(inp: Inputs) -> float:
-    penalty = 1.0
-    if inp.via_type != "thru":      penalty *= 0.94
-    return penalty
-
 def price_quote(inp: Inputs, prm: Params) -> dict:
-    yld = (prm.yield_baseline_pct / 100.0) * _yield_penalty(inp)
+    yld = prm.yield_baseline_pct / 100.0
     boards_per_panel = max(1, inp.panel_boards)
 
     # Material cost
@@ -88,10 +81,7 @@ def price_quote(inp: Inputs, prm: Params) -> dict:
     base = material_cost + treatment_cost + process_cost + sewage_cost
     oh = base * (prm.overheads_pct / 100.0)
 
-    risk_base = base if inp.via_type != "thru" else 0.0
-    risk = risk_base * (prm.risk_buffer_pct / 100.0)
-
-    cogs_pre_ship = base + oh + risk
+    cogs_pre_ship = base + oh
     zone_factor = prm.ship_zone_factor.get(inp.ship_zone, 1.0)
     logistics_cost = cogs_pre_ship * (zone_factor - 1)
     cogs = cogs_pre_ship + logistics_cost
@@ -137,15 +127,15 @@ def price_quote(inp: Inputs, prm: Params) -> dict:
                 "electricity": round(sewage_electricity, 2)
             }
         },
-        "logistics": {
+        "others": {
             "ship_zone": inp.ship_zone,
             "factor": round(zone_factor, 3),
-            "adjustment": round(logistics_cost, 2)
+            "logistic": round(logistics_cost, 2),
+            "overhead": round(oh, 2),
+            "yield_pct_effective": round(yld * 100.0, 2)
         },
-        "overhead": round(oh, 2),
-        "risk": round(risk, 2),
-        "boards_per_panel": boards_per_panel,
-        "yield_pct_effective": round(yld * 100.0, 2)
+        
+        "boards_per_panel": boards_per_panel
     }
     return {
         "cogs": round(cogs, 2),

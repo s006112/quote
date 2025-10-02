@@ -64,7 +64,6 @@ def _make_inputs() -> Inputs:
         package_cost=_to_float("package_cost", df["package_cost"]),
         sewage_water=_to_float("sewage_water", df["sewage_water"]),
         sewage_electricity=_to_float("sewage_electricity", df["sewage_electricity"]),
-        via_type=request.form.get("via_type", df["via_type"]),
         ship_zone=request.form.get("ship_zone", df["ship_zone"]),
     )
 
@@ -76,7 +75,6 @@ def _make_params() -> Params:
         finish_costs=p["finish_costs"],
         overheads_pct=p["overheads_pct"],
         yield_baseline_pct=p["yield_baseline_pct"],
-        risk_buffer_pct=p["risk_buffer_pct"],
         customer_discount_pct=p["customer_discount_pct"],
         target_margin_pct=p["target_margin_pct"],
         ship_zone_factor=p["ship_zone_factor"]

@@ -21,7 +21,6 @@
     "package_cost": 1.0,
     "sewage_water": 30.0,
     "sewage_electricity": 2.0,
-    "via_type": "thru",
     "ship_zone": "ASIA"
 
   },
@@ -41,7 +40,6 @@
     },
     "overheads_pct": 12.0,
     "yield_baseline_pct": 94.0,
-    "risk_buffer_pct": 2.0,
     "customer_discount_pct": 0.0,
     "target_margin_pct": 0.0,
     "ship_zone_factor": {
