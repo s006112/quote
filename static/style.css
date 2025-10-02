@@ -1,9 +1,9 @@
 :root { --fg:#111; --bg:#fff; --muted:#666; --accent:#1b6ef3; --bad:#a33; }
 *{box-sizing:border-box} body{margin:16px;font:14px/1.4 system-ui,Arial,sans-serif;color:var(--fg);background:var(--bg)}
 h1,h2,h3{margin:8px 0} header{margin-bottom:8px}
-.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(320px,max-content));gap:10px;justify-content:start}
-label{display:grid;grid-template-columns:150px auto;align-items:center;gap:6px;justify-items:start}
-label input,label select{width:150px;max-width:100%}
+.grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,max-content));gap:10px;justify-content:start}
+label{display:grid;grid-template-columns:100px auto;align-items:center;gap:6px;justify-items:start}
+label input,label select{width:100px;max-width:100%}
 input,select,button,table{font:inherit}
 input,select{padding:8px;border:1px solid #ccc;border-radius:6px}
 button{padding:10px 14px;border:0;border-radius:6px;background:var(--accent);color:#fff;cursor:pointer}
