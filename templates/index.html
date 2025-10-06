@@ -47,8 +47,8 @@
             </select>
           </label>
           <label id="material-price-field">
-            <span id="material-price-label">{{ (values.material or defaults.material) }} Price</span>
-            <input name="material_price" id="material-price-input" type="number" step="0.01" value="{{ material_price_value }}">
+            <span id="material-price-label">{{ (values.material or defaults.material) }}</span>
+            <input name="material_price" id="material-price-input" type="number" step="1" value="{{ material_price_value }}">
           </label>
           <label>干膜
             <input name="film_cost" type="number" step="1" value="{{ values.film_cost }}">
@@ -70,8 +70,8 @@
             </select>
           </label>
           <label id="finish-price-field">
-            <span id="finish-price-label">{{ (values.finish or defaults.finish) }} Price</span>
-            <input name="finish_price" id="finish-price-input" type="number" step="0.01" value="{{ finish_price_value }}">
+            <span id="finish-price-label">{{ (values.finish or defaults.finish) }}</span>
+            <input name="finish_price" id="finish-price-input" type="number" step="1" value="{{ finish_price_value }}">
           </label>
           <label>蚀刻
             <input name="etching_cost" type="number" step="1" value="{{ values.etching_cost }}">
@@ -243,7 +243,7 @@
 
     const updateLabelAndDefault = () => {
       const selected = select.value || fallback;
-      label.textContent = `${selected || fallback} Price`;
+      label.textContent = selected || fallback;
       const base = defaults[selected];
       input.value = base !== undefined ? base : '';
     };
