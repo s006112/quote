@@ -40,11 +40,15 @@
         <h2>Materials</h2>
         <div class="grid">
           <label>Material
-            <select name="material">
+            <select name="material" id="material-select">
               {% for m in material_options %}
               <option value="{{ m }}" {% if values.material==m %}selected{% endif %}>{{ m }}</option>
               {% endfor %}
             </select>
+          </label>
+          <label id="material-price-field">
+            <span id="material-price-label">{{ (values.material or defaults.material) }} Price</span>
+            <input name="material_price" id="material-price-input" type="number" step="0.01" value="{{ material_price_value }}">
           </label>
           <label>干膜
             <input name="film_cost" type="number" step="1" value="{{ values.film_cost }}">
@@ -59,11 +63,15 @@
             <input name="layers" type="number" step="1" value="{{ values.layers }}">
           </label>
           <label>表面处理
-            <select name="finish">
+            <select name="finish" id="finish-select">
               {% for f in finish_options %}
               <option value="{{ f }}" {% if values.finish==f %}selected{% endif %}>{{ f }}</option>
               {% endfor %}
             </select>
+          </label>
+          <label id="finish-price-field">
+            <span id="finish-price-label">{{ (values.finish or defaults.finish) }} Price</span>
+            <input name="finish_price" id="finish-price-input" type="number" step="0.01" value="{{ finish_price_value }}">
           </label>
           <label>蚀刻
             <input name="etching_cost" type="number" step="1" value="{{ values.etching_cost }}">
@@ -212,6 +220,11 @@
 
 <script>
 (function () {
+  const materialPrices = {{ material_prices|tojson }};
+  const finishCosts = {{ finish_costs|tojson }};
+  const defaultMaterial = {{ defaults.material|tojson }};
+  const defaultFinish = {{ defaults.finish|tojson }};
+
   const form = document.getElementById('quote-form');
   const summary = document.getElementById('live-summary');
   if (!form || !summary) {
@@ -219,6 +232,44 @@
   }
 
   let controller;
+
+  const attachPriceField = ({ selectId, inputId, labelId, defaults, fallback }) => {
+    const select = document.getElementById(selectId);
+    const input = document.getElementById(inputId);
+    const label = document.getElementById(labelId);
+    if (!select || !input || !label) {
+      return;
+    }
+
+    const updateLabelAndDefault = () => {
+      const selected = select.value || fallback;
+      label.textContent = `${selected || fallback} Price`;
+      const base = defaults[selected];
+      input.value = base !== undefined ? base : '';
+    };
+
+    select.addEventListener('change', () => {
+      updateLabelAndDefault();
+    });
+
+    updateLabelAndDefault();
+  };
+
+  attachPriceField({
+    selectId: 'material-select',
+    inputId: 'material-price-input',
+    labelId: 'material-price-label',
+    defaults: materialPrices,
+    fallback: defaultMaterial,
+  });
+
+  attachPriceField({
+    selectId: 'finish-select',
+    inputId: 'finish-price-input',
+    labelId: 'finish-price-label',
+    defaults: finishCosts,
+    fallback: defaultFinish,
+  });
 
   const submitForm = () => {
     const formData = new FormData(form);

@@ -78,6 +78,28 @@ def _make_params() -> Params:
             if isinstance(value, dict):
                 value = value.copy()
             payload[name] = value
+
+    selected_material = request.form.get("material", DEFAULTS.get("material"))
+    selected_finish = request.form.get("finish", DEFAULTS.get("finish"))
+
+    def _apply_override(form_key: str, map_key: str, selected: str | None, err_msg: str) -> None:
+        raw = request.form.get(form_key)
+        if raw in (None, ""):
+            return
+        try:
+            value = float(raw)
+        except ValueError:
+            raise ValueError(err_msg)
+        if not selected:
+            return
+        price_map = payload.get(map_key)
+        if price_map is None:
+            price_map = {}
+            payload[map_key] = price_map
+        price_map[selected] = value
+
+    _apply_override("material_price", "material_prices", selected_material, "Material price must be a number")
+    _apply_override("finish_price", "finish_costs", selected_finish, "Finish cost must be a number")
     return Params(**payload)
 
 @app.route("/", methods=["GET", "POST"])
@@ -96,6 +118,22 @@ def index():
     param_values = {k: request.form.get(k, str(v)) for k, v in param_defaults.items()}
 
     error_msgs, result = [], None
+
+    selected_material = form_values.get("material", str(DEFAULTS.get("material", "")))
+    selected_finish = form_values.get("finish", str(DEFAULTS.get("finish", "")))
+
+    default_material_prices = DEFAULTS.get("material_prices", {})
+    default_finish_costs = DEFAULTS.get("finish_costs", {})
+
+    def _form_price_value(field_name: str, defaults_map: dict[str, Any], selected: str) -> str:
+        raw = request.form.get(field_name)
+        if raw not in (None, ""):
+            return raw
+        default_value = defaults_map.get(selected)
+        return "" if default_value in (None, "") else str(default_value)
+
+    material_price_value = _form_price_value("material_price", default_material_prices, selected_material)
+    finish_price_value = _form_price_value("finish_price", default_finish_costs, selected_finish)
 
     if request.method == "POST":
         try:
@@ -116,6 +154,10 @@ def index():
                            params_values=param_values,
                            material_options=MATERIAL_OPTIONS,
                            finish_options=FINISH_OPTIONS,
+                           material_prices=default_material_prices,
+                           finish_costs=default_finish_costs,
+                           material_price_value=material_price_value,
+                           finish_price_value=finish_price_value,
                            ship_zone_options=SHIP_ZONE_OPTIONS,
                            error_msgs=error_msgs,
                            result=result)
