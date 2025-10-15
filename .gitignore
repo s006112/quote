@@ -1,2 +1,5 @@
 __pycache__/
 panel.log
+.vscode-server/
+.gnupg/
+.cache/
