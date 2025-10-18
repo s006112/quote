@@ -1,0 +1,7 @@
+{
+  "name": "quote-dev",
+  "image": "ubuntu:22.04-custom",
+  "workspaceMount": "source=${localWorkspaceFolder},target=/workspaces/${localWorkspaceFolderBasename},type=bind",
+  "workspaceFolder": "/workspaces/${localWorkspaceFolderBasename}",
+  "runArgs": ["--name=quote-dev"]
+}
