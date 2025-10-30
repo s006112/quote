@@ -26,16 +26,16 @@ PANEL_OPTIONS: Dict[str, Tuple[float, float]] = {
     "A1": (520.5, 622.5),    "A2": (415.0, 622.5),    "A3": (347.0, 622.5),    "A4": (520.5, 415.0),
     "B1": (546.0, 622.5),    "B2": (415.0, 622.5),    "B3": (415.0, 546.0),    "B4": (364.0, 622.5),
     "C1": (546.0, 647.5),    "C2": (431.6, 647.5),    "C3": (431.6, 546.0),    "C4": (364.0, 647.5),
-#    "D1": (520.5, 694.0),    "D2": (415.0, 694.0),    "D3": (416.4, 622.5),    "D4": (365.0, 622.5),
-#    "E1": (546.0, 728.0),    "E2": (431.5, 728.0),    "E3": (436.8, 647.5),    "E4": (384.1, 647.5),
+    "D1": (520.5, 694.0),    "D2": (415.0, 694.0),    "D3": (416.4, 622.5),    "D4": (365.0, 622.5),
+    "E1": (546.0, 728.0),    "E2": (431.5, 728.0),    "E3": (436.8, 647.5),    "E4": (384.1, 647.5),
 }
 
 JUMBO_MULTIPLIER: Dict[str, int] = {
     "A1": 4,    "A2": 5,    "A3": 6,    "A4": 6,
     "B1": 4,    "B2": 5,    "B3": 6,    "B4": 6,
     "C1": 4,    "C2": 5,    "C3": 6,    "C4": 6,
-#    "D1": 7,    "D2": 9,    "D3": 10,    "D4": 11,
-#    "E1": 7,    "E2": 9,    "E3": 10,    "E4": 11,
+    "D1": 7,    "D2": 9,    "D3": 10,    "D4": 11,
+    "E1": 7,    "E2": 9,    "E3": 10,    "E4": 11,
 }
 
 def default_config() -> Dict[str, float]:
@@ -58,6 +58,11 @@ def default_config() -> Dict[str, float]:
         "allow_rotate_single_pcb": True,
         "kerf_allowance": 0.0,
         "limit": 20,  # UI-only: max rows to display
+        "include_set_A": True,
+        "include_set_B": True,
+        "include_set_C": True,
+        "include_set_D": False,
+        "include_set_E": False,
     }
 
 def _almost_le(a: float, b: float, eps: float = 1e-9) -> bool:
@@ -328,6 +333,11 @@ def parse_cfg(qs: dict) -> Dict[str, float]:
     d["allow_rotate_single_pcb"] = parse_checkbox(qs, "ARS", d["allow_rotate_single_pcb"])
     d["kerf_allowance"] = parse_float(qs, "KERF", d["kerf_allowance"])
     d["limit"] = parse_int(qs, "LIMIT", d["limit"])
+    d["include_set_A"] = parse_checkbox(qs, "SET_A", d["include_set_A"])
+    d["include_set_B"] = parse_checkbox(qs, "SET_B", d["include_set_B"])
+    d["include_set_C"] = parse_checkbox(qs, "SET_C", d["include_set_C"])
+    d["include_set_D"] = parse_checkbox(qs, "SET_D", d["include_set_D"])
+    d["include_set_E"] = parse_checkbox(qs, "SET_E", d["include_set_E"])
     return d
 
 def input_field(name, label, value, step="0.1"):
@@ -404,6 +414,26 @@ def page(cfg: Dict[str, float], rows: List[Dict]) -> str:
     h.append("<fieldset><legend>Working Panel Margins</legend>")
     h.append(input_field("EW_w", "Panel edge margin width (EW_w, mm)", cfg["panel_edge_margin_w"]))
     h.append(input_field("EW_l", "Panel edge margin length (EW_l, mm)", cfg["panel_edge_margin_l"]))
+    h.append("<div class='checkbox-group'>")
+    h.append("<span>Panel sets</span>")
+    panel_set_labels = {
+        "A": "A: 1245 x 1041",
+        "B": "B: 1245 x 1092",
+        "C": "C: 1295 x 1092",
+        "D": "D: 1245 x 2082",
+        "E": "E: 1295 x 2184",
+    }
+    for letter in "ABCDE":
+        name = f"SET_{letter}"
+        cfg_key = f"include_set_{letter}"
+        checked_attr = "checked" if bool(cfg.get(cfg_key, False)) else ""
+        h.append(
+            f"<label class='panel-set-option'>"
+            f"<input type='checkbox' name='{name}' id='{name}' {checked_attr}/>"
+            f"<span>{panel_set_labels.get(letter, letter)}</span>"
+            "</label>"
+        )
+    h.append("</div>")
     h.append("</fieldset>")
 
     # Board edge margins (auxiliary rails)
@@ -540,7 +570,11 @@ def app(environ, start_response):
 
         # Compute across all panel styles
         all_rows: List[Dict] = []
+        enabled_sets = {letter for letter in "ABCDE" if cfg.get(f"include_set_{letter}", False)}
         for style, (pw, pl) in PANEL_OPTIONS.items():
+            # Only evaluate panel styles whose set letter is enabled in the UI.
+            if style[:1].upper() not in enabled_sets:
+                continue
             all_rows.extend(enumerate_layouts(cfg, pw, pl, style))
         # Sort by PCBs per Jumbo desc, then utilization/objective for stability
         all_rows.sort(key=lambda r: (-r["pcbs_per_jumbo"], -r["utilization"], r["objective_key"]))

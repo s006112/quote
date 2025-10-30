@@ -74,6 +74,26 @@ label {
     color: var(--muted);
 }
 
+.checkbox-group {
+    margin-top: 8px;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.checkbox-group span {
+    font-size: var(--font-label);
+    color: var(--muted);
+}
+
+.panel-set-option {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-size: var(--font-label);
+    color: var(--muted);
+}
+
 input[type=number] {
     width: 100%;
     padding: 8px;
