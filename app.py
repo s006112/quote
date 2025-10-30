@@ -44,8 +44,8 @@ def default_config() -> Dict[str, float]:
         "customer_board_length_min": 80.0,
         "single_pcb_width_max": 52.0,
         "single_pcb_length_max": 76.2,
-        "edge_margin_w": 5.0,
-        "edge_margin_l": 5.0,
+        "panel_edge_margin_w": 5.0,
+        "panel_edge_margin_l": 5.0,
         "inter_board_gap_w": 5.0,
         "inter_board_gap_l": 1.5,
         "inter_single_gap_w": 0.0,
@@ -93,8 +93,8 @@ def enumerate_layouts(cfg: Dict[str, float], panel_w: float, panel_l: float, pan
     CBL_min = float(cfg.get("customer_board_length_min", 0.0))
     SPW = float(cfg["single_pcb_width_max"])
     SPL = float(cfg["single_pcb_length_max"])
-    EW_w = float(cfg["edge_margin_w"])
-    EW_l = float(cfg["edge_margin_l"])
+    EW_w = float(cfg["panel_edge_margin_w"])
+    EW_l = float(cfg["panel_edge_margin_l"])
     CW = float(cfg["inter_board_gap_w"])
     CL = float(cfg["inter_board_gap_l"])
     SW = float(cfg["inter_single_gap_w"])
@@ -259,63 +259,10 @@ def enumerate_layouts(cfg: Dict[str, float], panel_w: float, panel_l: float, pan
 
 # ------------------------------ Web Utilities --------------------------------
 
-CSS = """
-:root {
-    --fg:#111;
-    --muted:#666;
-    --bg:#fff;
-    --line:#ddd;
-    --accent:#0b6;
-    --font-body: clamp(0.95rem, 0.65vw + 0.9rem, 1.05rem);
-    --font-heading: clamp(1.6rem, 1.1vw + 1.4rem, 2rem);
-    --font-label: clamp(0.75rem, 0.4vw + 0.7rem, 0.9rem);
-    --font-input: clamp(1rem, 0.9vw + 0.95rem, 1.3rem);
-    --font-small: clamp(0.8rem, 0.45vw + 0.75rem, 1rem);
-    --font-badge: clamp(0.75rem, 0.35vw + 0.7rem, 0.9rem);
-}
-* { box-sizing:border-box; font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Arial; }
-body { color:var(--fg); background:var(--bg); margin:0; padding:24px; font-size:var(--font-body); line-height:1.55; }
-h1 { margin:0 0 8px 0; font-size:var(--font-heading); line-height:1.2; }
-p.note { color:var(--muted); margin:0 0 16px 0; font-size:var(--font-small); }
-form { display:grid; grid-template-columns: repeat(4, minmax(220px,1fr)); gap:12px; align-items:start; font-size:inherit; }
-fieldset { border:1px solid var(--line); padding:12px; border-radius:8px; }
-legend { padding:0 6px; font-size:var(--font-label); }
-label { display:block; font-size:var(--font-label); color:var(--muted); }
-input[type=number] { width:100%; padding:8px; border:1px solid var(--line); border-radius:6px; font-size:var(--font-input); line-height:1.45; }
-input[type=checkbox] { transform: translateY(2px); }
-.controls { grid-column: 1 / -1; display:flex; gap:12px; align-items:center; font-size:inherit; }
-button { background:var(--accent); color:#fff; border:0; padding:10px 14px; border-radius:6px; cursor:pointer; font-size:var(--font-body); line-height:1.3; }
-button.secondary { background:#333; }
-table { width:100%; border-collapse:collapse; margin-top:18px; }
-th, td { border-bottom:1px solid var(--line); padding:8px 6px; text-align:right; font-variant-numeric: tabular-nums; font-size:calc(var(--font-body) * 0.95); }
-th { background:#f8f8f8; text-align:right; }
-td.l, th.l { text-align:left; }
-.badge { padding:2px 6px; border-radius:12px; border:1px solid var(--line); font-size:var(--font-badge); color:#333; }
-.ok { color:#0a5; }
-.err { color:#b00; }
-.small { font-size:var(--font-small); color:var(--muted); }
-pre { background:#f6f6f6; padding:8px; border-radius:6px; overflow:auto; font-size:var(--font-small); line-height:1.4; }
-@media (max-width: 1024px) {
-    :root {
-        --font-body: clamp(0.95rem, 1vw + 0.85rem, 1.1rem);
-        --font-heading: clamp(1.55rem, 1.6vw + 1.2rem, 2.05rem);
-        --font-input: clamp(1rem, 1.2vw + 0.9rem, 1.35rem);
-    }
-}
-@media (max-width: 640px) {
-    :root {
-        --font-body: clamp(1rem, 2vw + 0.75rem, 1.15rem);
-        --font-heading: clamp(1.7rem, 3.5vw + 1.2rem, 2.2rem);
-        --font-label: clamp(0.82rem, 1.5vw + 0.65rem, 0.95rem);
-        --font-input: clamp(1.05rem, 2.5vw + 0.8rem, 1.4rem);
-        --font-small: clamp(0.9rem, 1.8vw + 0.7rem, 1.05rem);
-    }
-    th, td { font-size:var(--font-body); }
-}
-"""
-
 ICON_FILENAME = "lt.png"
 ICON_PATH = os.path.join(os.path.dirname(__file__), ICON_FILENAME)
+CSS_FILENAME = "panelizer.css"
+CSS_PATH = os.path.join(os.path.dirname(__file__), "static", CSS_FILENAME)
 
 def parse_bool(v: str) -> bool:
     if isinstance(v, str):
@@ -353,8 +300,8 @@ def parse_cfg(qs: dict) -> Dict[str, float]:
     d["customer_board_length_min"] = parse_float(qs, "CBLM", d["customer_board_length_min"])
     d["single_pcb_width_max"]  = parse_float(qs, "SPW", d["single_pcb_width_max"])
     d["single_pcb_length_max"] = parse_float(qs, "SPL", d["single_pcb_length_max"])
-    d["edge_margin_w"] = parse_float(qs, "EW_w", d["edge_margin_w"])
-    d["edge_margin_l"] = parse_float(qs, "EW_l", d["edge_margin_l"])
+    d["panel_edge_margin_w"] = parse_float(qs, "EW_w", d["panel_edge_margin_w"])
+    d["panel_edge_margin_l"] = parse_float(qs, "EW_l", d["panel_edge_margin_l"])
     d["inter_board_gap_w"] = parse_float(qs, "CW", d["inter_board_gap_w"])
     d["inter_board_gap_l"] = parse_float(qs, "CL", d["inter_board_gap_l"])
     d["inter_single_gap_w"] = parse_float(qs, "SW", d["inter_single_gap_w"])
@@ -420,7 +367,7 @@ def page(cfg: Dict[str, float], rows: List[Dict]) -> str:
     h = []
     h.append("<html><head><meta charset='utf-8'><title>PCB Panelizer</title>")
     h.append("<link rel='icon' type='image/png' href='/lt.png'>")
-    h.append(f"<style>{CSS}</style></head><body>")
+    h.append(f"<link rel='stylesheet' href='/static/{CSS_FILENAME}'></head><body>")
     h.append("<h1>PCB Panelizer by LT</h1>")
 #    h.append("<p class='note'>Edit parameters. Press Calculate. Results ranked by PCBs per Jumbo.</p>")
     # Form
@@ -435,8 +382,8 @@ def page(cfg: Dict[str, float], rows: List[Dict]) -> str:
 
     # Panel margins
     h.append("<fieldset><legend>Working Panel Margins</legend>")
-    h.append(input_field("EW_w", "Edge margin width (EW_w, mm)", cfg["edge_margin_w"]))
-    h.append(input_field("EW_l", "Edge margin length (EW_l, mm)", cfg["edge_margin_l"]))
+    h.append(input_field("EW_w", "Panel edge margin width (EW_w, mm)", cfg["panel_edge_margin_w"]))
+    h.append(input_field("EW_l", "Panel edge margin length (EW_l, mm)", cfg["panel_edge_margin_l"]))
     h.append("</fieldset>")
 
     # Customer board
@@ -535,6 +482,20 @@ def app(environ, start_response):
                                                  ("Content-Length", "0")])
                 return [b""]
             headers = [("Content-Type", "image/png"), ("Content-Length", str(len(data)))]
+            start_response("200 OK", headers)
+            if method == "HEAD":
+                return [b""]
+            return [data]
+
+        if path == f"/static/{CSS_FILENAME}":
+            try:
+                with open(CSS_PATH, "rb") as fh:
+                    data = fh.read()
+            except FileNotFoundError:
+                start_response("404 Not Found", [("Content-Type", "text/plain; charset=utf-8"),
+                                                 ("Content-Length", "0")])
+                return [b""]
+            headers = [("Content-Type", "text/css; charset=utf-8"), ("Content-Length", str(len(data)))]
             start_response("200 OK", headers)
             if method == "HEAD":
                 return [b""]
