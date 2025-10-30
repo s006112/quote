@@ -23,31 +23,35 @@ from typing import Dict, Tuple, List, Optional
 # ------------------------------ Core Solver ----------------------------------
 
 PANEL_OPTIONS: Dict[str, Tuple[float, float]] = {
-    "A": (520.5, 622.5),
-    "B": (415.0, 622.5),
-    "C": (347.0, 622.5),
-    "D": (520.5, 415.0),
+    "A1": (520.5, 622.5),    "A2": (415.0, 622.5),    "A3": (347.0, 622.5),    "A4": (520.5, 415.0),
+    "B1": (546.0, 622.5),    "B2": (415.0, 622.5),    "B3": (415.0, 546.0),    "B4": (364.0, 622.5),
+    "C1": (546.0, 647.5),    "C2": (431.6, 647.5),    "C3": (431.6, 546.0),    "C4": (364.0, 647.5),
+#    "D1": (520.5, 694.0),    "D2": (415.0, 694.0),    "D3": (416.4, 622.5),    "D4": (365.0, 622.5),
+#    "E1": (546.0, 728.0),    "E2": (431.5, 728.0),    "E3": (436.8, 647.5),    "E4": (384.1, 647.5),
 }
 
 JUMBO_MULTIPLIER: Dict[str, int] = {
-    "A": 4,
-    "B": 5,
-    "C": 6,
-    "D": 6,
+    "A1": 4,    "A2": 5,    "A3": 6,    "A4": 6,
+    "B1": 4,    "B2": 5,    "B3": 6,    "B4": 6,
+    "C1": 4,    "C2": 5,    "C3": 6,    "C4": 6,
+#    "D1": 7,    "D2": 9,    "D3": 10,    "D4": 11,
+#    "E1": 7,    "E2": 9,    "E3": 10,    "E4": 11,
 }
 
 def default_config() -> Dict[str, float]:
     return {
         "customer_board_width_max": 350.0,
-        "customer_board_length_max": 622.5,
+        "customer_board_length_max": 400.0,
         "customer_board_width_min": 80.0,
         "customer_board_length_min": 80.0,
         "single_pcb_width_max": 52.0,
         "single_pcb_length_max": 76.2,
         "panel_edge_margin_w": 5.0,
         "panel_edge_margin_l": 5.0,
-        "inter_board_gap_w": 5.0,
-        "inter_board_gap_l": 1.5,
+        "board_edge_margin_w": 5.0,
+        "board_edge_margin_l": 0.0,
+        "inter_board_gap_w": 2.0,
+        "inter_board_gap_l": 2.0,
         "inter_single_gap_w": 0.0,
         "inter_single_gap_l": 0.0,
         "allow_rotate_board": True,
@@ -95,6 +99,8 @@ def enumerate_layouts(cfg: Dict[str, float], panel_w: float, panel_l: float, pan
     SPL = float(cfg["single_pcb_length_max"])
     EW_w = float(cfg["panel_edge_margin_w"])
     EW_l = float(cfg["panel_edge_margin_l"])
+    BEW = float(cfg.get("board_edge_margin_w", 0.0))
+    BEL = float(cfg.get("board_edge_margin_l", 0.0))
     CW = float(cfg["inter_board_gap_w"])
     CL = float(cfg["inter_board_gap_l"])
     SW = float(cfg["inter_single_gap_w"])
@@ -114,27 +120,39 @@ def enumerate_layouts(cfg: Dict[str, float], panel_w: float, panel_l: float, pan
     single_rot_options = [False, True] if allow_rotate_single else [False]
 
     for board_rot in board_rot_options:
-        CBW_eff, CBL_eff = (CBL, CBW) if board_rot else (CBW, CBL)
-        CBW_min_eff, CBL_min_eff = (CBL_min, CBW_min) if board_rot else (CBW_min, CBL_min)
+        if board_rot:
+            CBW_eff, CBL_eff = CBL, CBW
+            CBW_min_eff, CBL_min_eff = CBL_min, CBW_min
+            margin_w_eff, margin_l_eff = BEL, BEW
+        else:
+            CBW_eff, CBL_eff = CBW, CBL
+            CBW_min_eff, CBL_min_eff = CBW_min, CBL_min
+            margin_w_eff, margin_l_eff = BEW, BEL
+
+        max_inner_w = CBW_eff - 2.0 * margin_w_eff
+        max_inner_l = CBL_eff - 2.0 * margin_l_eff
+        if max_inner_w <= 0 or max_inner_l <= 0:
+            continue
 
         for single_rot in single_rot_options:
             spw_eff, spl_eff = (SPL, SPW) if single_rot else (SPW, SPL)
 
-            ub_nw = _upper_bound_grid(CBW_eff, spw_eff, SWi)
-            ub_nl = _upper_bound_grid(CBL_eff, spl_eff, SLi)
+            ub_nw = _upper_bound_grid(max_inner_w, spw_eff, SWi)
+            ub_nl = _upper_bound_grid(max_inner_l, spl_eff, SLi)
             if ub_nw == 0 or ub_nl == 0:
                 continue
 
             for nw in range(1, ub_nw + 1):
                 single_grid_w = nw * spw_eff + (nw - 1) * SWi
-                if not _almost_le(single_grid_w, CBW_eff):
+                if not _almost_le(single_grid_w, max_inner_w):
                     continue
                 for nl in range(1, ub_nl + 1):
                     single_grid_l = nl * spl_eff + (nl - 1) * SLi
-                    if not _almost_le(single_grid_l, CBL_eff):
+                    if not _almost_le(single_grid_l, max_inner_l):
                         continue
 
-                    board_w, board_l = single_grid_w, single_grid_l
+                    board_w = single_grid_w + 2.0 * margin_w_eff
+                    board_l = single_grid_l + 2.0 * margin_l_eff
                     if not _almost_ge(board_w, CBW_min_eff) or not _almost_ge(board_l, CBL_min_eff):
                         continue
                     avail_w = WPW - 2.0 * EW_w
@@ -178,10 +196,8 @@ def enumerate_layouts(cfg: Dict[str, float], panel_w: float, panel_l: float, pan
                                     board_origins.append({"x": x, "y": y, "rotated": board_rot})
 
                             single_origins = []
-                            sx0, sy0 = 0.0, 0.0
+                            sx0, sy0 = margin_w_eff, margin_l_eff
                             for jl in range(nl):
-                                sy = sy0 + jl * ((SPL if single_rot else SPL) if single_rot else spl_eff)  # safe
-                                # correct step is spl_eff
                                 sy = sy0 + jl * (spl_eff + SLi)
                                 for iw in range(nw):
                                     sx = sx0 + iw * (spw_eff + SWi)
@@ -302,6 +318,8 @@ def parse_cfg(qs: dict) -> Dict[str, float]:
     d["single_pcb_length_max"] = parse_float(qs, "SPL", d["single_pcb_length_max"])
     d["panel_edge_margin_w"] = parse_float(qs, "EW_w", d["panel_edge_margin_w"])
     d["panel_edge_margin_l"] = parse_float(qs, "EW_l", d["panel_edge_margin_l"])
+    d["board_edge_margin_w"] = parse_float(qs, "BMW", d["board_edge_margin_w"])
+    d["board_edge_margin_l"] = parse_float(qs, "BML", d["board_edge_margin_l"])
     d["inter_board_gap_w"] = parse_float(qs, "CW", d["inter_board_gap_w"])
     d["inter_board_gap_l"] = parse_float(qs, "CL", d["inter_board_gap_l"])
     d["inter_single_gap_w"] = parse_float(qs, "SW", d["inter_single_gap_w"])
@@ -373,6 +391,8 @@ def page(cfg: Dict[str, float], rows: List[Dict]) -> str:
     # Form
     h.append("<form method='GET'>")
 
+    h.append("<div class='fieldset-row'>")
+
     # Single PCB (leftmost)
     h.append("<fieldset><legend>Single PCB</legend>")
     h.append(input_field("SPW", "Single width (SPW, mm)", cfg["single_pcb_width_max"]))
@@ -384,6 +404,12 @@ def page(cfg: Dict[str, float], rows: List[Dict]) -> str:
     h.append("<fieldset><legend>Working Panel Margins</legend>")
     h.append(input_field("EW_w", "Panel edge margin width (EW_w, mm)", cfg["panel_edge_margin_w"]))
     h.append(input_field("EW_l", "Panel edge margin length (EW_l, mm)", cfg["panel_edge_margin_l"]))
+    h.append("</fieldset>")
+
+    # Board edge margins (auxiliary rails)
+    h.append("<fieldset><legend>Board Edge Margins</legend>")
+    h.append(input_field("BMW", "Board edge margin width (BMW, mm)", cfg["board_edge_margin_w"]))
+    h.append(input_field("BML", "Board edge margin length (BML, mm)", cfg["board_edge_margin_l"]))
     h.append("</fieldset>")
 
     # Customer board
@@ -403,6 +429,8 @@ def page(cfg: Dict[str, float], rows: List[Dict]) -> str:
     h.append(input_field("SL", "Inter-single gap L (SL, mm)", cfg["inter_single_gap_l"]))
     h.append(input_field("KERF", "Kerf (adds to all gaps, mm)", cfg["kerf_allowance"], step="0.1"))
     h.append("</fieldset>")
+
+    h.append("</div>")
 
     # Controls
     h.append("<div class='controls'>")
