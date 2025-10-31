@@ -8,7 +8,6 @@ class Inputs:
     height: float
     layers: int
     panel_boards: int
-    plating_cost: float
     cnc_pth_holes: int
     material: str
     finish: str
@@ -67,7 +66,6 @@ def price_quote(inp: Inputs, prm: Params) -> dict:
     # Process cost
     mr = prm.machine_rates
     process_components = {
-        "plating": _non_negative(inp.plating_cost),
         "cnc_pth": mr.get("cnc_pth_per_hole", 0.0) * max(0, inp.cnc_pth_holes) * boards_per_panel,
         "cutting": _non_negative(inp.cutting_cost),
         "routing": _non_negative(inp.routing_cost),

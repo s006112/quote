@@ -5,7 +5,6 @@
     "height": 52,
     "layers": 2,
     "panel_boards": 240,
-    "plating_cost": 125,
     "cnc_pth_holes": 125,
     "material": "KB6160A",
     "finish": "HASL",
@@ -24,7 +23,6 @@
     "yield_pct": 98.0,
 
     "machine_rates": {
-      "direct_pth_per_hole": 0.0017,
       "cnc_pth_per_hole": 0.0034
     },
     "material_prices": {

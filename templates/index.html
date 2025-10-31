@@ -50,15 +50,15 @@
             <span id="material-price-label">{{ (values.material or defaults.material) }}</span>
             <input name="material_price" id="material-price-input" type="number" step="1" value="{{ material_price_value }}">
           </label>
+          <label>Layers
+            <input name="layers" type="number" step="1" value="{{ values.layers }}">
+          </label>
         </div>
       </section>
 
       <section>
         <h2>Treatment</h2>
         <div class="grid">
-          <label>Layers
-            <input name="layers" type="number" step="1" value="{{ values.layers }}">
-          </label>
           <label>表面处理
             <select name="finish" id="finish-select">
               {% for f in finish_options %}
@@ -85,9 +85,6 @@
       <section>
         <h2>Process</h2>
         <div class="grid">
-          <label>电铜
-            <input name="plating_cost" type="number" step="0.1" min="0" value="{{ values.plating_cost }}">
-          </label>
           <label>CNC 钻孔
             <input name="cnc_pth_holes" type="number" step="1" min="0" value="{{ values.cnc_pth_holes }}">
           </label>
@@ -155,6 +152,7 @@
               <li>Material: {{ result.breakdown.material.total }}
                 <ul>
                   <li>{{ values.material or 'Laminate' }}: {{ result.breakdown.material.components.laminate }}</li>
+                  <li>Layers: {{ values.layers }}</li>
                 </ul>
               </li>
               <li>Treatment: {{ result.breakdown.treatment.total }}
@@ -167,7 +165,6 @@
               </li>            
               <li>Process: {{ result.breakdown.process.total }}
                 <ul>
-                  <li>电铜: {{ result.breakdown.process.components.plating }}</li>
                   <li>CNC 钻孔: {{ result.breakdown.process.components.cnc_pth }}</li>
                   <li>开料: {{ result.breakdown.process.components.cutting }}</li>
                   <li>锣板: {{ result.breakdown.process.components.routing }}</li>
