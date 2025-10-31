@@ -1,6 +1,6 @@
 from __future__ import annotations
 import json, os
-from dataclasses import fields
+from dataclasses import asdict, fields
 from typing import Any, NamedTuple, get_type_hints
 from flask import Flask, render_template, request, send_file
 
@@ -10,10 +10,39 @@ app = Flask(__name__)
 
 ICON_FILENAME = "lt.png"
 ICON_PATH = os.path.join(os.path.dirname(__file__), ICON_FILENAME)
+BASE_PRESETS_PATH = os.path.join(os.path.dirname(__file__), "presets.json")
+LOCAL_PRESETS_PATH = os.environ.get(
+    "PRESETS_OVERRIDE_PATH",
+    os.path.join(os.path.dirname(__file__), "presets.local.json"),
+)
 
-with open(os.path.join(os.path.dirname(__file__), "presets.json"), "r", encoding="utf-8") as f:
-    PRESETS = json.load(f)
 
+def _load_json(path: str, *, required: bool = False) -> dict[str, Any]:
+    try:
+        with open(path, "r", encoding="utf-8") as f:
+            return json.load(f)
+    except FileNotFoundError:
+        if required:
+            raise
+        return {}
+    except json.JSONDecodeError as exc:
+        raise RuntimeError(f"Invalid JSON in {path}: {exc}") from exc
+
+
+def _deep_merge(base: dict[str, Any], override: dict[str, Any]) -> dict[str, Any]:
+    merged: dict[str, Any] = base.copy()
+    for key, value in override.items():
+        base_value = merged.get(key)
+        if isinstance(base_value, dict) and isinstance(value, dict):
+            merged[key] = _deep_merge(base_value, value)
+        else:
+            merged[key] = value
+    return merged
+
+
+PRESETS_BASE = _load_json(BASE_PRESETS_PATH, required=True)
+PRESETS_OVERRIDE = _load_json(LOCAL_PRESETS_PATH)
+PRESETS = _deep_merge(PRESETS_BASE, PRESETS_OVERRIDE)
 DEFAULTS = PRESETS["defaults"]
 INPUT_TYPE_HINTS = get_type_hints(Inputs)
 PARAM_TYPE_HINTS = get_type_hints(Params)
@@ -45,6 +74,31 @@ def _defaults_map(key: str) -> dict[str, Any]:
 PRICED_DEFAULT_MAPS = {field.name: _defaults_map(field.map_key) for field in PRICED_FIELDS}
 SELECT_OPTIONS = {field.name: tuple(PRICED_DEFAULT_MAPS[field.name].keys()) for field in PRICED_FIELDS}
 PRICED_LABELS = {"material": "板材", "finish": "表面处理", "masking": "阻焊", "plating": "电铜"}
+
+def _persist_defaults(inputs: Inputs, params: Params) -> None:
+    updated_defaults = DEFAULTS.copy()
+    updated_defaults.update(asdict(inputs))
+    updated_defaults.update(asdict(params))
+
+    try:
+        PRESETS_OVERRIDE["defaults"] = updated_defaults
+        with open(LOCAL_PRESETS_PATH, "w", encoding="utf-8") as f:
+            json.dump(PRESETS_OVERRIDE, f, indent=2, ensure_ascii=False)
+            f.write("\n")
+    except OSError as exc:
+        raise RuntimeError(f"Failed to update presets: {exc}") from exc
+
+    DEFAULTS.clear()
+    DEFAULTS.update(updated_defaults)
+    PRESETS["defaults"] = DEFAULTS
+
+    global SHIP_ZONE_OPTIONS
+    SHIP_ZONE_OPTIONS = tuple(DEFAULTS.get("ship_zone_factor", {}).keys())
+
+    for field in PRICED_FIELDS:
+        defaults_map = _defaults_map(field.map_key)
+        PRICED_DEFAULT_MAPS[field.name] = defaults_map
+        SELECT_OPTIONS[field.name] = tuple(defaults_map.keys())
 
 def _to_float(name: str, default: float) -> float:
     v = request.form.get(name, str(default)).strip()
@@ -127,6 +181,22 @@ def _make_params() -> Params:
 
 @app.route("/", methods=["GET", "POST"])
 def index():
+    error_msgs, result = [], None
+
+    if request.method == "POST":
+        try:
+            inp = _make_inputs()
+            errs = _validate(vars(inp))
+            if errs:
+                error_msgs = errs
+            else:
+                prm = _make_params()
+                result = price_quote(inp, prm)
+                _persist_defaults(inp, prm)
+        except Exception as e:
+            error_msgs = [str(e)]
+            result = None
+
     param_defaults = {
         name: DEFAULTS[name]
         for name, hint in PARAM_TYPE_HINTS.items()
@@ -139,8 +209,6 @@ def index():
     }
     form_values = {k: request.form.get(k, str(v)) for k, v in form_defaults.items()}
     param_values = {k: request.form.get(k, str(v)) for k, v in param_defaults.items()}
-
-    error_msgs, result = [], None
 
     selected_choices = {
         field.name: form_values.get(field.name, str(DEFAULTS.get(field.name, "")))
@@ -160,18 +228,6 @@ def index():
         price_value_kwargs[f"{field.price_field}_value"] = _form_price_value(
             field.price_field, defaults_map, selected_choices[field.name]
         )
-
-    if request.method == "POST":
-        try:
-            inp = _make_inputs()
-            errs = _validate(vars(inp))
-            if errs:
-                error_msgs = errs
-            else:
-                prm = _make_params()
-                result = price_quote(inp, prm)
-        except Exception as e:
-            error_msgs = [str(e)]
 
     return render_template(
         "index.html",

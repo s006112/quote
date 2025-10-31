@@ -3,3 +3,4 @@ panel.log
 .vscode-server/
 .gnupg/
 .cache/
+presets.local.json
