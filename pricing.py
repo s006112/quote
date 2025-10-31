@@ -13,7 +13,7 @@ class Inputs:
     finish: str
     plating: str
     etching_cost: float
-    masking_cost: float
+    masking: str
     silkscreen_cost: float
     cutting_cost: float
     routing_cost: float
@@ -28,6 +28,7 @@ class Params:
     machine_rates: dict
     material_prices: dict
     finish_costs: dict
+    masking_costs: dict
     plating_costs: dict
     overheads_pct: float
     yield_pct: float
@@ -59,9 +60,8 @@ def price_quote(inp: Inputs, prm: Params) -> dict:
     # Treatment cost
     treatment_components = {
         "finish": prm.finish_costs.get(inp.finish, 0.0),
-        "plating": prm.plating_costs.get(inp.plating, 0.0),
         "etching": inp.etching_cost,
-        "masking": inp.masking_cost,
+        "masking": prm.masking_costs.get(inp.masking, 0.0),
         "silkscreen": inp.silkscreen_cost,
     }
     treatment_cost = _component_total(treatment_components)
@@ -69,6 +69,7 @@ def price_quote(inp: Inputs, prm: Params) -> dict:
     # Process cost
     mr = prm.machine_rates
     process_components = {
+        "plating": prm.plating_costs.get(inp.plating, 0.0),
         "cnc_pth": mr.get("cnc_pth_per_hole", 0.0) * max(0, inp.cnc_pth_holes) * boards_per_panel,
         "cutting": _non_negative(inp.cutting_cost),
         "routing": _non_negative(inp.routing_cost),

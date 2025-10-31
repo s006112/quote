@@ -9,7 +9,7 @@
     "material": "KB6160A",
     "finish": "HASL",
     "plating": "24um",
-    "masking_cost": 12.0,
+    "masking": "普通",
     "silkscreen_cost": 2.0,
     "etching_cost": 3.0,
     "cutting_cost": 8.0,
@@ -34,6 +34,10 @@
       "HASL": 20.0,
       "ENIG": 30.0,
       "OSP": 10.0
+    },
+    "masking_costs": {
+      "普通": 5.0,
+      "其他": 10.0
     },
     "plating_costs": {
       "24um": 5.0,

@@ -32,6 +32,7 @@ class PricedField(NamedTuple):
 PRICED_FIELDS: tuple[PricedField, ...] = (
     PricedField("material", "material_price", "material_prices", "Material price must be a number"),
     PricedField("finish", "finish_price", "finish_costs", "Finish cost must be a number"),
+    PricedField("masking", "masking_price", "masking_costs", "Masking cost must be a number"),
     PricedField("plating", "plating_price", "plating_costs", "Plating cost must be a number"),
 )
 
@@ -43,7 +44,7 @@ def _defaults_map(key: str) -> dict[str, Any]:
 
 PRICED_DEFAULT_MAPS = {field.name: _defaults_map(field.map_key) for field in PRICED_FIELDS}
 SELECT_OPTIONS = {field.name: tuple(PRICED_DEFAULT_MAPS[field.name].keys()) for field in PRICED_FIELDS}
-PRICED_LABELS = {"material": "板材", "finish": "表面处理", "plating": "电铜"}
+PRICED_LABELS = {"material": "板材", "finish": "表面处理", "masking": "阻焊", "plating": "电铜"}
 
 def _to_float(name: str, default: float) -> float:
     v = request.form.get(name, str(default)).strip()

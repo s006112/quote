@@ -20,7 +20,7 @@
     </div>
     {% endif %}
 
-    <form id="quote-form" method="post" novalidate data-default-material="{{ defaults.material|e }}" data-default-finish="{{ defaults.finish|e }}" data-default-plating="{{ defaults.plating|e }}">
+    <form id="quote-form" method="post" novalidate data-default-material="{{ defaults.material|e }}" data-default-finish="{{ defaults.finish|e }}" data-default-masking="{{ defaults.masking|e }}" data-default-plating="{{ defaults.plating|e }}">
       <section>
         <h2>Board Basics</h2>
         <div class="grid">
@@ -70,11 +70,19 @@
             <span id="finish-price-label">{{ (values.finish or defaults.finish) }}</span>
             <input name="finish_price" id="finish-price-input" type="number" step="1" value="{{ finish_price_value }}">
           </label>
+          <label>{{ priced_labels.masking }}
+            <select name="masking" id="masking-select">
+              {% for mask in priced_options.masking %}
+              <option value="{{ mask }}" {% if values.masking==mask %}selected{% endif %}>{{ mask }}</option>
+              {% endfor %}
+            </select>
+          </label>
+          <label id="masking-price-field">
+            <span id="masking-price-label">{{ (values.masking or defaults.masking) }}</span>
+            <input name="masking_price" id="masking-price-input" type="number" step="1" value="{{ masking_price_value }}">
+          </label>
           <label>线路
             <input name="etching_cost" type="number" step="1" value="{{ values.etching_cost }}">
-          </label>
-          <label>阻焊
-            <input name="masking_cost" type="number" step="1" value="{{ values.masking_cost }}">
           </label>
           <label>文字丝印
             <input name="silkscreen_cost" type="number" step="1" value="{{ values.silkscreen_cost }}">
@@ -176,7 +184,7 @@
               </li>            
               <li>Process: {{ result.breakdown.process.total }}
                 <ul>
-                  <li>{{ values.plating or 'Plating' }}: {{ result.breakdown.treatment.components.plating }}</li>
+                  <li>电铜: {{ result.breakdown.process.components.plating }}</li>
                   <li>CNC 钻孔: {{ result.breakdown.process.components.cnc_pth }}</li>
                   <li>开料: {{ result.breakdown.process.components.cutting }}</li>
                   <li>锣板: {{ result.breakdown.process.components.routing }}</li>
