@@ -1,7 +1,7 @@
 from __future__ import annotations
 import json, os
 from dataclasses import fields
-from typing import Any, get_type_hints
+from typing import Any, NamedTuple, get_type_hints
 from flask import Flask, render_template, request, send_file
 
 from pricing import Inputs, Params, price_quote
@@ -19,9 +19,31 @@ INPUT_TYPE_HINTS = get_type_hints(Inputs)
 PARAM_TYPE_HINTS = get_type_hints(Params)
 
 INPUT_FIELD_NAMES = tuple(f.name for f in fields(Inputs))
-MATERIAL_OPTIONS = tuple(DEFAULTS["material_prices"].keys())
-FINISH_OPTIONS = tuple(DEFAULTS["finish_costs"].keys())
 SHIP_ZONE_OPTIONS = tuple(DEFAULTS["ship_zone_factor"].keys())
+
+
+class PricedField(NamedTuple):
+    name: str
+    price_field: str
+    map_key: str
+    error: str
+
+
+PRICED_FIELDS: tuple[PricedField, ...] = (
+    PricedField("material", "material_price", "material_prices", "Material price must be a number"),
+    PricedField("finish", "finish_price", "finish_costs", "Finish cost must be a number"),
+    PricedField("plating", "plating_price", "plating_costs", "Plating cost must be a number"),
+)
+
+
+def _defaults_map(key: str) -> dict[str, Any]:
+    value = DEFAULTS.get(key, {})
+    return value.copy() if isinstance(value, dict) else {}
+
+
+PRICED_DEFAULT_MAPS = {field.name: _defaults_map(field.map_key) for field in PRICED_FIELDS}
+SELECT_OPTIONS = {field.name: tuple(PRICED_DEFAULT_MAPS[field.name].keys()) for field in PRICED_FIELDS}
+PRICED_LABELS = {"material": "板材", "finish": "表面处理", "plating": "电铜"}
 
 def _to_float(name: str, default: float) -> float:
     v = request.form.get(name, str(default)).strip()
@@ -76,11 +98,13 @@ def _make_params() -> Params:
                 value = value.copy()
             payload[name] = value
 
-    selected_material = request.form.get("material", DEFAULTS.get("material"))
-    selected_finish = request.form.get("finish", DEFAULTS.get("finish"))
+    selected_choices = {
+        field.name: request.form.get(field.name, DEFAULTS.get(field.name))
+        for field in PRICED_FIELDS
+    }
 
-    def _apply_override(form_key: str, map_key: str, selected: str | None, err_msg: str) -> None:
-        raw = request.form.get(form_key)
+    def _apply_override(price_field: str, map_key: str, selected: str | None, err_msg: str) -> None:
+        raw = request.form.get(price_field)
         if raw in (None, ""):
             return
         try:
@@ -95,8 +119,9 @@ def _make_params() -> Params:
             payload[map_key] = price_map
         price_map[selected] = value
 
-    _apply_override("material_price", "material_prices", selected_material, "Material price must be a number")
-    _apply_override("finish_price", "finish_costs", selected_finish, "Finish cost must be a number")
+    for field in PRICED_FIELDS:
+        form_key = field.price_field
+        _apply_override(form_key, field.map_key, selected_choices.get(field.name), field.error)
     return Params(**payload)
 
 @app.route("/", methods=["GET", "POST"])
@@ -116,11 +141,10 @@ def index():
 
     error_msgs, result = [], None
 
-    selected_material = form_values.get("material", str(DEFAULTS.get("material", "")))
-    selected_finish = form_values.get("finish", str(DEFAULTS.get("finish", "")))
-
-    default_material_prices = DEFAULTS.get("material_prices", {})
-    default_finish_costs = DEFAULTS.get("finish_costs", {})
+    selected_choices = {
+        field.name: form_values.get(field.name, str(DEFAULTS.get(field.name, "")))
+        for field in PRICED_FIELDS
+    }
 
     def _form_price_value(field_name: str, defaults_map: dict[str, Any], selected: str) -> str:
         raw = request.form.get(field_name)
@@ -129,8 +153,12 @@ def index():
         default_value = defaults_map.get(selected)
         return "" if default_value in (None, "") else str(default_value)
 
-    material_price_value = _form_price_value("material_price", default_material_prices, selected_material)
-    finish_price_value = _form_price_value("finish_price", default_finish_costs, selected_finish)
+    price_value_kwargs = {}
+    for field in PRICED_FIELDS:
+        defaults_map = PRICED_DEFAULT_MAPS[field.name]
+        price_value_kwargs[f"{field.price_field}_value"] = _form_price_value(
+            field.price_field, defaults_map, selected_choices[field.name]
+        )
 
     if request.method == "POST":
         try:
@@ -144,20 +172,22 @@ def index():
         except Exception as e:
             error_msgs = [str(e)]
 
-    return render_template("index.html",
-                           defaults=form_defaults,
-                           values=form_values,
-                           params_defaults=param_defaults,
-                           params_values=param_values,
-                           material_options=MATERIAL_OPTIONS,
-                           finish_options=FINISH_OPTIONS,
-                           material_prices=default_material_prices,
-                           finish_costs=default_finish_costs,
-                           material_price_value=material_price_value,
-                           finish_price_value=finish_price_value,
-                           ship_zone_options=SHIP_ZONE_OPTIONS,
-                           error_msgs=error_msgs,
-                           result=result)
+    return render_template(
+        "index.html",
+        defaults=form_defaults,
+        values=form_values,
+        params_defaults=param_defaults,
+        params_values=param_values,
+        ship_zone_options=SHIP_ZONE_OPTIONS,
+        error_msgs=error_msgs,
+        result=result,
+        priced_fields=PRICED_FIELDS,
+        priced_labels=PRICED_LABELS,
+        priced_options=SELECT_OPTIONS,
+        priced_costs=PRICED_DEFAULT_MAPS,
+        priced_client_config=[{"name": field.name, "priceField": field.price_field} for field in PRICED_FIELDS],
+        **price_value_kwargs,
+    )
 
 
 @app.route("/lt.png")

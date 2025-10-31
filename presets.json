@@ -8,6 +8,7 @@
     "cnc_pth_holes": 125,
     "material": "KB6160A",
     "finish": "HASL",
+    "plating": "24um",
     "masking_cost": 12.0,
     "silkscreen_cost": 2.0,
     "etching_cost": 3.0,
@@ -33,6 +34,11 @@
       "HASL": 20.0,
       "ENIG": 30.0,
       "OSP": 10.0
+    },
+    "plating_costs": {
+      "24um": 5.0,
+      "29um": 10.0,
+      "35um": 15.0
     },
     "ship_zone_factor": {
       "ASIA": 1.0,

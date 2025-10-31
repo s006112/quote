@@ -20,7 +20,7 @@
     </div>
     {% endif %}
 
-    <form id="quote-form" method="post" novalidate data-default-material="{{ defaults.material|e }}" data-default-finish="{{ defaults.finish|e }}">
+    <form id="quote-form" method="post" novalidate data-default-material="{{ defaults.material|e }}" data-default-finish="{{ defaults.finish|e }}" data-default-plating="{{ defaults.plating|e }}">
       <section>
         <h2>Board Basics</h2>
         <div class="grid">
@@ -39,9 +39,9 @@
       <section>
         <h2>Materials</h2>
         <div class="grid">
-          <label>Material
+          <label>{{ priced_labels.material }}
             <select name="material" id="material-select">
-              {% for m in material_options %}
+              {% for m in priced_options.material %}
               <option value="{{ m }}" {% if values.material==m %}selected{% endif %}>{{ m }}</option>
               {% endfor %}
             </select>
@@ -59,9 +59,9 @@
       <section>
         <h2>Treatment</h2>
         <div class="grid">
-          <label>表面处理
+          <label>{{ priced_labels.finish }}
             <select name="finish" id="finish-select">
-              {% for f in finish_options %}
+              {% for f in priced_options.finish %}
               <option value="{{ f }}" {% if values.finish==f %}selected{% endif %}>{{ f }}</option>
               {% endfor %}
             </select>
@@ -85,6 +85,17 @@
       <section>
         <h2>Process</h2>
         <div class="grid">
+          <label>{{ priced_labels.plating }}
+            <select name="plating" id="plating-select">
+              {% for p in priced_options.plating %}
+              <option value="{{ p }}" {% if values.plating==p %}selected{% endif %}>{{ p }}</option>
+              {% endfor %}
+            </select>
+          </label>
+          <label id="plating-price-field">
+            <span id="plating-price-label">{{ (values.plating or defaults.plating) }}</span>
+            <input name="plating_price" id="plating-price-input" type="number" step="1" value="{{ plating_price_value }}">
+          </label>
           <label>CNC 钻孔
             <input name="cnc_pth_holes" type="number" step="1" min="0" value="{{ values.cnc_pth_holes }}">
           </label>
@@ -165,6 +176,7 @@
               </li>            
               <li>Process: {{ result.breakdown.process.total }}
                 <ul>
+                  <li>{{ values.plating or 'Plating' }}: {{ result.breakdown.treatment.components.plating }}</li>
                   <li>CNC 钻孔: {{ result.breakdown.process.components.cnc_pth }}</li>
                   <li>开料: {{ result.breakdown.process.components.cutting }}</li>
                   <li>锣板: {{ result.breakdown.process.components.routing }}</li>
@@ -203,15 +215,15 @@
   </aside>
 </div>
 
-<script id="material-prices-data" type="application/json">{{ material_prices|tojson }}</script>
-<script id="finish-costs-data" type="application/json">{{ finish_costs|tojson }}</script>
+<script id="priced-costs-data" type="application/json">{{ priced_costs|tojson }}</script>
+<script id="priced-fields-config" type="application/json">{{ priced_client_config|tojson }}</script>
 
 <script>
 (function () {
-  const materialDataEl = document.getElementById('material-prices-data');
-  const finishDataEl = document.getElementById('finish-costs-data');
-  const materialPrices = materialDataEl ? JSON.parse(materialDataEl.textContent || '{}') : {};
-  const finishCosts = finishDataEl ? JSON.parse(finishDataEl.textContent || '{}') : {};
+  const costsDataEl = document.getElementById('priced-costs-data');
+  const fieldsConfigEl = document.getElementById('priced-fields-config');
+  const pricedCosts = costsDataEl ? JSON.parse(costsDataEl.textContent || '{}') : {};
+  const pricedFields = fieldsConfigEl ? JSON.parse(fieldsConfigEl.textContent || '[]') : [];
 
   const form = document.getElementById('quote-form');
   const summary = document.getElementById('live-summary');
@@ -219,8 +231,12 @@
     return;
   }
 
-  const defaultMaterial = form.dataset.defaultMaterial || '';
-  const defaultFinish = form.dataset.defaultFinish || '';
+  const fallbackFor = (name) => {
+    const datasetKey = `default${name.charAt(0).toUpperCase()}${name.slice(1)}`;
+    return form.dataset[datasetKey] || '';
+  };
+
+  const toDash = (value) => value.replace(/_/g, '-');
 
   let controller;
 
@@ -246,20 +262,15 @@
     updateLabelAndDefault();
   };
 
-  attachPriceField({
-    selectId: 'material-select',
-    inputId: 'material-price-input',
-    labelId: 'material-price-label',
-    defaults: materialPrices,
-    fallback: defaultMaterial,
-  });
-
-  attachPriceField({
-    selectId: 'finish-select',
-    inputId: 'finish-price-input',
-    labelId: 'finish-price-label',
-    defaults: finishCosts,
-    fallback: defaultFinish,
+  pricedFields.forEach(({ name, priceField }) => {
+    const dashName = toDash(priceField);
+    attachPriceField({
+      selectId: `${name}-select`,
+      inputId: `${dashName}-input`,
+      labelId: `${dashName}-label`,
+      defaults: pricedCosts[name] || {},
+      fallback: fallbackFor(name),
+    });
   });
 
   const submitForm = () => {
