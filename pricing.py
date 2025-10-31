@@ -12,7 +12,6 @@ class Inputs:
     cnc_pth_holes: int
     material: str
     finish: str
-    film_cost: float
     etching_cost: float
     masking_cost: float
     silkscreen_cost: float
@@ -55,7 +54,6 @@ def price_quote(inp: Inputs, prm: Params) -> dict:
     # Material cost
     material_components = {
         "laminate": prm.material_prices.get(inp.material, 15.0),
-        "film": inp.film_cost,
     }
     material_cost = _component_total(material_components)
 

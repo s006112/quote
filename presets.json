@@ -9,7 +9,6 @@
     "cnc_pth_holes": 125,
     "material": "KB6160A",
     "finish": "HASL",
-    "film_cost": 12.0,
     "masking_cost": 12.0,
     "silkscreen_cost": 2.0,
     "etching_cost": 3.0,

@@ -20,7 +20,7 @@
     </div>
     {% endif %}
 
-    <form id="quote-form" method="post" novalidate>
+    <form id="quote-form" method="post" novalidate data-default-material="{{ defaults.material|e }}" data-default-finish="{{ defaults.finish|e }}">
       <section>
         <h2>Board Basics</h2>
         <div class="grid">
@@ -50,9 +50,6 @@
             <span id="material-price-label">{{ (values.material or defaults.material) }}</span>
             <input name="material_price" id="material-price-input" type="number" step="1" value="{{ material_price_value }}">
           </label>
-          <label>干膜
-            <input name="film_cost" type="number" step="1" value="{{ values.film_cost }}">
-          </label>
         </div>
       </section>
 
@@ -73,7 +70,7 @@
             <span id="finish-price-label">{{ (values.finish or defaults.finish) }}</span>
             <input name="finish_price" id="finish-price-input" type="number" step="1" value="{{ finish_price_value }}">
           </label>
-          <label>蚀刻
+          <label>线路
             <input name="etching_cost" type="number" step="1" value="{{ values.etching_cost }}">
           </label>
           <label>阻焊
@@ -164,13 +161,12 @@
               <li>Material: {{ result.breakdown.material.total }}
                 <ul>
                   <li>{{ values.material or 'Laminate' }}: {{ result.breakdown.material.components.laminate }}</li>
-                  <li>干膜: {{ result.breakdown.material.components.film }}</li>
                 </ul>
               </li>
               <li>Treatment: {{ result.breakdown.treatment.total }}
                 <ul>
                   <li>{{ values.finish or 'Finish' }}: {{ result.breakdown.treatment.components.finish }}</li>
-                  <li>蚀刻: {{ result.breakdown.treatment.components.etching }}</li>
+                  <li>线路: {{ result.breakdown.treatment.components.etching }}</li>
                   <li>阻焊: {{ result.breakdown.treatment.components.masking }}</li>
                   <li>文字丝印: {{ result.breakdown.treatment.components.silkscreen }}</li>
                 </ul>
@@ -218,18 +214,24 @@
   </aside>
 </div>
 
+<script id="material-prices-data" type="application/json">{{ material_prices|tojson }}</script>
+<script id="finish-costs-data" type="application/json">{{ finish_costs|tojson }}</script>
+
 <script>
 (function () {
-  const materialPrices = {{ material_prices|tojson }};
-  const finishCosts = {{ finish_costs|tojson }};
-  const defaultMaterial = {{ defaults.material|tojson }};
-  const defaultFinish = {{ defaults.finish|tojson }};
+  const materialDataEl = document.getElementById('material-prices-data');
+  const finishDataEl = document.getElementById('finish-costs-data');
+  const materialPrices = materialDataEl ? JSON.parse(materialDataEl.textContent || '{}') : {};
+  const finishCosts = finishDataEl ? JSON.parse(finishDataEl.textContent || '{}') : {};
 
   const form = document.getElementById('quote-form');
   const summary = document.getElementById('live-summary');
   if (!form || !summary) {
     return;
   }
+
+  const defaultMaterial = form.dataset.defaultMaterial || '';
+  const defaultFinish = form.dataset.defaultFinish || '';
 
   let controller;
 
