@@ -8,7 +8,7 @@ class Inputs:
     height: float
     layers: int
     panel_boards: int
-    direct_pth_holes: int
+    plating_cost: float
     cnc_pth_holes: int
     material: str
     finish: str
@@ -17,10 +17,8 @@ class Inputs:
     silkscreen_cost: float
     cutting_cost: float
     routing_cost: float
-    e_test_cost: float
-    v_cut_cost: float
-    fqc_cost: float
-    package_cost: float
+    stamping_cost: float
+    post_process_cost: float
     sewage_water: float
     sewage_electricity: float
     ship_zone: str
@@ -69,14 +67,12 @@ def price_quote(inp: Inputs, prm: Params) -> dict:
     # Process cost
     mr = prm.machine_rates
     process_components = {
-        "direct_pth": mr.get("direct_pth_per_hole", 0.0) * max(0, inp.direct_pth_holes) * boards_per_panel,
+        "plating": _non_negative(inp.plating_cost),
         "cnc_pth": mr.get("cnc_pth_per_hole", 0.0) * max(0, inp.cnc_pth_holes) * boards_per_panel,
         "cutting": _non_negative(inp.cutting_cost),
         "routing": _non_negative(inp.routing_cost),
-        "e_test": _non_negative(inp.e_test_cost),
-        "v_cut": _non_negative(inp.v_cut_cost),
-        "fqc": _non_negative(inp.fqc_cost),
-        "package": _non_negative(inp.package_cost),
+        "stamping": _non_negative(inp.stamping_cost),
+        "post_process": _non_negative(inp.post_process_cost),
     }
     process_cost = _component_total(process_components)
 

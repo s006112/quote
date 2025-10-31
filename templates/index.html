@@ -85,8 +85,8 @@
       <section>
         <h2>Process</h2>
         <div class="grid">
-          <label>直 PTH
-            <input name="direct_pth_holes" type="number" step="1" min="0" value="{{ values.direct_pth_holes }}">
+          <label>电铜
+            <input name="plating_cost" type="number" step="0.1" min="0" value="{{ values.plating_cost }}">
           </label>
           <label>CNC 钻孔
             <input name="cnc_pth_holes" type="number" step="1" min="0" value="{{ values.cnc_pth_holes }}">
@@ -94,20 +94,14 @@
           <label>开料
             <input name="cutting_cost" type="number" step="1" min="0" value="{{ values.cutting_cost }}">
           </label>
-          <label>锣板/冲板
+          <label>锣板
             <input name="routing_cost" type="number" step="1" min="0" value="{{ values.routing_cost }}">
           </label>
-          <label>E-test
-            <input name="e_test_cost" type="number" step="0.1" min="0" value="{{ values.e_test_cost }}">
+          <label>啤板
+            <input name="stamping_cost" type="number" step="0.1" min="0" value="{{ values.stamping_cost }}">
           </label>
-          <label>V-cut
-            <input name="v_cut_cost" type="number" step="0.1" min="0" value="{{ values.v_cut_cost }}">
-          </label>
-          <label>FQC
-            <input name="fqc_cost" type="number" step="0.1" min="0" value="{{ values.fqc_cost }}">
-          </label>
-          <label>包裝
-            <input name="package_cost" type="number" step="0.1" min="0" value="{{ values.package_cost }}">
+          <label>后工序
+            <input name="post_process_cost" type="number" step="0.1" min="0" value="{{ values.post_process_cost }}">
           </label>
         </div>
       </section>
@@ -173,14 +167,12 @@
               </li>            
               <li>Process: {{ result.breakdown.process.total }}
                 <ul>
-                  <li>直 PTH: {{ result.breakdown.process.components.direct_pth }}</li>
+                  <li>电铜: {{ result.breakdown.process.components.plating }}</li>
                   <li>CNC 钻孔: {{ result.breakdown.process.components.cnc_pth }}</li>
                   <li>开料: {{ result.breakdown.process.components.cutting }}</li>
-                  <li>锣板/冲板: {{ result.breakdown.process.components.routing }}</li>
-                  <li>E-test: {{ result.breakdown.process.components.e_test }}</li>
-                  <li>V-cut: {{ result.breakdown.process.components.v_cut }}</li>
-                  <li>FQC: {{ result.breakdown.process.components.fqc }}</li>
-                  <li>包装: {{ result.breakdown.process.components.package }}</li>
+                  <li>锣板: {{ result.breakdown.process.components.routing }}</li>
+                  <li>啤板: {{ result.breakdown.process.components.stamping }}</li>
+                  <li>后工序: {{ result.breakdown.process.components.post_process }}</li>
                 </ul>
               </li>
               <li>Sewage: {{ result.breakdown.sewage.total }}
