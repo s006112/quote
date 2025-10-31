@@ -16,7 +16,7 @@ class Inputs:
     masking: str
     silkscreen_cost: float
     cutting_cost: float
-    routing_cost: float
+    routing_length: float
     stamping_cost: float
     post_process_cost: float
     sewage_water: float
@@ -68,11 +68,13 @@ def price_quote(inp: Inputs, prm: Params) -> dict:
 
     # Process cost
     mr = prm.machine_rates
+    routing_length = _non_negative(inp.routing_length)
+    routing_rate = _non_negative(mr.get("routing_per_inch", 0.0))
     process_components = {
         "plating": prm.plating_costs.get(inp.plating, 0.0),
         "cnc_pth": mr.get("cnc_pth_per_hole", 0.0) * max(0, inp.cnc_pth_holes) * boards_per_panel,
         "cutting": _non_negative(inp.cutting_cost),
-        "routing": _non_negative(inp.routing_cost),
+        "routing": routing_length * routing_rate,
         "stamping": _non_negative(inp.stamping_cost),
         "post_process": _non_negative(inp.post_process_cost),
     }

@@ -13,7 +13,7 @@
     "silkscreen_cost": 2.0,
     "etching_cost": 3.0,
     "cutting_cost": 8.0,
-    "routing_cost": 18.0,
+    "routing_length": 100.0,
     "stamping_cost": 1.0,
     "post_process_cost": 1.0,
     "sewage_water": 30.0,
@@ -24,7 +24,8 @@
     "yield_pct": 98.0,
 
     "machine_rates": {
-      "cnc_pth_per_hole": 0.0034
+      "cnc_pth_per_hole": 0.0034,
+      "routing_per_inch": 0.01
     },
     "material_prices": {
       "KB6160A": 110,

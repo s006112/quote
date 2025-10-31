@@ -110,14 +110,14 @@
           <label>开料
             <input name="cutting_cost" type="number" step="1" min="0" value="{{ values.cutting_cost }}">
           </label>
-          <label>锣板
-            <input name="routing_cost" type="number" step="1" min="0" value="{{ values.routing_cost }}">
+          <label>锣程 (inch)
+            <input name="routing_length" type="number" step="1" min="0" value="{{ values.routing_length }}">
           </label>
           <label>啤板
-            <input name="stamping_cost" type="number" step="0.1" min="0" value="{{ values.stamping_cost }}">
+            <input name="stamping_cost" type="number" step="1" min="0" value="{{ values.stamping_cost }}">
           </label>
           <label>后工序
-            <input name="post_process_cost" type="number" step="0.1" min="0" value="{{ values.post_process_cost }}">
+            <input name="post_process_cost" type="number" step="1" min="0" value="{{ values.post_process_cost }}">
           </label>
         </div>
       </section>

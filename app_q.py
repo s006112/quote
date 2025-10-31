@@ -68,7 +68,7 @@ def _validate(d: dict[str, Any]) -> list[str]:
     if d["panel_boards"] < 1: errs.append("Boards per panel must be >= 1.")
     if d.get("cnc_pth_holes", 0) < 0: errs.append("CNC PTH holes must be >= 0.")
     if d.get("cutting_cost", 0.0) < 0: errs.append("Cutting cost must be >= 0.")
-    if d.get("routing_cost", 0.0) < 0: errs.append("Routing cost must be >= 0.")
+    if d.get("routing_length", 0.0) < 0: errs.append("Routing length must be >= 0.")
     if d.get("stamping_cost", 0.0) < 0: errs.append("Stamping cost must be >= 0.")
     if d.get("post_process_cost", 0.0) < 0: errs.append("Post Process cost must be >= 0.")
     return errs
