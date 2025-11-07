@@ -1,2 +1,6 @@
-Flask==3.0.3
+Flask==3.0.3 
+
+
+# sudo dpkg -i python3-pip_24.0+dfsg-1ubuntu1.3_all.deb python3-wheel_0.42.0-2_all.deb
+# pip install --no-index --find-links=wheelhouse -r requirements.txt.
 

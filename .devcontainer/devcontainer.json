@@ -3,5 +3,10 @@
   "image": "ubuntu:22.04-custom",
   "workspaceMount": "source=${localWorkspaceFolder},target=/workspaces/${localWorkspaceFolderBasename},type=bind",
   "workspaceFolder": "/workspaces/${localWorkspaceFolderBasename}",
-  "runArgs": ["--name=quote-dev"]
+  "runArgs": ["--name=quote-dev"],
+
+  "mounts": [
+    "source=${localEnv:HOME}/Desktop,target=/desktop,type=bind",
+  ]
+
 }
