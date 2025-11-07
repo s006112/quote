@@ -6,7 +6,7 @@
   "runArgs": ["--name=quote-dev"],
 
   "mounts": [
-    "source=${localEnv:HOME}/Desktop,target=/desktop,type=bind",
+    "source=${localEnv:HOME}/Desktop,target=/desktop,type=bind"
   ]
 
 }
