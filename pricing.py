@@ -8,6 +8,7 @@ class Inputs:
     height: float
     layers: int
     panel_boards: int
+    stack_qty: int
     pcb_thickness: str
     cnc_hole_dimension: str
     cnc_pth_holes: int
@@ -53,6 +54,7 @@ def _rounded(components: Mapping[str, float], digits: int) -> dict:
 def price_quote(inp: Inputs, prm: Params) -> dict:
 
     boards_per_panel = max(1, int(inp.panel_boards) if inp.panel_boards else 1)
+    stack_qty = max(1, int(inp.stack_qty) if inp.stack_qty else 1)
 
     # Material cost
     material_components = {
@@ -74,7 +76,9 @@ def price_quote(inp: Inputs, prm: Params) -> dict:
     cnc_components = {
         "cnc_pth": cnc_rate * max(0, inp.cnc_pth_holes) * boards_per_panel,
     }
-    cnc_cost = _component_total(cnc_components)
+    cnc_stack_cost = _component_total(cnc_components)
+    cnd_cost_panel = cnc_stack_cost / stack_qty if stack_qty else cnc_stack_cost
+    cnc_cost = cnd_cost_panel
 
     # Process cost
     routing_length = _non_negative(inp.routing_length)
@@ -123,6 +127,8 @@ def price_quote(inp: Inputs, prm: Params) -> dict:
         },
         "cnc": {
             "total": round(cnc_cost, 1),
+            "cnd_cost_panel": round(cnd_cost_panel, 1),
+            "stack_qty": stack_qty,
             "components": _rounded(cnc_components, 1),
         },
         "process": {

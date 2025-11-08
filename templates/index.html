@@ -113,6 +113,9 @@
           <label>钻孔数
             <input name="cnc_pth_holes" type="number" step="1" min="0" value="{{ values.cnc_pth_holes }}">
           </label>
+          <label>Stack Qty
+            <input name="stack_qty" type="number" step="1" min="1" value="{{ values.stack_qty }}">
+          </label>
         </div>
       </section>
 
@@ -208,7 +211,7 @@
                   <li>文字丝印: {{ result.breakdown.treatment.components.silkscreen }}</li>
                 </ul>
               </li>            
-              <li>CNC: {{ result.breakdown.cnc.total }}
+              <li>CNC/panel: {{ result.breakdown.cnc.cnd_cost_panel }}
                 <ul>
                   <li>CNC Cost: {{ result.breakdown.cnc.components.cnc_pth }}</li>
                 </ul>

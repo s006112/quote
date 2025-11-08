@@ -129,6 +129,7 @@ def _validate(d: dict[str, Any]) -> list[str]:
     if not (5 <= d["height"] <= 650): errs.append("Height must be 5–650 mm.")
     if not (1 <= d["layers"] <= 40): errs.append("Layers must be 1–40.")
     if d["panel_boards"] < 1: errs.append("Boards per panel must be >= 1.")
+    if d.get("stack_qty", 1) < 1: errs.append("Stack quantity must be >= 1.")
     if d.get("cnc_pth_holes", 0) < 0: errs.append("CNC PTH holes must be >= 0.")
     if d.get("cutting_cost", 0.0) < 0: errs.append("Cutting cost must be >= 0.")
     if d.get("routing_length", 0.0) < 0: errs.append("Routing length must be >= 0.")
