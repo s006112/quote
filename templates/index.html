@@ -93,6 +93,20 @@
       <section>
         <h2>CNC</h2>
         <div class="grid">
+          <label>PCB厚度
+            <select name="pcb_thickness">
+              {% for t in pcb_thickness_options %}
+              <option value="{{ t }}" {% if values.pcb_thickness==t %}selected{% endif %}>{{ t }}</option>
+              {% endfor %}
+            </select>
+          </label>
+          <label>孔径
+            <select name="cnc_hole_dimension">
+              {% for d in cnc_hole_dimension_options %}
+              <option value="{{ d }}" {% if values.cnc_hole_dimension==d %}selected{% endif %}>{{ d }}</option>
+              {% endfor %}
+            </select>
+          </label>
           <label>钻孔数
             <input name="cnc_pth_holes" type="number" step="1" min="0" value="{{ values.cnc_pth_holes }}">
           </label>

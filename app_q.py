@@ -48,7 +48,14 @@ INPUT_TYPE_HINTS = get_type_hints(Inputs)
 PARAM_TYPE_HINTS = get_type_hints(Params)
 
 INPUT_FIELD_NAMES = tuple(f.name for f in fields(Inputs))
-SHIP_ZONE_OPTIONS = tuple(DEFAULTS["ship_zone_factor"].keys())
+
+def _options_from_defaults(map_key: str) -> tuple[str, ...]:
+    mapping = DEFAULTS.get(map_key, {})
+    return tuple(mapping.keys()) if isinstance(mapping, dict) else tuple()
+
+SHIP_ZONE_OPTIONS = _options_from_defaults("ship_zone_factor")
+PCB_THICKNESS_OPTIONS = _options_from_defaults("pcb_thickness_options")
+CNC_HOLE_DIMENSION_OPTIONS = _options_from_defaults("cnc_hole_dimension_options")
 
 
 class PricedField(NamedTuple):
@@ -92,8 +99,10 @@ def _persist_defaults(inputs: Inputs, params: Params) -> None:
     DEFAULTS.update(updated_defaults)
     PRESETS["defaults"] = DEFAULTS
 
-    global SHIP_ZONE_OPTIONS
-    SHIP_ZONE_OPTIONS = tuple(DEFAULTS.get("ship_zone_factor", {}).keys())
+    global SHIP_ZONE_OPTIONS, PCB_THICKNESS_OPTIONS, CNC_HOLE_DIMENSION_OPTIONS
+    SHIP_ZONE_OPTIONS = _options_from_defaults("ship_zone_factor")
+    PCB_THICKNESS_OPTIONS = _options_from_defaults("pcb_thickness_options")
+    CNC_HOLE_DIMENSION_OPTIONS = _options_from_defaults("cnc_hole_dimension_options")
 
     for field in PRICED_FIELDS:
         defaults_map = _defaults_map(field.map_key)
@@ -236,6 +245,8 @@ def index():
         params_defaults=param_defaults,
         params_values=param_values,
         ship_zone_options=SHIP_ZONE_OPTIONS,
+        pcb_thickness_options=PCB_THICKNESS_OPTIONS,
+        cnc_hole_dimension_options=CNC_HOLE_DIMENSION_OPTIONS,
         error_msgs=error_msgs,
         result=result,
         priced_fields=PRICED_FIELDS,

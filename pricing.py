@@ -8,6 +8,8 @@ class Inputs:
     height: float
     layers: int
     panel_boards: int
+    pcb_thickness: str
+    cnc_hole_dimension: str
     cnc_pth_holes: int
     material: str
     finish: str

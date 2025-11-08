@@ -22,8 +22,18 @@
     "margin_pct": 5.0,
     "overheads_pct": 10.0,
     "yield_pct": 98.0,
-    "pcb_thickness": 1.2,
-    "cnc_hole_dimension": 0.4,
+    "pcb_thickness": "1.2 mm",
+    "pcb_thickness_options": {
+      "1.0 mm": 1.0,
+      "1.2 mm": 1.2,
+      "1.6 mm": 1.6
+    },
+    "cnc_hole_dimension": "0.4~0.45 mm",
+    "cnc_hole_dimension_options": {
+      "0.3~0.35 mm": 0.35,
+      "0.4~0.45 mm": 0.45,
+      "0.5~0.55 mm": 0.55
+    },
     "machine_rates": {
       "cnc_pth_per_hole": 0.0034,
       "routing_per_inch": 0.01
