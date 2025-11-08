@@ -5,7 +5,7 @@
     "height": 60.0,
     "layers": 2,
     "panel_boards": 240,
-    "stack_qty": 1,
+    "stack_qty": 3,
     "cnc_pth_holes": 125,
     "material": "KB6160A",
     "finish": "HASL",
@@ -60,6 +60,23 @@
       "EU": 1.05,
       "NA": 1.08,
       "OTHER": 1.1
+    },
+    "stack_qty_map": {
+      "1.6 mm": {
+        "<0.35 mm": 2,
+        "<0.45 mm": 3,
+        "<0.55 mm": 3
+      },
+      "1.2 mm": {
+        "<0.35 mm": 3,
+        "<0.45 mm": 3,
+        "<0.55 mm": 4
+      },
+      "1.0 mm": {
+        "<0.35 mm": 3,
+        "<0.45 mm": 4,
+        "<0.55 mm": 5
+      }
     }
   }
 }

@@ -94,14 +94,14 @@
         <h2>CNC</h2>
         <div class="grid">
           <label>PCB厚度
-            <select name="pcb_thickness">
+            <select name="pcb_thickness" id="pcb-thickness-select">
               {% for t in pcb_thickness_options %}
               <option value="{{ t }}" {% if values.pcb_thickness==t %}selected{% endif %}>{{ t }}</option>
               {% endfor %}
             </select>
           </label>
           <label>孔径
-            <select name="cnc_hole_dimension">
+            <select name="cnc_hole_dimension" id="cnc-hole-select">
               {% for d in cnc_hole_dimension_options %}
               <option value="{{ d }}" {% if values.cnc_hole_dimension==d %}selected{% endif %}>{{ d }}</option>
               {% endfor %}
@@ -114,7 +114,7 @@
             <input name="cnc_pth_holes" type="number" step="1" min="0" value="{{ values.cnc_pth_holes }}">
           </label>
           <label>Stack Qty
-            <input name="stack_qty" type="number" step="1" min="1" value="{{ values.stack_qty }}">
+            <input name="stack_qty" id="stack-qty-input" type="number" step="1" min="1" value="{{ values.stack_qty }}">
           </label>
         </div>
       </section>
@@ -258,6 +258,7 @@
 
 <script id="priced-costs-data" type="application/json">{{ priced_costs|tojson }}</script>
 <script id="priced-fields-config" type="application/json">{{ priced_client_config|tojson }}</script>
+<script id="stack-qty-map" type="application/json">{{ stack_qty_map|tojson }}</script>
 
 <script>
 (function () {
@@ -265,6 +266,8 @@
   const fieldsConfigEl = document.getElementById('priced-fields-config');
   const pricedCosts = costsDataEl ? JSON.parse(costsDataEl.textContent || '{}') : {};
   const pricedFields = fieldsConfigEl ? JSON.parse(fieldsConfigEl.textContent || '[]') : [];
+  const stackQtyMapEl = document.getElementById('stack-qty-map');
+  const stackQtyMap = stackQtyMapEl ? JSON.parse(stackQtyMapEl.textContent || '{}') : {};
 
   const form = document.getElementById('quote-form');
   const summary = document.getElementById('live-summary');
@@ -348,6 +351,29 @@
         console.error('Failed to refresh summary', error);
       });
   };
+
+  const updateStackQty = (() => {
+    const thicknessSelect = document.getElementById('pcb-thickness-select');
+    const drillSelect = document.getElementById('cnc-hole-select');
+    const stackQtyInput = document.getElementById('stack-qty-input');
+    if (!thicknessSelect || !drillSelect || !stackQtyInput) {
+      return () => {};
+    }
+    const lookup = (thickness, drill) => {
+      const byThickness = stackQtyMap[thickness];
+      return byThickness ? byThickness[drill] : undefined;
+    };
+    const apply = () => {
+      const derived = lookup(thicknessSelect.value, drillSelect.value);
+      if (derived) {
+        stackQtyInput.value = derived;
+      }
+    };
+    thicknessSelect.addEventListener('change', apply);
+    drillSelect.addEventListener('change', apply);
+    apply();
+    return apply;
+  })();
 
   const debouncedSubmit = (() => {
     let timeoutId;

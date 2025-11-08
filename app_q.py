@@ -49,6 +49,21 @@ PARAM_TYPE_HINTS = get_type_hints(Params)
 
 INPUT_FIELD_NAMES = tuple(f.name for f in fields(Inputs))
 
+def _stack_qty_lookup(thickness: str | None, hole_dimension: str | None) -> int | None:
+    mapping = DEFAULTS.get("stack_qty_map")
+    if not isinstance(mapping, dict):
+        return None
+    thickness_map = mapping.get(thickness)
+    if not isinstance(thickness_map, dict):
+        return None
+    value = thickness_map.get(hole_dimension)
+    if value is None:
+        return None
+    try:
+        return max(1, int(value))
+    except (TypeError, ValueError):
+        return None
+
 def _options_from_defaults(map_key: str) -> tuple[str, ...]:
     mapping = DEFAULTS.get(map_key, {})
     return tuple(mapping.keys()) if isinstance(mapping, dict) else tuple()
@@ -147,6 +162,14 @@ def _make_inputs() -> Inputs:
             payload[name] = _to_float(name, float(default))
         else:
             payload[name] = request.form.get(name, str(default))
+    derived_stack_qty = _stack_qty_lookup(
+        payload.get("pcb_thickness"),
+        payload.get("cnc_hole_dimension"),
+    )
+    if derived_stack_qty is not None:
+        payload["stack_qty"] = derived_stack_qty
+    else:
+        payload["stack_qty"] = max(1, int(payload.get("stack_qty", 1)))
     return Inputs(**payload)
 
 def _make_params() -> Params:
@@ -192,10 +215,12 @@ def _make_params() -> Params:
 @app.route("/", methods=["GET", "POST"])
 def index():
     error_msgs, result = [], None
+    resolved_inputs: Inputs | None = None
 
     if request.method == "POST":
         try:
             inp = _make_inputs()
+            resolved_inputs = inp
             errs = _validate(vars(inp))
             if errs:
                 error_msgs = errs
@@ -218,6 +243,8 @@ def index():
         if name in DEFAULTS
     }
     form_values = {k: request.form.get(k, str(v)) for k, v in form_defaults.items()}
+    if resolved_inputs is not None:
+        form_values["stack_qty"] = str(resolved_inputs.stack_qty)
     param_values = {k: request.form.get(k, str(v)) for k, v in param_defaults.items()}
 
     selected_choices = {
@@ -255,6 +282,7 @@ def index():
         priced_options=SELECT_OPTIONS,
         priced_costs=PRICED_DEFAULT_MAPS,
         priced_client_config=[{"name": field.name, "priceField": field.price_field} for field in PRICED_FIELDS],
+        stack_qty_map=DEFAULTS.get("stack_qty_map", {}),
         **price_value_kwargs,
     )
 
