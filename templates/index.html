@@ -91,6 +91,15 @@
       </section>
 
       <section>
+        <h2>CNC</h2>
+        <div class="grid">
+          <label>钻孔数
+            <input name="cnc_pth_holes" type="number" step="1" min="0" value="{{ values.cnc_pth_holes }}">
+          </label>
+        </div>
+      </section>
+
+      <section>
         <h2>Process</h2>
         <div class="grid">
           <label>{{ priced_labels.plating }}
@@ -103,9 +112,6 @@
           <label id="plating-price-field">
             <span id="plating-price-label">{{ (values.plating or defaults.plating) }}</span>
             <input name="plating_price" id="plating-price-input" type="number" step="1" value="{{ plating_price_value }}">
-          </label>
-          <label>CNC 钻孔
-            <input name="cnc_pth_holes" type="number" step="1" min="0" value="{{ values.cnc_pth_holes }}">
           </label>
           <label>开料
             <input name="cutting_cost" type="number" step="1" min="0" value="{{ values.cutting_cost }}">
@@ -182,10 +188,14 @@
                   <li>文字丝印: {{ result.breakdown.treatment.components.silkscreen }}</li>
                 </ul>
               </li>            
+              <li>CNC: {{ result.breakdown.cnc.total }}
+                <ul>
+                  <li>CNC Cost: {{ result.breakdown.cnc.components.cnc_pth }}</li>
+                </ul>
+              </li>
               <li>Process: {{ result.breakdown.process.total }}
                 <ul>
                   <li>电铜: {{ result.breakdown.process.components.plating }}</li>
-                  <li>CNC 钻孔: {{ result.breakdown.process.components.cnc_pth }}</li>
                   <li>开料: {{ result.breakdown.process.components.cutting }}</li>
                   <li>锣板: {{ result.breakdown.process.components.routing }}</li>
                   <li>啤板: {{ result.breakdown.process.components.stamping }}</li>

@@ -22,6 +22,8 @@
     "margin_pct": 5.0,
     "overheads_pct": 10.0,
     "yield_pct": 98.0,
+    "pcb_thickness": 1.2,
+    "cnc_hole_dimension": 0.4,
     "machine_rates": {
       "cnc_pth_per_hole": 0.0034,
       "routing_per_inch": 0.01

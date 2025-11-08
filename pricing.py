@@ -66,13 +66,19 @@ def price_quote(inp: Inputs, prm: Params) -> dict:
     }
     treatment_cost = _component_total(treatment_components)
 
-    # Process cost
+    # CNC drilling cost
     mr = prm.machine_rates
+    cnc_rate = _non_negative(mr.get("cnc_pth_per_hole", 0.0))
+    cnc_components = {
+        "cnc_pth": cnc_rate * max(0, inp.cnc_pth_holes) * boards_per_panel,
+    }
+    cnc_cost = _component_total(cnc_components)
+
+    # Process cost
     routing_length = _non_negative(inp.routing_length)
     routing_rate = _non_negative(mr.get("routing_per_inch", 0.0))
     process_components = {
         "plating": prm.plating_costs.get(inp.plating, 0.0),
-        "cnc_pth": mr.get("cnc_pth_per_hole", 0.0) * max(0, inp.cnc_pth_holes) * boards_per_panel,
         "cutting": _non_negative(inp.cutting_cost),
         "routing": routing_length * routing_rate,
         "stamping": _non_negative(inp.stamping_cost),
@@ -87,7 +93,7 @@ def price_quote(inp: Inputs, prm: Params) -> dict:
     }
     sewage_cost = _component_total(sewage_components)
 
-    base = material_cost + treatment_cost + process_cost + sewage_cost
+    base = material_cost + treatment_cost + cnc_cost + process_cost + sewage_cost
 
     # Other cost
     oh = base * _non_negative(prm.overheads_pct) / 100.0
@@ -112,6 +118,10 @@ def price_quote(inp: Inputs, prm: Params) -> dict:
         "treatment": {
             "total": round(treatment_cost, 2),
             "components": _rounded(treatment_components, 2),
+        },
+        "cnc": {
+            "total": round(cnc_cost, 1),
+            "components": _rounded(cnc_components, 1),
         },
         "process": {
             "total": round(process_cost, 1),
