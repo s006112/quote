@@ -27,7 +27,6 @@ class Inputs:
 
 @dataclass
 class Params:
-    machine_rates: dict
     material_prices: dict
     finish_costs: dict
     masking_costs: dict
@@ -36,6 +35,8 @@ class Params:
     yield_pct: float
     margin_pct: float
     ship_zone_factor: dict
+    cnc_pth_per_hole: float
+    routing_per_inch: float
 
 def _non_negative(value: float) -> float:
     return max(value, 0.0)
@@ -69,8 +70,7 @@ def price_quote(inp: Inputs, prm: Params) -> dict:
     treatment_cost = _component_total(treatment_components)
 
     # CNC drilling cost
-    mr = prm.machine_rates
-    cnc_rate = _non_negative(mr.get("cnc_pth_per_hole", 0.0))
+    cnc_rate = _non_negative(prm.cnc_pth_per_hole)
     cnc_components = {
         "cnc_pth": cnc_rate * max(0, inp.cnc_pth_holes) * boards_per_panel,
     }
@@ -78,7 +78,7 @@ def price_quote(inp: Inputs, prm: Params) -> dict:
 
     # Process cost
     routing_length = _non_negative(inp.routing_length)
-    routing_rate = _non_negative(mr.get("routing_per_inch", 0.0))
+    routing_rate = _non_negative(prm.routing_per_inch)
     process_components = {
         "plating": prm.plating_costs.get(inp.plating, 0.0),
         "cutting": _non_negative(inp.cutting_cost),
