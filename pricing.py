@@ -74,7 +74,7 @@ def price_quote(inp: Inputs, prm: Params) -> dict:
     # CNC drilling cost
     cnc_rate = _non_negative(prm.cnc_pth_per_hole)
     cnc_components = {
-        "cnc_pth": cnc_rate * max(0, inp.cnc_pth_holes) * boards_per_panel,
+        "cnc_pth": cnc_rate * max(0, inp.cnc_pth_holes) ,
     }
     cnc_stack_cost = _component_total(cnc_components)
     cnd_cost_panel = cnc_stack_cost / stack_qty if stack_qty else cnc_stack_cost
