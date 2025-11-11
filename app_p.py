@@ -1,17 +1,3 @@
-#!/usr/bin/env python3
-"""
-Web UI for brute-force PCB panelization.
-
-- Single file. Standard library only.
-- Edit all parameters in the form. Defaults pre-filled.
-- Press "Calculate" to enumerate ALL feasible layouts.
-- Results sorted by utilization (desc). Primary objective and tie-breakers shown.
-
-Run:
-  python webui_pcb_panelizer.py
-Open:
-  http://127.0.0.1:8000
-"""
 import os
 from wsgiref.simple_server import make_server
 from urllib.parse import parse_qs
@@ -399,7 +385,7 @@ def page(cfg: Dict[str, float], rows: List[Dict]) -> str:
     h.append("<h1>PCB Panelizer by LT</h1>")
 #    h.append("<p class='note'>Edit parameters. Press Calculate. Results ranked by PCBs per Jumbo.</p>")
     # Form
-    h.append("<form method='GET'>")
+    h.append("<form method='GET' id='panelizer-form'>")
 
     h.append("<div class='fieldset-row'>")
 
@@ -465,7 +451,6 @@ def page(cfg: Dict[str, float], rows: List[Dict]) -> str:
     # Controls
     h.append("<div class='controls'>")
     h.append(input_field("LIMIT", "Max rows", int(cfg.get("limit", 10)), step="1"))
-    h.append("<button type='submit'>Calculate</button>")
     if max_pcbs_jumbo is not None:
         h.append("<span class='badge'>Highest PCBs per Jumbo shown with ★</span>")
     h.append("</div>")
@@ -522,6 +507,14 @@ def page(cfg: Dict[str, float], rows: List[Dict]) -> str:
     else:
         h.append("<p class='small'>No feasible layouts under current constraints.</p>")
 
+    h.append("<script>(function(){const f=document.getElementById('panelizer-form');"
+             "if(!f)return;let pending=false;"
+             "const submit=()=>{pending=false;"
+             "if(typeof f.requestSubmit==='function'){f.requestSubmit();}else{f.submit();}};"
+             "const queue=window.requestAnimationFrame?window.requestAnimationFrame.bind(window):function(cb){return setTimeout(cb,0);};"
+             "const schedule=()=>{if(pending)return;pending=true;queue(submit);};"
+             "f.addEventListener('input',schedule);"
+             "f.addEventListener('change',schedule);})();</script>")
     h.append("</body></html>")
     return "".join(h)
 
