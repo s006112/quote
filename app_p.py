@@ -4,52 +4,72 @@ from urllib.parse import parse_qs
 from html import escape
 import json
 import math
-from typing import Dict, Tuple, List, Optional
+from typing import Any, Dict, Tuple, List, Optional
 
-# ------------------------------ Core Solver ----------------------------------
+BASE_DIR = os.path.dirname(__file__)
+PRESETS_FILE = os.path.join(BASE_DIR, "presets.json")
+PRESETS_LOCAL_FILE = os.path.join(BASE_DIR, "presets.local.json")
 
-PANEL_OPTIONS: Dict[str, Tuple[float, float]] = {
-    "A1": (520.5, 622.5),    "A2": (415.0, 622.5),    "A3": (347.0, 622.5),    "A4": (520.5, 415.0),
-    "B1": (546.0, 622.5),    "B2": (415.0, 622.5),    "B3": (415.0, 546.0),    "B4": (364.0, 622.5),
-    "C1": (546.0, 647.5),    "C2": (431.6, 647.5),    "C3": (431.6, 546.0),    "C4": (364.0, 647.5),
-    "D1": (520.5, 694.0),    "D2": (415.0, 694.0),    "D3": (416.4, 622.5),    "D4": (365.0, 622.5),
-    "E1": (546.0, 728.0),    "E2": (431.5, 728.0),    "E3": (436.8, 647.5),    "E4": (384.1, 647.5),
-}
 
-JUMBO_MULTIPLIER: Dict[str, int] = {
-    "A1": 4,    "A2": 5,    "A3": 6,    "A4": 6,
-    "B1": 4,    "B2": 5,    "B3": 6,    "B4": 6,
-    "C1": 4,    "C2": 5,    "C3": 6,    "C4": 6,
-    "D1": 7,    "D2": 9,    "D3": 10,    "D4": 11,
-    "E1": 7,    "E2": 9,    "E3": 10,    "E4": 11,
-}
+def _load_json_file(path: str) -> Dict[str, Any]:
+    try:
+        with open(path, "r", encoding="utf-8") as handle:
+            return json.load(handle)
+    except FileNotFoundError:
+        return {}
+
+
+_BASE_PRESETS = _load_json_file(PRESETS_FILE)
+_LOCAL_PRESETS = _load_json_file(PRESETS_LOCAL_FILE)
+
+
+def _merged_section(key: str) -> Dict[str, Any]:
+    merged: Dict[str, Any] = {}
+    base_val = _BASE_PRESETS.get(key)
+    if isinstance(base_val, dict):
+        merged.update(base_val)
+    local_val = _LOCAL_PRESETS.get(key)
+    if isinstance(local_val, dict):
+        merged.update(local_val)
+    return merged
+
+
+def _load_panel_options() -> Dict[str, Tuple[float, float]]:
+    raw = _merged_section("panelizer_panel_options")
+    if not raw:
+        raise RuntimeError("panelizer_panel_options is missing from presets.")
+    options: Dict[str, Tuple[float, float]] = {}
+    for style, dims in raw.items():
+        if not isinstance(dims, (list, tuple)) or len(dims) != 2:
+            raise ValueError(f"Invalid panel dimensions for {style!r}")
+        options[style] = (float(dims[0]), float(dims[1]))
+    return options
+
+
+def _load_jumbo_multiplier() -> Dict[str, int]:
+    raw = _merged_section("panelizer_jumbo_multiplier")
+    if not raw:
+        raise RuntimeError("panelizer_jumbo_multiplier is missing from presets.")
+    multipliers: Dict[str, int] = {}
+    for style, value in raw.items():
+        multipliers[style] = int(value)
+    return multipliers
+
+
+def _load_panelizer_defaults() -> Dict[str, Any]:
+    defaults = _merged_section("panelizer_defaults")
+    if not defaults:
+        raise RuntimeError("panelizer_defaults is missing from presets.")
+    return defaults
+
+
+PANEL_OPTIONS: Dict[str, Tuple[float, float]] = _load_panel_options()
+JUMBO_MULTIPLIER: Dict[str, int] = _load_jumbo_multiplier()
+
 
 def default_config() -> Dict[str, float]:
-    return {
-        "customer_board_width_max": 350.0,
-        "customer_board_length_max": 400.0,
-        "customer_board_width_min": 80.0,
-        "customer_board_length_min": 80.0,
-        "single_pcb_width_max": 52.0,
-        "single_pcb_length_max": 76.2,
-        "panel_edge_margin_w": 5.0,
-        "panel_edge_margin_l": 5.0,
-        "board_edge_margin_w": 5.0,
-        "board_edge_margin_l": 0.0,
-        "inter_board_gap_w": 2.0,
-        "inter_board_gap_l": 2.0,
-        "inter_single_gap_w": 0.0,
-        "inter_single_gap_l": 0.0,
-        "allow_rotate_board": True,
-        "allow_rotate_single_pcb": True,
-        "kerf_allowance": 0.0,
-        "limit": 20,  # UI-only: max rows to display
-        "include_set_A": True,
-        "include_set_B": True,
-        "include_set_C": True,
-        "include_set_D": False,
-        "include_set_E": False,
-    }
+    defaults = _load_panelizer_defaults()
+    return dict(defaults)
 
 def _almost_le(a: float, b: float, eps: float = 1e-9) -> bool:
     return a <= b + eps
