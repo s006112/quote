@@ -44,6 +44,18 @@ PRESETS_BASE = _load_json(BASE_PRESETS_PATH, required=True)
 PRESETS_OVERRIDE = _load_json(LOCAL_PRESETS_PATH)
 PRESETS = _deep_merge(PRESETS_BASE, PRESETS_OVERRIDE)
 DEFAULTS = PRESETS["defaults"]
+_panel_defaults = PRESETS.get("panelizer_defaults")
+if isinstance(_panel_defaults, dict):
+    PANELIZER_DEFAULTS = _panel_defaults.copy()
+else:
+    PANELIZER_DEFAULTS = {}
+PANELIZER_SET_OPTIONS = (
+    {"field": "include_set_A", "input": "SET_A", "label": "A: 1245 x 1041"},
+    {"field": "include_set_B", "input": "SET_B", "label": "B: 1245 x 1092"},
+    {"field": "include_set_C", "input": "SET_C", "label": "C: 1295 x 1092"},
+    {"field": "include_set_D", "input": "SET_D", "label": "D: 1245 x 2082"},
+    {"field": "include_set_E", "input": "SET_E", "label": "E: 1295 x 2184"},
+)
 INPUT_TYPE_HINTS = get_type_hints(Inputs)
 PARAM_TYPE_HINTS = get_type_hints(Params)
 
@@ -278,6 +290,8 @@ def index():
         priced_costs=PRICED_DEFAULT_MAPS,
         priced_client_config=[{"name": field.name, "priceField": field.price_field} for field in PRICED_FIELDS],
         stack_qty_map=DEFAULTS.get("stack_qty_map", {}),
+        panelizer_defaults=PANELIZER_DEFAULTS,
+        panelizer_set_options=PANELIZER_SET_OPTIONS,
         **price_value_kwargs,
     )
 

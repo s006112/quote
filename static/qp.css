@@ -29,6 +29,12 @@ label select {
   max-width: 100%;
 }
 
+label input[type="checkbox"],
+label input[type="radio"] {
+  width: auto;
+  padding: 0;
+}
+
 input,
 select {
   font: inherit;
@@ -49,7 +55,8 @@ form section {
   padding: 0;
 }
 
-form section h2 {
+form section h2,
+form section h3 {
   margin: 0;
   align-self: start;
 }

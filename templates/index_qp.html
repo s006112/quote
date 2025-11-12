@@ -179,6 +179,112 @@
       </section>
 
     </form>
+
+    <h1>PCB Panelizer</h1>
+
+    {% set pd = panelizer_defaults or {} %}
+    <form id="panelizer-form" method="get" novalidate>
+      <section>
+        <h2>Single PCB</h2>
+        <div class="grid">
+          <label>Single width (SPW, mm)
+            <input type="number" step="0.1" name="SPW" id="SPW" value="{{ pd.single_pcb_width_max|default('', true) }}">
+          </label>
+          <label>Single length (SPL, mm)
+            <input type="number" step="0.1" name="SPL" id="SPL" value="{{ pd.single_pcb_length_max|default('', true) }}">
+          </label>
+          <label>Allow rotate single
+            <input type="checkbox" name="ARS" id="ARS" {% if pd.allow_rotate_single_pcb|default(false) %}checked{% endif %}>
+          </label>
+        </div>
+      </section>
+
+      <section>
+        <h2>Working Panel</h2>
+        <div class="grid">
+          <label>Panel edge width (EW_w, mm)
+            <input type="number" step="0.1" name="EW_w" id="EW_w" value="{{ pd.panel_edge_margin_w|default('', true) }}">
+          </label>
+          <label>Panel edge length (EW_l, mm)
+            <input type="number" step="0.1" name="EW_l" id="EW_l" value="{{ pd.panel_edge_margin_l|default('', true) }}">
+          </label>
+        </div>
+        <div>
+          <p>Panel sets</p>
+          <div class="grid">
+            {% for option in panelizer_set_options %}
+            <label>{{ option.label }}
+              <input type="checkbox" name="{{ option.input }}" id="{{ option.input }}" {% if pd.get(option.field) %}checked{% endif %}>
+            </label>
+            {% endfor %}
+          </div>
+        </div>
+      </section>
+
+      <section>
+        <h2>Board Edge Margins</h2>
+        <div class="grid">
+          <label>Board edge margin width (BMW, mm)
+            <input type="number" step="0.1" name="BMW" id="BMW" value="{{ pd.board_edge_margin_w|default('', true) }}">
+          </label>
+          <label>Board edge margin length (BML, mm)
+            <input type="number" step="0.1" name="BML" id="BML" value="{{ pd.board_edge_margin_l|default('', true) }}">
+          </label>
+        </div>
+      </section>
+
+      <section>
+        <h2>Customer Board Limits</h2>
+        <div class="grid">
+          <label>Max board width (CBW, mm)
+            <input type="number" step="0.1" name="CBW" id="CBW" value="{{ pd.customer_board_width_max|default('', true) }}">
+          </label>
+          <label>Max board length (CBL, mm)
+            <input type="number" step="0.1" name="CBL" id="CBL" value="{{ pd.customer_board_length_max|default('', true) }}">
+          </label>
+          <label>Min board width (CBWM, mm)
+            <input type="number" step="0.1" name="CBWM" id="CBWM" value="{{ pd.customer_board_width_min|default('', true) }}">
+          </label>
+          <label>Min board length (CBLM, mm)
+            <input type="number" step="0.1" name="CBLM" id="CBLM" value="{{ pd.customer_board_length_min|default('', true) }}">
+          </label>
+          <label>Allow rotate board
+            <input type="checkbox" name="ARB" id="ARB" {% if pd.allow_rotate_board|default(false) %}checked{% endif %}>
+          </label>
+        </div>
+      </section>
+
+      <section>
+        <h2>Gaps</h2>
+        <div class="grid">
+          <label>Inter-board gap W (CW, mm)
+            <input type="number" step="0.1" name="CW" id="CW" value="{{ pd.inter_board_gap_w|default('', true) }}">
+          </label>
+          <label>Inter-board gap L (CL, mm)
+            <input type="number" step="0.1" name="CL" id="CL" value="{{ pd.inter_board_gap_l|default('', true) }}">
+          </label>
+          <label>Inter-single gap W (SW, mm)
+            <input type="number" step="0.1" name="SW" id="SW" value="{{ pd.inter_single_gap_w|default('', true) }}">
+          </label>
+          <label>Inter-single gap L (SL, mm)
+            <input type="number" step="0.1" name="SL" id="SL" value="{{ pd.inter_single_gap_l|default('', true) }}">
+          </label>
+          <label>Kerf (adds to all gaps, mm)
+            <input type="number" step="0.1" name="KERF" id="KERF" value="{{ pd.kerf_allowance|default('', true) }}">
+          </label>
+        </div>
+      </section>
+
+      <section class="form-controls">
+        <h2>Display</h2>
+        <div class="grid">
+          <label>Max rows
+            <input type="number" step="1" name="LIMIT" id="LIMIT" value="{{ pd.limit|default('', true) }}">
+          </label>
+          <p>Highest PCBs per Jumbo shown with ★</p>
+        </div>
+      </section>
+    </form>
   </div>
 
   <aside class="page-summary">
