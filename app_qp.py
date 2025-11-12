@@ -166,23 +166,21 @@ def _defaults_map(key: str) -> dict[str, Any]:
 PRICED_DEFAULT_MAPS = {field.name: _defaults_map(field.map_key) for field in PRICED_FIELDS}
 SELECT_OPTIONS = {field.name: tuple(PRICED_DEFAULT_MAPS[field.name].keys()) for field in PRICED_FIELDS}
 
-def _refresh_priced_defaults() -> None:
-    global PCB_THICKNESS_OPTIONS, CNC_HOLE_DIMENSION_OPTIONS
-    PCB_THICKNESS_OPTIONS = _options_from_defaults("pcb_thickness_options")
-    CNC_HOLE_DIMENSION_OPTIONS = _options_from_defaults("cnc_hole_dimension_options")
-    for field in PRICED_FIELDS:
-        defaults_map = _defaults_map(field.map_key)
-        PRICED_DEFAULT_MAPS[field.name] = defaults_map
-        SELECT_OPTIONS[field.name] = tuple(defaults_map.keys())
+def _persist_defaults(
+    inputs: Inputs,
+    params: Params,
+    panelizer_cfg: Optional[Dict[str, Any]] = None,
+) -> None:
+    updated_defaults = DEFAULTS.copy()
+    updated_defaults.update(asdict(inputs))
+    updated_defaults.update(asdict(params))
+    if panelizer_cfg:
+        for key in PANELIZER_CONFIG_KEYS:
+            if key in panelizer_cfg:
+                updated_defaults[key] = panelizer_cfg[key]
 
-
-def _apply_default_updates(updates: dict[str, Any], *, refresh_pricing: bool = False) -> None:
-    if not updates:
-        return
-    merged_defaults = DEFAULTS.copy()
-    merged_defaults.update(updates)
     try:
-        PRESETS_OVERRIDE["defaults"] = merged_defaults
+        PRESETS_OVERRIDE["defaults"] = updated_defaults
         with open(LOCAL_PRESETS_PATH, "w", encoding="utf-8") as f:
             json.dump(PRESETS_OVERRIDE, f, indent=2, ensure_ascii=False)
             f.write("\n")
@@ -190,21 +188,17 @@ def _apply_default_updates(updates: dict[str, Any], *, refresh_pricing: bool = F
         raise RuntimeError(f"Failed to update presets: {exc}") from exc
 
     DEFAULTS.clear()
-    DEFAULTS.update(merged_defaults)
+    DEFAULTS.update(updated_defaults)
     PRESETS["defaults"] = DEFAULTS
-    if refresh_pricing:
-        _refresh_priced_defaults()
 
+    global PCB_THICKNESS_OPTIONS, CNC_HOLE_DIMENSION_OPTIONS
+    PCB_THICKNESS_OPTIONS = _options_from_defaults("pcb_thickness_options")
+    CNC_HOLE_DIMENSION_OPTIONS = _options_from_defaults("cnc_hole_dimension_options")
 
-def _persist_defaults(inputs: Inputs, params: Params) -> None:
-    updates = asdict(inputs)
-    updates.update(asdict(params))
-    _apply_default_updates(updates, refresh_pricing=True)
-
-
-def _persist_panelizer_defaults(cfg: Dict[str, Any]) -> None:
-    updates = {key: cfg[key] for key in PANELIZER_CONFIG_KEYS if key in cfg}
-    _apply_default_updates(updates)
+    for field in PRICED_FIELDS:
+        defaults_map = _defaults_map(field.map_key)
+        PRICED_DEFAULT_MAPS[field.name] = defaults_map
+        SELECT_OPTIONS[field.name] = tuple(defaults_map.keys())
 
 def _to_float(name: str, default: float) -> float:
     v = request.form.get(name, str(default)).strip()
@@ -648,21 +642,22 @@ def _panelizer_summary(rows: List[Dict[str, Any]], cfg: Dict[str, Any]) -> Dict[
         "table_attrs": table_attrs,
     }
 
-
-@app.route("/panelizer/presets", methods=["POST"])
-def save_panelizer_defaults():
-    try:
-        cfg = _panelizer_config(request.form)
-        _persist_panelizer_defaults(cfg)
-    except Exception as exc:
-        return {"error": str(exc)}, 400
-    return ("", 204)
-
-
 @app.route("/", methods=["GET", "POST"])
 def index():
     error_msgs, result = [], None
     resolved_inputs: Inputs | None = None
+
+    panelizer_error = None
+    panelizer_cfg = _panelizer_default_config()
+    panelizer_rows: List[Dict[str, Any]] = []
+    panelizer_summary = None
+    panelizer_source = request.values
+    try:
+        panelizer_cfg = _panelizer_config(panelizer_source)
+        panelizer_rows = _panelizer_all_rows(panelizer_cfg)
+        panelizer_summary = _panelizer_summary(panelizer_rows, panelizer_cfg)
+    except Exception as exc:
+        panelizer_error = str(exc)
 
     if request.method == "POST":
         try:
@@ -674,7 +669,8 @@ def index():
             else:
                 prm = _make_params()
                 result = price_quote(inp, prm)
-                _persist_defaults(inp, prm)
+                persist_panelizer = None if panelizer_error else panelizer_cfg
+                _persist_defaults(inp, prm, persist_panelizer)
         except Exception as e:
             error_msgs = [str(e)]
             result = None
@@ -714,16 +710,6 @@ def index():
             field.price_field, defaults_map, selected_choices[field.name]
         )
 
-    panelizer_error = None
-    panelizer_cfg = _panelizer_default_config()
-    panelizer_rows: List[Dict[str, Any]] = []
-    panelizer_summary = None
-    try:
-        panelizer_cfg = _panelizer_config(request.args)
-        panelizer_rows = _panelizer_all_rows(panelizer_cfg)
-        panelizer_summary = _panelizer_summary(panelizer_rows, panelizer_cfg)
-    except Exception as exc:
-        panelizer_error = str(exc)
     max_panel_boards = panelizer_summary.get("max_pcbs_per_jumbo") if panelizer_summary else None
     if resolved_inputs is None and max_panel_boards is not None:
         form_values["panel_boards"] = str(int(max_panel_boards))
