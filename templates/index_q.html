@@ -5,7 +5,7 @@
 <title>PCB Quote (Internal)</title>
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <link rel="icon" type="image/png" href="/lt.png">
-<link href="{{ url_for('static', filename='style.css') }}" rel="stylesheet">
+<link href="{{ url_for('static', filename='quote.css') }}" rel="stylesheet">
 </head>
 <body>
 <header><h1>PCB Quotation — Internal</h1></header>
@@ -199,7 +199,7 @@
               <li>阻焊: {{ result.breakdown.treatment.components.masking }}</li>
               <li>文字丝印: {{ result.breakdown.treatment.components.silkscreen }}</li>
             </ul>
-          </li>            
+          </li>
           <li>CNC/panel: {{ result.breakdown.cnc.cnd_cost_panel }}
             <ul>
               <li>CNC Cost: {{ result.breakdown.cnc.components.cnc_pth }}</li>
@@ -277,18 +277,18 @@
       return;
     }
 
-    const updateLabelAndDefault = () => {
+    const applyDefaults = (force = false) => {
       const selected = select.value || fallback;
       label.textContent = selected || fallback;
+      if (!force && input.value) {
+        return;
+      }
       const base = defaults[selected];
-      input.value = base !== undefined ? base : '';
+      input.value = base === undefined ? '' : base;
     };
 
-    select.addEventListener('change', () => {
-      updateLabelAndDefault();
-    });
-
-    updateLabelAndDefault();
+    select.addEventListener('change', () => applyDefaults(true));
+    applyDefaults();
   };
 
   pricedFields.forEach(({ name, priceField }) => {
@@ -303,11 +303,7 @@
   });
 
   const submitForm = () => {
-    const formData = new FormData(form);
-    const payload = new URLSearchParams();
-    for (const [key, value] of formData.entries()) {
-      payload.append(key, value);
-    }
+    const payload = new URLSearchParams(new FormData(form));
 
     if (controller) {
       controller.abort();
@@ -337,12 +333,12 @@
       });
   };
 
-  const updateStackQty = (() => {
+  const initStackQtySync = () => {
     const thicknessSelect = document.getElementById('pcb-thickness-select');
     const drillSelect = document.getElementById('cnc-hole-select');
     const stackQtyInput = document.getElementById('stack-qty-input');
     if (!thicknessSelect || !drillSelect || !stackQtyInput) {
-      return () => {};
+      return;
     }
     const lookup = (thickness, drill) => {
       const byThickness = stackQtyMap[thickness];
@@ -357,8 +353,9 @@
     thicknessSelect.addEventListener('change', apply);
     drillSelect.addEventListener('change', apply);
     apply();
-    return apply;
-  })();
+  };
+
+  initStackQtySync();
 
   const debouncedSubmit = (() => {
     let timeoutId;
