@@ -50,7 +50,7 @@
             <span id="material-price-label">{{ (values.material or defaults.material) }}</span>
             <input name="material_price" id="material-price-input" type="number" step="1" value="{{ material_price_value }}">
           </label>
-          <label>Layers
+          <label>层数
             <input name="layers" type="number" step="1" value="{{ values.layers }}">
           </label>
         </div>
@@ -113,7 +113,7 @@
           <label>钻孔数
             <input name="cnc_pth_holes" type="number" step="1" min="0" value="{{ values.cnc_pth_holes }}">
           </label>
-          <label>Stack Qty
+          <label>叠片数
             <input name="stack_qty" id="stack-qty-input" type="number" step="1" min="1" value="{{ values.stack_qty }}">
           </label>
         </div>
@@ -154,10 +154,10 @@
       <section>
         <h2>Sewage</h2>
         <div class="grid">
-          <label>Water
+          <label>污水
             <input name="sewage_water" type="number" step="1" value="{{ values.sewage_water }}">
           </label>
-          <label>Electricity
+          <label>电
             <input name="sewage_electricity" type="number" step="1" value="{{ values.sewage_electricity }}">
           </label>
         </div>
@@ -200,7 +200,6 @@
               <li>Material: {{ result.breakdown.material.total }}
                 <ul>
                   <li>{{ values.material or 'Laminate' }}: {{ result.breakdown.material.components.laminate }}</li>
-                  <li>Layers: {{ values.layers }}</li>
                 </ul>
               </li>
               <li>Treatment: {{ result.breakdown.treatment.total }}
@@ -227,13 +226,13 @@
               </li>
               <li>Sewage: {{ result.breakdown.sewage.total }}
                 <ul>
-                  <li>Water: {{ result.breakdown.sewage.components.water }}</li>
-                  <li>Electricity: {{ result.breakdown.sewage.components.electricity }}</li>
+                  <li>污水: {{ result.breakdown.sewage.components.water }}</li>
+                  <li>电: {{ result.breakdown.sewage.components.electricity }}</li>
                 </ul>
               </li>
               <li>Others: {{ result.breakdown.others.total }}
                 <ul>
-                  <li>Overhead: {{ result.breakdown.others.overhead }}</li>
+                  <li>Overheads: {{ result.breakdown.others.overhead }}</li>
                   <li>產出 (%): {{ result.breakdown.others.yield_pct }}</li>
                   <li>地区: {{ result.breakdown.others.factor }}</li>
                   <li>运输: {{ result.breakdown.others.logistic }}</li>
