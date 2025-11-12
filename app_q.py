@@ -80,7 +80,7 @@ class PricedField(NamedTuple):
 
 
 PRICED_FIELDS: tuple[PricedField, ...] = (
-    PricedField("material", "material_price", "material_prices", "Material price must be a number"),
+    PricedField("material", "material_price", "material_costs", "Material price must be a number"),
     PricedField("finish", "finish_price", "finish_costs", "Finish cost must be a number"),
     PricedField("masking", "masking_price", "masking_costs", "Masking cost must be a number"),
     PricedField("plating", "plating_price", "plating_costs", "Plating cost must be a number"),

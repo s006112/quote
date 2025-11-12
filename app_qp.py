@@ -48,11 +48,6 @@ PRESETS_BASE = _load_json(BASE_PRESETS_PATH, required=True)
 PRESETS_OVERRIDE = _load_json(LOCAL_PRESETS_PATH)
 PRESETS = _deep_merge(PRESETS_BASE, PRESETS_OVERRIDE)
 DEFAULTS = PRESETS["defaults"]
-_panel_defaults = PRESETS.get("panelizer_defaults")
-if isinstance(_panel_defaults, dict):
-    PANELIZER_DEFAULTS = _panel_defaults.copy()
-else:
-    PANELIZER_DEFAULTS = {}
 INPUT_TYPE_HINTS = get_type_hints(Inputs)
 PARAM_TYPE_HINTS = get_type_hints(Params)
 
@@ -60,14 +55,14 @@ INPUT_FIELD_NAMES = tuple(f.name for f in fields(Inputs))
 
 
 def _panelizer_section(key: str) -> Dict[str, Any]:
-    value = PRESETS.get(key, {})
+    value = DEFAULTS.get(key, {})
     return value.copy() if isinstance(value, dict) else {}
 
 
 def _load_panelizer_panel_options() -> Dict[str, Tuple[float, float]]:
     section = _panelizer_section("panelizer_panel_options")
     if not section:
-        raise RuntimeError("panelizer_panel_options is missing from presets.")
+        raise RuntimeError("panelizer_panel_options is missing from defaults.")
     options: Dict[str, Tuple[float, float]] = {}
     for style, dims in section.items():
         if not isinstance(dims, (list, tuple)) or len(dims) != 2:
@@ -79,17 +74,46 @@ def _load_panelizer_panel_options() -> Dict[str, Tuple[float, float]]:
 def _load_panelizer_jumbo_multiplier() -> Dict[str, int]:
     section = _panelizer_section("panelizer_jumbo_multiplier")
     if not section:
-        raise RuntimeError("panelizer_jumbo_multiplier is missing from presets.")
+        raise RuntimeError("panelizer_jumbo_multiplier is missing from defaults.")
     multipliers: Dict[str, int] = {}
     for style, value in section.items():
         multipliers[style] = int(value)
     return multipliers
 
 
+PANELIZER_CONFIG_KEYS: tuple[str, ...] = (
+    "customer_board_width_max",
+    "customer_board_length_max",
+    "customer_board_width_min",
+    "customer_board_length_min",
+    "single_pcb_width_max",
+    "single_pcb_length_max",
+    "panel_edge_margin_w",
+    "panel_edge_margin_l",
+    "board_edge_margin_w",
+    "board_edge_margin_l",
+    "inter_board_gap_w",
+    "inter_board_gap_l",
+    "inter_single_gap_w",
+    "inter_single_gap_l",
+    "allow_rotate_board",
+    "allow_rotate_single_pcb",
+    "kerf_allowance",
+    "limit",
+    "include_set_A",
+    "include_set_B",
+    "include_set_C",
+    "include_set_D",
+    "include_set_E",
+)
+
+
 def _panelizer_default_config() -> Dict[str, Any]:
-    if not PANELIZER_DEFAULTS:
-        raise RuntimeError("panelizer_defaults is missing from presets.")
-    return PANELIZER_DEFAULTS.copy()
+    missing = [key for key in PANELIZER_CONFIG_KEYS if key not in DEFAULTS]
+    if missing:
+        missing_csv = ", ".join(sorted(missing))
+        raise RuntimeError(f"Panelizer defaults missing from presets: {missing_csv}")
+    return {key: DEFAULTS[key] for key in PANELIZER_CONFIG_KEYS}
 
 
 PANELIZER_PANEL_OPTIONS = _load_panelizer_panel_options()
@@ -127,7 +151,7 @@ class PricedField(NamedTuple):
 
 
 PRICED_FIELDS: tuple[PricedField, ...] = (
-    PricedField("material", "material_price", "material_prices", "Material price must be a number"),
+    PricedField("material", "material_price", "material_costs", "Material price must be a number"),
     PricedField("finish", "finish_price", "finish_costs", "Finish cost must be a number"),
     PricedField("masking", "masking_price", "masking_costs", "Masking cost must be a number"),
     PricedField("plating", "plating_price", "plating_costs", "Plating cost must be a number"),
@@ -667,7 +691,7 @@ def index():
         )
 
     panelizer_error = None
-    panelizer_cfg = PANELIZER_DEFAULTS.copy()
+    panelizer_cfg = _panelizer_default_config()
     panelizer_rows: List[Dict[str, Any]] = []
     panelizer_summary = None
     try:

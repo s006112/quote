@@ -27,7 +27,7 @@ class Inputs:
 
 @dataclass
 class Params:
-    material_prices: dict
+    material_costs: dict
     finish_costs: dict
     masking_costs: dict
     plating_costs: dict
@@ -56,7 +56,7 @@ def price_quote(inp: Inputs, prm: Params) -> dict:
 
     # Material cost
     material_components = {
-        "laminate": prm.material_prices.get(inp.material, 15.0),
+        "laminate": prm.material_costs.get(inp.material, 15.0),
     }
     material_cost = _component_total(material_components)
 
