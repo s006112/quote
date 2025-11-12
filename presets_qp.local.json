@@ -2,7 +2,7 @@
   "defaults": {
     "units": "mm",
     "layers": 2,
-    "panel_boards": 200,
+    "panel_boards": 190,
     "stack_qty": 3,
     "cnc_pth_holes": 125,
     "material": "KB6160A",

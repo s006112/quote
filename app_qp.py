@@ -667,6 +667,7 @@ def index():
     form_values = {k: request.form.get(k, str(v)) for k, v in form_defaults.items()}
     if resolved_inputs is not None:
         form_values["stack_qty"] = str(resolved_inputs.stack_qty)
+        form_values["panel_boards"] = str(resolved_inputs.panel_boards)
     param_values = {k: request.form.get(k, str(v)) for k, v in param_defaults.items()}
 
     selected_choices = {
@@ -698,6 +699,9 @@ def index():
         panelizer_summary = _panelizer_summary(panelizer_rows, panelizer_cfg)
     except Exception as exc:
         panelizer_error = str(exc)
+    max_panel_boards = panelizer_summary.get("max_pcbs_per_jumbo") if panelizer_summary else None
+    if resolved_inputs is None and max_panel_boards is not None:
+        form_values["panel_boards"] = str(int(max_panel_boards))
 
     return render_template(
         "index_qp.html",
