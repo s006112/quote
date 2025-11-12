@@ -24,7 +24,6 @@ class Inputs:
     post_process_cost: float
     sewage_water: float
     sewage_electricity: float
-    ship_zone: str
 
 @dataclass
 class Params:
@@ -35,7 +34,6 @@ class Params:
     overheads_pct: float
     yield_pct: float
     margin_pct: float
-    ship_zone_factor: dict
     cnc_pth_per_hole: float
     routing_per_inch: float
 
@@ -105,16 +103,15 @@ def price_quote(inp: Inputs, prm: Params) -> dict:
     oh = base * _non_negative(prm.overheads_pct) / 100.0
     yield_pct = _percent(prm.yield_pct)
     yld = base * (100.0 - yield_pct) / 100.0
-    zone_factor = prm.ship_zone_factor.get(inp.ship_zone, 1.0)
-    logistics_factor = max(zone_factor - 1.0, 0.0)
-    logistics_cost = (base + oh + yld) * logistics_factor
-    other_cost = oh + yld + logistics_cost
+    other_cost = oh + yld
 
     # Total COGs
-    cogs = base + oh + yld + logistics_cost
+    cogs = base + other_cost
 
     cogs_unit = cogs / boards_per_panel if boards_per_panel else 0.0
-    price_unit = cogs_unit * (1 + prm.margin_pct / 100.0)
+    margin_pct = _non_negative(prm.margin_pct)
+    price_unit = cogs_unit * (1 + margin_pct / 100.0)
+    margin_cost = cogs * margin_pct / 100.0
 
     breakdown = {
         "material": {
@@ -141,11 +138,9 @@ def price_quote(inp: Inputs, prm: Params) -> dict:
         },
         "others": {
             "total": round(other_cost, 2),
-            "ship_zone": inp.ship_zone,
-            "factor": round(zone_factor, 3),
-            "logistic": round(logistics_cost, 2),
             "overhead": round(oh, 2),
-            "yield_pct": round(yield_pct, 2),
+            "yield": round(yld, 2),
+            "margin": round(margin_cost, 2),
         },
         "boards_per_panel": boards_per_panel,
     }

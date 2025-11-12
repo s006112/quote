@@ -68,7 +68,6 @@ def _options_from_defaults(map_key: str) -> tuple[str, ...]:
     mapping = DEFAULTS.get(map_key, {})
     return tuple(mapping.keys()) if isinstance(mapping, dict) else tuple()
 
-SHIP_ZONE_OPTIONS = _options_from_defaults("ship_zone_factor")
 PCB_THICKNESS_OPTIONS = _options_from_defaults("pcb_thickness_options")
 CNC_HOLE_DIMENSION_OPTIONS = _options_from_defaults("cnc_hole_dimension_options")
 
@@ -114,8 +113,7 @@ def _persist_defaults(inputs: Inputs, params: Params) -> None:
     DEFAULTS.update(updated_defaults)
     PRESETS["defaults"] = DEFAULTS
 
-    global SHIP_ZONE_OPTIONS, PCB_THICKNESS_OPTIONS, CNC_HOLE_DIMENSION_OPTIONS
-    SHIP_ZONE_OPTIONS = _options_from_defaults("ship_zone_factor")
+    global PCB_THICKNESS_OPTIONS, CNC_HOLE_DIMENSION_OPTIONS
     PCB_THICKNESS_OPTIONS = _options_from_defaults("pcb_thickness_options")
     CNC_HOLE_DIMENSION_OPTIONS = _options_from_defaults("cnc_hole_dimension_options")
 
@@ -272,7 +270,6 @@ def index():
         values=form_values,
         params_defaults=param_defaults,
         params_values=param_values,
-        ship_zone_options=SHIP_ZONE_OPTIONS,
         pcb_thickness_options=PCB_THICKNESS_OPTIONS,
         cnc_hole_dimension_options=CNC_HOLE_DIMENSION_OPTIONS,
         error_msgs=error_msgs,

@@ -19,7 +19,6 @@
     "post_process_cost": 1.0,
     "sewage_water": 30.0,
     "sewage_electricity": 2.0,
-    "ship_zone": "ASIA",
     "margin_pct": 5.0,
     "overheads_pct": 10.0,
     "yield_pct": 98.0,
@@ -54,12 +53,6 @@
       "24um": 5.0,
       "29um": 10.0,
       "35um": 15.0
-    },
-    "ship_zone_factor": {
-      "ASIA": 1.0,
-      "EU": 1.05,
-      "NA": 1.08,
-      "OTHER": 1.1
     },
     "stack_qty_map": {
       "1.6 mm": {

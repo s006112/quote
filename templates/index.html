@@ -22,7 +22,7 @@
 
     <form id="quote-form" method="post" novalidate data-default-material="{{ defaults.material|e }}" data-default-finish="{{ defaults.finish|e }}" data-default-masking="{{ defaults.masking|e }}" data-default-plating="{{ defaults.plating|e }}">
       <section>
-        <h2>Board Basics</h2>
+        <h2>Basics</h2>
         <div class="grid">
           <label>Width (mm)
             <input name="width" type="number" step="1" value="{{ values.width }}">
@@ -175,13 +175,6 @@
           <label>利润 (%)
             <input name="margin_pct" type="number" step="1" min="0" value="{{ params_values.margin_pct }}">
           </label>
-          <label>目的地
-            <select name="ship_zone">
-              {% for z in ship_zone_options %}
-              <option value="{{ z }}" {% if values.ship_zone==z %}selected{% endif %}>{{ z }}</option>
-              {% endfor %}
-            </select>
-          </label>
         </div>
       </section>
 
@@ -232,10 +225,8 @@
               </li>
               <li>Others: {{ result.breakdown.others.total }}
                 <ul>
-                  <li>Overheads: {{ result.breakdown.others.overhead }}</li>
-                  <li>產出 (%): {{ result.breakdown.others.yield_pct }}</li>
-                  <li>地区: {{ result.breakdown.others.factor }}</li>
-                  <li>运输: {{ result.breakdown.others.logistic }}</li>
+                  <li>OH: {{ result.breakdown.others.overhead }}</li>
+                  <li>產出: {{ result.breakdown.others.yield }}</li>
                 </ul>
               </li>
               <li>开料件数: {{ result.breakdown.boards_per_panel }}</li>
