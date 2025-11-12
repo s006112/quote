@@ -14,10 +14,10 @@ app = Flask(__name__)
 
 ICON_FILENAME = "lt.png"
 ICON_PATH = os.path.join(os.path.dirname(__file__), ICON_FILENAME)
-BASE_PRESETS_PATH = os.path.join(os.path.dirname(__file__), "presets.json")
+BASE_PRESETS_PATH = os.path.join(os.path.dirname(__file__), "presets_qp.json")
 LOCAL_PRESETS_PATH = os.environ.get(
     "PRESETS_OVERRIDE_PATH",
-    os.path.join(os.path.dirname(__file__), "presets.local.json"),
+    os.path.join(os.path.dirname(__file__), "presets_qp.local.json"),
 )
 
 
