@@ -288,7 +288,7 @@ def enumerate_layouts(cfg: Dict[str, float], panel_w: float, panel_l: float, pan
 
 ICON_FILENAME = "lt.png"
 ICON_PATH = os.path.join(os.path.dirname(__file__), ICON_FILENAME)
-CSS_FILENAME = "panelizer.css"
+CSS_FILENAME = "style.css"
 CSS_PATH = os.path.join(os.path.dirname(__file__), "static", CSS_FILENAME)
 
 def parse_bool(v: str) -> bool:
@@ -401,7 +401,8 @@ def page(cfg: Dict[str, float], rows: List[Dict]) -> str:
     h = []
     h.append("<html><head><meta charset='utf-8'><title>PCB Panelizer</title>")
     h.append("<link rel='icon' type='image/png' href='/lt.png'>")
-    h.append(f"<link rel='stylesheet' href='/static/{CSS_FILENAME}'></head><body>")
+    h.append(f"<link rel='stylesheet' href='/static/{CSS_FILENAME}'></head>"
+             "<body class='panelizer-app'>")
     h.append("<h1>PCB Panelizer by LT</h1>")
 #    h.append("<p class='note'>Edit parameters. Press Calculate. Results ranked by PCBs per Jumbo.</p>")
     # Form
