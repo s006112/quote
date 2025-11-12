@@ -264,7 +264,7 @@ def index():
         )
 
     return render_template(
-        "index.html",
+        "index_q.html",
         defaults=form_defaults,
         values=form_values,
         params_defaults=param_defaults,

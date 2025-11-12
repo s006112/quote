@@ -346,17 +346,7 @@ def parse_cfg(qs: dict) -> Dict[str, float]:
     d["include_set_E"] = parse_checkbox(qs, "SET_E", d["include_set_E"])
     return d
 
-def input_field(name, label, value, step="0.1"):
-    return f"""<div>
-<label for="{name}">{escape(label)}</label>
-<input type="number" step="{step}" name="{name}" id="{name}" value="{value}"/>
-</div>"""
-
-def checkbox_field(name, label, checked: bool):
-    return f"""<div>
-<label for="{name}">{escape(label)}</label>
-<input type="checkbox" name="{name}" id="{name}" {"checked" if checked else ""}/>
-</div>"""
+# Legacy HTML helpers removed after template extraction
 
 def _rotation_priority(row: Dict) -> int:
     board_rot = row.get("board_rot", False)
@@ -393,106 +383,30 @@ def deduplicate_rows(rows: List[Dict]) -> List[Dict]:
     return [best[k] for k in seen_order]
 
 def page(cfg: Dict[str, float], rows: List[Dict]) -> str:
-    # Summary
     total = len(rows)
     max_pcbs_jumbo = max((r["pcbs_per_jumbo"] for r in rows), default=None)
 
-    # HTML
-    h = []
-    h.append("<html><head><meta charset='utf-8'><title>PCB Panelizer</title>")
-    h.append("<link rel='icon' type='image/png' href='/lt.png'>")
-    h.append(f"<link rel='stylesheet' href='/static/{CSS_FILENAME}'></head>"
-             "<body class='panelizer-app'>")
-    h.append("<h1>PCB Panelizer by LT</h1>")
-#    h.append("<p class='note'>Edit parameters. Press Calculate. Results ranked by PCBs per Jumbo.</p>")
-    # Form
-    h.append("<form method='GET' id='panelizer-form'>")
-
-    h.append("<div class='fieldset-row'>")
-
-    # Single PCB (leftmost)
-    h.append("<fieldset><legend>Single PCB</legend>")
-    h.append(input_field("SPW", "Single width (SPW, mm)", cfg["single_pcb_width_max"]))
-    h.append(input_field("SPL", "Single length (SPL, mm)", cfg["single_pcb_length_max"]))
-    h.append(checkbox_field("ARS", "Allow rotate single", cfg["allow_rotate_single_pcb"]))
-    h.append("</fieldset>")
-
-    # Panel margins
-    h.append("<fieldset><legend>Working Panel</legend>")
-    h.append(input_field("EW_w", "Panel edge width (EW_w, mm)", cfg["panel_edge_margin_w"]))
-    h.append(input_field("EW_l", "Panel edge length (EW_l, mm)", cfg["panel_edge_margin_l"]))
-    h.append("<div class='checkbox-group'>")
-    h.append("<span>Panel sets</span>")
-    panel_set_labels = {
-        "A": "A: 1245 x 1041",
-        "B": "B: 1245 x 1092",
-        "C": "C: 1295 x 1092",
-        "D": "D: 1245 x 2082",
-        "E": "E: 1295 x 2184",
-    }
-    for letter in "ABCDE":
-        name = f"SET_{letter}"
-        cfg_key = f"include_set_{letter}"
-        checked_attr = "checked" if bool(cfg.get(cfg_key, False)) else ""
-        h.append(
-            f"<label class='panel-set-option'>"
-            f"<input type='checkbox' name='{name}' id='{name}' {checked_attr}/>"
-            f"<span>{panel_set_labels.get(letter, letter)}</span>"
-            "</label>"
-        )
-    h.append("</div>")
-    h.append("</fieldset>")
-
-    # Board edge margins (auxiliary rails)
-    h.append("<fieldset><legend>Board Edge Margins</legend>")
-    h.append(input_field("BMW", "Board edge margin width (BMW, mm)", cfg["board_edge_margin_w"]))
-    h.append(input_field("BML", "Board edge margin length (BML, mm)", cfg["board_edge_margin_l"]))
-    h.append("</fieldset>")
-
-    # Customer board
-    h.append("<fieldset><legend>Customer Board Limits</legend>")
-    h.append(input_field("CBW", "Max board width (CBW, mm)", cfg["customer_board_width_max"]))
-    h.append(input_field("CBL", "Max board length (CBL, mm)", cfg["customer_board_length_max"]))
-    h.append(input_field("CBWM", "Min board width (CBWM, mm)", cfg["customer_board_width_min"]))
-    h.append(input_field("CBLM", "Min board length (CBLM, mm)", cfg["customer_board_length_min"]))
-    h.append(checkbox_field("ARB", "Allow rotate board", cfg["allow_rotate_board"]))
-    h.append("</fieldset>")
-
-    # V-Cut Gaps
-    h.append("<fieldset><legend>Gaps</legend>")
-    h.append(input_field("CW", "Inter-board gap W (CW, mm)", cfg["inter_board_gap_w"]))
-    h.append(input_field("CL", "Inter-board gap L (CL, mm)", cfg["inter_board_gap_l"]))
-    h.append(input_field("SW", "Inter-single gap W (SW, mm)", cfg["inter_single_gap_w"]))
-    h.append(input_field("SL", "Inter-single gap L (SL, mm)", cfg["inter_single_gap_l"]))
-    h.append(input_field("KERF", "Kerf (adds to all gaps, mm)", cfg["kerf_allowance"], step="0.1"))
-    h.append("</fieldset>")
-
-    h.append("</div>")
-
-    # Controls
-    h.append("<div class='controls'>")
-    h.append(input_field("LIMIT", "Max rows", int(cfg.get("limit", 10)), step="1"))
-    if max_pcbs_jumbo is not None:
-        h.append("<span class='badge'>Highest PCBs per Jumbo shown with ★</span>")
-    h.append("</div>")
-    h.append("</form>")
-
-    # Results
+    # Build results HTML
+    parts: List[str] = []
     if rows:
-        h.append(f"<p class='small'>Found {total} feasible layouts. Showing top {min(total, cfg['limit'])} by PCBs per Jumbo.</p>")
-        h.append("<table>")
-        h.append("<tr>"
-                 "<th class='l'>Rank</th>"
-                 "<th>PCBs/Jumbo</th>"
-                 "<th>PCBs/Panel</th>"
-                 "<th>Panel WxL</th>"
-                 "<th>Board WxL</th>"
-                 "<th>Board size (mm)</th>"
-                 "<th>Panel style</th>"
-                 "<th>Panel size (mm)</th>"
-                 "<th>Utilization</th>"
-                 "<th>Rotation</th>"
-                 "</tr>")
+        parts.append(
+            f"<p class='small'>Found {total} feasible layouts. Showing top {min(total, int(cfg['limit']))} by PCBs per Jumbo.</p>"
+        )
+        parts.append("<table>")
+        parts.append(
+            "<tr>"
+            "<th class='l'>Rank</th>"
+            "<th>PCBs/Jumbo</th>"
+            "<th>PCBs/Panel</th>"
+            "<th>Panel WxL</th>"
+            "<th>Board WxL</th>"
+            "<th>Board size (mm)</th>"
+            "<th>Panel style</th>"
+            "<th>Panel size (mm)</th>"
+            "<th>Utilization</th>"
+            "<th>Rotation</th>"
+            "</tr>"
+        )
         for idx, r in enumerate(rows[: int(cfg["limit"])]):
             star = " ★" if max_pcbs_jumbo is not None and r["pcbs_per_jumbo"] == max_pcbs_jumbo else ""
             util = f"{r['utilization'] * 100:.2f}%"
@@ -501,43 +415,63 @@ def page(cfg: Dict[str, float], rows: List[Dict]) -> str:
             panel_size = f"{r['panel_width']:.1f}×{r['panel_length']:.1f}"
             rot = ("B" if r["board_rot"] else "") + ("S" if r["single_rot"] else "")
             rot = rot if rot else "—"
-            h.append("<tr>")
-            h.append(f"<td class='l'>{idx+1}{star}</td>")
-            h.append(f"<td>{r['pcbs_per_jumbo']}</td>")
-            h.append(f"<td>{r['total_single_pcbs']}</td>")
-            h.append(f"<td>{r['nbw']}×{r['nbl']}</td>")
-            h.append(f"<td>{r['nw']}×{r['nl']}</td>")
-            h.append(f"<td>{board_sz}</td>")
-            h.append(f"<td>{panel_style}</td>")
-            h.append(f"<td>{panel_size}</td>")
-            h.append(f"<td>{util}</td>")
-            h.append(f"<td>{rot}</td>")
-            h.append("</tr>")
-            # Details row
-            # details = {
-            #     "margins": r["margins"],
-            #     "margin_uniformity": r["margin_uniformity"],
-            #     "all_constraints_satisfied": r["all_constraints_satisfied"],
-            #     "first_failure": r["first_failure"],
-            # }
-            # h.append(
-            #     f"<tr><td colspan='10' class='l'><details><summary>Details</summary>"
-            #     f"<pre>{escape(json.dumps(details, indent=2))}</pre></details></td></tr>"
-            # )
-        h.append("</table>")
+            parts.append("<tr>")
+            parts.append(f"<td class='l'>{idx+1}{star}</td>")
+            parts.append(f"<td>{r['pcbs_per_jumbo']}</td>")
+            parts.append(f"<td>{r['total_single_pcbs']}</td>")
+            parts.append(f"<td>{r['nbw']}×{r['nbl']}</td>")
+            parts.append(f"<td>{r['nw']}×{r['nl']}</td>")
+            parts.append(f"<td>{board_sz}</td>")
+            parts.append(f"<td>{panel_style}</td>")
+            parts.append(f"<td>{panel_size}</td>")
+            parts.append(f"<td>{util}</td>")
+            parts.append(f"<td>{rot}</td>")
+            parts.append("</tr>")
+        parts.append("</table>")
     else:
-        h.append("<p class='small'>No feasible layouts under current constraints.</p>")
+        parts.append("<p class='small'>No feasible layouts under current constraints.</p>")
 
-    h.append("<script>(function(){const f=document.getElementById('panelizer-form');"
-             "if(!f)return;let pending=false;"
-             "const submit=()=>{pending=false;"
-             "if(typeof f.requestSubmit==='function'){f.requestSubmit();}else{f.submit();}};"
-             "const queue=window.requestAnimationFrame?window.requestAnimationFrame.bind(window):function(cb){return setTimeout(cb,0);};"
-             "const schedule=()=>{if(pending)return;pending=true;queue(submit);};"
-             "f.addEventListener('input',schedule);"
-             "f.addEventListener('change',schedule);})();</script>")
-    h.append("</body></html>")
-    return "".join(h)
+    results_html = "".join(parts)
+
+    # Simple template substitution
+    tmpl_path = os.path.join(os.path.dirname(__file__), "templates", "index_p.html")
+    with open(tmpl_path, "r", encoding="utf-8") as fh:
+        html = fh.read()
+
+    def chk(val: bool) -> str:
+        return "checked" if bool(val) else ""
+
+    repl = {
+        "{{VAL_SPW}}": str(cfg["single_pcb_width_max"]),
+        "{{VAL_SPL}}": str(cfg["single_pcb_length_max"]),
+        "{{CHK_ARS}}": chk(cfg.get("allow_rotate_single_pcb", False)),
+        "{{VAL_EW_w}}": str(cfg["panel_edge_margin_w"]),
+        "{{VAL_EW_l}}": str(cfg["panel_edge_margin_l"]),
+        "{{CHK_SET_A}}": chk(cfg.get("include_set_A", False)),
+        "{{CHK_SET_B}}": chk(cfg.get("include_set_B", False)),
+        "{{CHK_SET_C}}": chk(cfg.get("include_set_C", False)),
+        "{{CHK_SET_D}}": chk(cfg.get("include_set_D", False)),
+        "{{CHK_SET_E}}": chk(cfg.get("include_set_E", False)),
+        "{{VAL_BMW}}": str(cfg["board_edge_margin_w"]),
+        "{{VAL_BML}}": str(cfg["board_edge_margin_l"]),
+        "{{VAL_CBW}}": str(cfg["customer_board_width_max"]),
+        "{{VAL_CBL}}": str(cfg["customer_board_length_max"]),
+        "{{VAL_CBWM}}": str(cfg["customer_board_width_min"]),
+        "{{VAL_CBLM}}": str(cfg["customer_board_length_min"]),
+        "{{CHK_ARB}}": chk(cfg.get("allow_rotate_board", False)),
+        "{{VAL_CW}}": str(cfg["inter_board_gap_w"]),
+        "{{VAL_CL}}": str(cfg["inter_board_gap_l"]),
+        "{{VAL_SW}}": str(cfg["inter_single_gap_w"]),
+        "{{VAL_SL}}": str(cfg["inter_single_gap_l"]),
+        "{{VAL_KERF}}": str(cfg["kerf_allowance"]),
+        "{{VAL_LIMIT}}": str(int(cfg.get("limit", 10))),
+        "{{STAR_BADGE}}": ("Highest PCBs per Jumbo shown with ★" if max_pcbs_jumbo is not None else ""),
+        "{{RESULTS_HTML}}": results_html,
+    }
+
+    for k, v in repl.items():
+        html = html.replace(k, v)
+    return html
 
 # ------------------------------ WSGI Handler ---------------------------------
 
