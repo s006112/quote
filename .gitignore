@@ -4,4 +4,5 @@ panel.log
 .gnupg/
 .cache/
 presets.local.json
+presets_qp.local.json
 wheelhouse/
