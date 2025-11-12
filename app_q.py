@@ -94,7 +94,6 @@ def _defaults_map(key: str) -> dict[str, Any]:
 
 PRICED_DEFAULT_MAPS = {field.name: _defaults_map(field.map_key) for field in PRICED_FIELDS}
 SELECT_OPTIONS = {field.name: tuple(PRICED_DEFAULT_MAPS[field.name].keys()) for field in PRICED_FIELDS}
-PRICED_LABELS = {"material": "板材", "finish": "表面处理", "masking": "阻焊", "plating": "电铜"}
 
 def _persist_defaults(inputs: Inputs, params: Params) -> None:
     updated_defaults = DEFAULTS.copy()
@@ -275,7 +274,6 @@ def index():
         error_msgs=error_msgs,
         result=result,
         priced_fields=PRICED_FIELDS,
-        priced_labels=PRICED_LABELS,
         priced_options=SELECT_OPTIONS,
         priced_costs=PRICED_DEFAULT_MAPS,
         priced_client_config=[{"name": field.name, "priceField": field.price_field} for field in PRICED_FIELDS],

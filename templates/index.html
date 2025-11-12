@@ -39,7 +39,7 @@
       <section>
         <h2>Materials</h2>
         <div class="grid">
-          <label>{{ priced_labels.material }}
+          <label>板材
             <select name="material" id="material-select">
               {% for m in priced_options.material %}
               <option value="{{ m }}" {% if values.material==m %}selected{% endif %}>{{ m }}</option>
@@ -59,7 +59,7 @@
       <section>
         <h2>Treatment</h2>
         <div class="grid">
-          <label>{{ priced_labels.finish }}
+          <label>表面处理
             <select name="finish" id="finish-select">
               {% for f in priced_options.finish %}
               <option value="{{ f }}" {% if values.finish==f %}selected{% endif %}>{{ f }}</option>
@@ -70,7 +70,7 @@
             <span id="finish-price-label">{{ (values.finish or defaults.finish) }}</span>
             <input name="finish_price" id="finish-price-input" type="number" step="1" value="{{ finish_price_value }}">
           </label>
-          <label>{{ priced_labels.masking }}
+          <label>阻焊
             <select name="masking" id="masking-select">
               {% for mask in priced_options.masking %}
               <option value="{{ mask }}" {% if values.masking==mask %}selected{% endif %}>{{ mask }}</option>
@@ -122,7 +122,7 @@
       <section>
         <h2>Process</h2>
         <div class="grid">
-          <label>{{ priced_labels.plating }}
+          <label>电铜
             <select name="plating" id="plating-select">
               {% for p in priced_options.plating %}
               <option value="{{ p }}" {% if values.plating==p %}selected{% endif %}>{{ p }}</option>
