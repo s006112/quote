@@ -12,6 +12,34 @@ body {
   box-sizing: border-box;
 }
 
+.grid {
+    display:grid;
+    grid-template-columns:repeat(auto-fit,minmax(200px,max-content));
+    gap:10px;
+    justify-content:start;
+}
+
+label {
+    display:grid;
+    font-size: var(--font-label);
+    color: var(--muted);
+}
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 p.note {
     color: var(--muted);
@@ -19,13 +47,6 @@ p.note {
     font-size: var(--font-small);
 }
 
-form {
-    display: grid;
-    grid-template-columns: repeat(4, minmax(220px, 1fr));
-    gap: 12px;
-    align-items: start;
-    font-size: inherit;
-}
 
 .fieldset-row {
     grid-column: 1 / -1;
@@ -49,11 +70,7 @@ legend {
     font-size: var(--font-label);
 }
 
-label {
-    display: block;
-    font-size: var(--font-label);
-    color: var(--muted);
-}
+
 
 .checkbox-group {
     margin-top: 8px;
