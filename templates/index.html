@@ -184,60 +184,55 @@
   <aside class="page-summary">
     <section class="summary-card">
       <h2>Live Summary</h2>
-      <div id="live-summary">
+      <div id="live-summary" class="grid">
         {% if result %}
-        <div class="grid">
-          <div>
-            <h3>Breakdown</h3>
-            <ul class="mono">
-              <li>Material: {{ result.breakdown.material.total }}
-                <ul>
-                  <li>{{ values.material or 'Laminate' }}: {{ result.breakdown.material.components.laminate }}</li>
-                </ul>
-              </li>
-              <li>Treatment: {{ result.breakdown.treatment.total }}
-                <ul>
-                  <li>{{ values.finish or 'Finish' }}: {{ result.breakdown.treatment.components.finish }}</li>
-                  <li>线路: {{ result.breakdown.treatment.components.etching }}</li>
-                  <li>阻焊: {{ result.breakdown.treatment.components.masking }}</li>
-                  <li>文字丝印: {{ result.breakdown.treatment.components.silkscreen }}</li>
-                </ul>
-              </li>            
-              <li>CNC/panel: {{ result.breakdown.cnc.cnd_cost_panel }}
-                <ul>
-                  <li>CNC Cost: {{ result.breakdown.cnc.components.cnc_pth }}</li>
-                </ul>
-              </li>
-              <li>Process: {{ result.breakdown.process.total }}
-                <ul>
-                  <li>电铜: {{ result.breakdown.process.components.plating }}</li>
-                  <li>开料: {{ result.breakdown.process.components.cutting }}</li>
-                  <li>锣板: {{ result.breakdown.process.components.routing }}</li>
-                  <li>啤板: {{ result.breakdown.process.components.stamping }}</li>
-                  <li>后工序: {{ result.breakdown.process.components.post_process }}</li>
-                </ul>
-              </li>
-              <li>Sewage: {{ result.breakdown.sewage.total }}
-                <ul>
-                  <li>污水: {{ result.breakdown.sewage.components.water }}</li>
-                  <li>电: {{ result.breakdown.sewage.components.electricity }}</li>
-                </ul>
-              </li>
-              <li>Others: {{ result.breakdown.others.total }}
-                <ul>
-                  <li>OH: {{ result.breakdown.others.overhead }}</li>
-                  <li>產出: {{ result.breakdown.others.yield }}</li>
-                </ul>
-              </li>
-              <li>开料件数: {{ result.breakdown.boards_per_panel }}</li>
+        <ul class="mono">
+          <li>Material: {{ result.breakdown.material.total }}
+            <ul>
+              <li>{{ values.material or 'Laminate' }}: {{ result.breakdown.material.components.laminate }}</li>
             </ul>
-            <ul class="mono">
-              <li>Panel Cost: {{ result.cogs }}</li>
-              <li>Unit Cost: {{ result.cogs_unit }}</li>
-              <li>Unit price: {{ result.price_unit }}</li>
+          </li>
+          <li>Treatment: {{ result.breakdown.treatment.total }}
+            <ul>
+              <li>{{ values.finish or 'Finish' }}: {{ result.breakdown.treatment.components.finish }}</li>
+              <li>线路: {{ result.breakdown.treatment.components.etching }}</li>
+              <li>阻焊: {{ result.breakdown.treatment.components.masking }}</li>
+              <li>文字丝印: {{ result.breakdown.treatment.components.silkscreen }}</li>
             </ul>
-          </div>
-        </div>
+          </li>            
+          <li>CNC/panel: {{ result.breakdown.cnc.cnd_cost_panel }}
+            <ul>
+              <li>CNC Cost: {{ result.breakdown.cnc.components.cnc_pth }}</li>
+            </ul>
+          </li>
+          <li>Process: {{ result.breakdown.process.total }}
+            <ul>
+              <li>电铜: {{ result.breakdown.process.components.plating }}</li>
+              <li>开料: {{ result.breakdown.process.components.cutting }}</li>
+              <li>锣板: {{ result.breakdown.process.components.routing }}</li>
+              <li>啤板: {{ result.breakdown.process.components.stamping }}</li>
+              <li>后工序: {{ result.breakdown.process.components.post_process }}</li>
+            </ul>
+          </li>
+          <li>Sewage: {{ result.breakdown.sewage.total }}
+            <ul>
+              <li>污水: {{ result.breakdown.sewage.components.water }}</li>
+              <li>电: {{ result.breakdown.sewage.components.electricity }}</li>
+            </ul>
+          </li>
+          <li>Others: {{ result.breakdown.others.total }}
+            <ul>
+              <li>OH: {{ result.breakdown.others.overhead }}</li>
+              <li>產出: {{ result.breakdown.others.yield }}</li>
+            </ul>
+          </li>
+          <li>开料件数: {{ result.breakdown.boards_per_panel }}</li>
+        </ul>
+        <ul class="mono">
+          <li>Panel Cost: {{ result.cogs }}</li>
+          <li>Unit Cost: {{ result.cogs_unit }}</li>
+          <li>Unit price: {{ result.price_unit }}</li>
+        </ul>
         {% else %}
         <p class="summary-placeholder">Fill out the form to see pricing details here.</p>
         {% endif %}
