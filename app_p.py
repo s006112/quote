@@ -288,7 +288,7 @@ def enumerate_layouts(cfg: Dict[str, float], panel_w: float, panel_l: float, pan
 
 ICON_FILENAME = "lt.png"
 ICON_PATH = os.path.join(os.path.dirname(__file__), ICON_FILENAME)
-CSS_FILENAME = "style.css"
+CSS_FILENAME = "panel.css"
 CSS_PATH = os.path.join(os.path.dirname(__file__), "static", CSS_FILENAME)
 
 def parse_bool(v: str) -> bool:
