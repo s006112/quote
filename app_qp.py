@@ -600,6 +600,7 @@ def _panelizer_summary(rows: List[Dict[str, Any]], cfg: Dict[str, Any]) -> Dict[
         message = "No feasible layouts under current constraints."
     max_pcbs = max((r["pcbs_per_jumbo"] for r in rows), default=None)
     star_message = "Highest PCBs per Jumbo shown with ★" if max_pcbs is not None else ""
+    table_attrs = "" if display_rows else 'style="display:none"'
     return {
         "rows": display_rows,
         "message": message,
@@ -608,6 +609,7 @@ def _panelizer_summary(rows: List[Dict[str, Any]], cfg: Dict[str, Any]) -> Dict[
         "shown": shown,
         "max_pcbs_per_jumbo": max_pcbs,
         "star_message": star_message,
+        "table_attrs": table_attrs,
     }
 
 @app.route("/", methods=["GET", "POST"])

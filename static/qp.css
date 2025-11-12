@@ -87,6 +87,41 @@ form section .grid {
   margin: 0;
 }
 
+/* Panelizer summary */
+.panelizer-results {
+  --line: #ddd;
+  margin-top: 20px;
+}
+
+.panelizer-results .panelizer-table {
+  width: 100%;
+  border-collapse: collapse;
+  margin-top: 12px;
+  font-size: 0.95rem;
+}
+
+.panelizer-results th,
+.panelizer-results td {
+  border-bottom: 1px solid var(--line);
+  padding: 8px 6px;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+}
+
+.panelizer-results th {
+  background: #f8f8f8;
+  font-weight: 600;
+}
+
+.panelizer-results .l {
+  text-align: center;
+}
+
+.panelizer-results .small {
+  font-size: 0.85rem;
+  color: #4b5563;
+}
+
 @media (min-width: 960px) {
   .page-layout {
     grid-template-columns: minmax(0, 1fr) 360px;
