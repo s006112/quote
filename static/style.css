@@ -1,27 +1,33 @@
 :root {
-    --fg:#111;
-    --bg:#fff;
-    --muted:#666;
-    --accent:#1b6ef3;
-    --bad:#a33;
-}
-
-* {
-    box-sizing:border-box;
+    --line:#ddd;
 }
 
 body {
-    margin:16px;
-    font:14px/1.4 system-ui,Arial,sans-serif;
-    color:var(--fg);
-    background:var(--bg);
+  margin: 8px;
+  padding: 8px;
+  font: 14px/1.5 ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
 }
 
-h1,
-h2,
-h3 {
-    margin:8px 0;
+* {
+  box-sizing: border-box;
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 header {
     margin-bottom:8px;

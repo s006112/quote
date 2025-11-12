@@ -1,36 +1,17 @@
 :root {
-    --fg:#111;
-    --muted:#666;
-    --bg:#fff;
     --line:#ddd;
-    --accent:#0b6;
-    --font-body: clamp(0.95rem, 0.65vw + 0.9rem, 1.05rem);
-    --font-heading: clamp(1.6rem, 1.1vw + 1.4rem, 2rem);
-    --font-label: clamp(0.75rem, 0.4vw + 0.7rem, 0.9rem);
-    --font-input: clamp(1rem, 0.9vw + 0.95rem, 1.3rem);
-    --font-small: clamp(0.8rem, 0.45vw + 0.75rem, 1rem);
-    --font-badge: clamp(0.75rem, 0.35vw + 0.7rem, 0.9rem);
-}
-
-* {
-    box-sizing: border-box;
-    font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial;
 }
 
 body {
-    color: var(--fg);
-    background: var(--bg);
-    margin: 0;
-    padding: 24px;
-    font-size: var(--font-body);
-    line-height: 1.55;
+  margin: 8px;
+  padding: 8px;
+  font: 14px/1.5 ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
 }
 
-h1 {
-    margin: 0 0 8px 0;
-    font-size: var(--font-heading);
-    line-height: 1.2;
+* {
+  box-sizing: border-box;
 }
+
 
 p.note {
     color: var(--muted);

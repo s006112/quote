@@ -418,9 +418,9 @@ def page(cfg: Dict[str, float], rows: List[Dict]) -> str:
     h.append("</fieldset>")
 
     # Panel margins
-    h.append("<fieldset><legend>Working Panel Margins</legend>")
-    h.append(input_field("EW_w", "Panel edge margin width (EW_w, mm)", cfg["panel_edge_margin_w"]))
-    h.append(input_field("EW_l", "Panel edge margin length (EW_l, mm)", cfg["panel_edge_margin_l"]))
+    h.append("<fieldset><legend>Working Panel</legend>")
+    h.append(input_field("EW_w", "Panel edge width (EW_w, mm)", cfg["panel_edge_margin_w"]))
+    h.append(input_field("EW_l", "Panel edge length (EW_l, mm)", cfg["panel_edge_margin_l"]))
     h.append("<div class='checkbox-group'>")
     h.append("<span>Panel sets</span>")
     panel_set_labels = {
