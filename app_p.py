@@ -291,6 +291,20 @@ ICON_PATH = os.path.join(os.path.dirname(__file__), ICON_FILENAME)
 CSS_FILENAME = "panel.css"
 CSS_PATH = os.path.join(os.path.dirname(__file__), "static", CSS_FILENAME)
 
+def _serve_static_asset(path: str, content_type: str, method: str, start_response):
+    try:
+        with open(path, "rb") as fh:
+            data = fh.read()
+    except FileNotFoundError:
+        start_response("404 Not Found", [("Content-Type", "text/plain; charset=utf-8"),
+                                         ("Content-Length", "0")])
+        return [b""]
+    headers = [("Content-Type", content_type), ("Content-Length", str(len(data)))]
+    start_response("200 OK", headers)
+    if method == "HEAD":
+        return [b""]
+    return [data]
+
 def parse_bool(v: str) -> bool:
     if isinstance(v, str):
         return v.lower() in ("1", "true", "on", "yes")
@@ -471,32 +485,10 @@ def app(environ, start_response):
         method = environ.get("REQUEST_METHOD", "GET").upper()
         path = environ.get("PATH_INFO", "") or "/"
         if path in (f"/{ICON_FILENAME}", "/favicon.ico"):
-            try:
-                with open(ICON_PATH, "rb") as fh:
-                    data = fh.read()
-            except FileNotFoundError:
-                start_response("404 Not Found", [("Content-Type", "text/plain; charset=utf-8"),
-                                                 ("Content-Length", "0")])
-                return [b""]
-            headers = [("Content-Type", "image/png"), ("Content-Length", str(len(data)))]
-            start_response("200 OK", headers)
-            if method == "HEAD":
-                return [b""]
-            return [data]
+            return _serve_static_asset(ICON_PATH, "image/png", method, start_response)
 
         if path == f"/static/{CSS_FILENAME}":
-            try:
-                with open(CSS_PATH, "rb") as fh:
-                    data = fh.read()
-            except FileNotFoundError:
-                start_response("404 Not Found", [("Content-Type", "text/plain; charset=utf-8"),
-                                                 ("Content-Length", "0")])
-                return [b""]
-            headers = [("Content-Type", "text/css; charset=utf-8"), ("Content-Length", str(len(data)))]
-            start_response("200 OK", headers)
-            if method == "HEAD":
-                return [b""]
-            return [data]
+            return _serve_static_asset(CSS_PATH, "text/css; charset=utf-8", method, start_response)
 
         if method == "POST":
             size = int(environ.get("CONTENT_LENGTH", "0") or 0)
