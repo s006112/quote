@@ -486,6 +486,11 @@
             panelizerResults.innerHTML = newPanelizerResults.innerHTML;
           }
         }
+        const panelBoardsInput = form.querySelector('input[name="panel_boards"]');
+        const newPanelBoardsInput = doc.querySelector('#quote-form input[name="panel_boards"]');
+        if (panelBoardsInput && newPanelBoardsInput) {
+          panelBoardsInput.value = newPanelBoardsInput.value;
+        }
       })
       .catch((error) => {
         if (error.name === 'AbortError') {

@@ -659,9 +659,17 @@ def index():
     except Exception as exc:
         panelizer_error = str(exc)
 
+    computed_panel_boards: int | None = None
+    if panelizer_summary:
+        max_pcbs = panelizer_summary.get("max_pcbs_per_jumbo")
+        if max_pcbs is not None:
+            computed_panel_boards = max(1, int(max_pcbs))
+
     if request.method == "POST":
         try:
             inp = _make_inputs()
+            if computed_panel_boards is not None:
+                inp.panel_boards = computed_panel_boards
             resolved_inputs = inp
             errs = _validate(vars(inp))
             if errs:
@@ -710,9 +718,8 @@ def index():
             field.price_field, defaults_map, selected_choices[field.name]
         )
 
-    max_panel_boards = panelizer_summary.get("max_pcbs_per_jumbo") if panelizer_summary else None
-    if resolved_inputs is None and max_panel_boards is not None:
-        form_values["panel_boards"] = str(int(max_panel_boards))
+    if resolved_inputs is None and computed_panel_boards is not None:
+        form_values["panel_boards"] = str(computed_panel_boards)
 
     return render_template(
         "index_qp.html",
