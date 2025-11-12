@@ -289,18 +289,16 @@
           <label>Max rows
             <input type="number" step="1" name="LIMIT" id="LIMIT" value="{{ pv.limit|default('', false) }}">
           </label>
-          <p>Highest PCBs per Jumbo shown with ★</p>
         </div>
       </section>
     </form>
 
     <section id="panelizer-results" class="panelizer-results">
-      <h2>Panelizer Results</h2>
       {% if panelizer_error %}
       <p class="alert mono">{{ panelizer_error }}</p>
       {% endif %}
       {% if panelizer_summary %}
-      <p class="small" id="panelizer-results-message">{{ panelizer_summary.message }}</p>
+
       <table class="panelizer-table" {% if not panelizer_summary.rows %}style="display:none"{% endif %}>
         <thead>
           <tr>
@@ -335,9 +333,7 @@
           {% endfor %}
         </tbody>
       </table>
-      {% if panelizer_summary.star_message %}
-      <p class="small">{{ panelizer_summary.star_message }}</p>
-      {% endif %}
+      <p class="small" id="panelizer-results-message">{{ panelizer_summary.message }}</p>
       {% endif %}
     </section>
   </div>
