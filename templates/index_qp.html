@@ -21,15 +21,6 @@
 
     <form id="quote-form" method="post" novalidate data-default-material="{{ defaults.material|e }}" data-default-finish="{{ defaults.finish|e }}" data-default-masking="{{ defaults.masking|e }}" data-default-plating="{{ defaults.plating|e }}">
       <section>
-        <h2>Basics</h2>
-        <div class="grid">
-          <label>开料件数
-            <input name="panel_boards" type="number" step="1" value="{{ values.panel_boards }}">
-          </label>
-        </div>
-      </section>
-
-      <section>
         <h2>Materials</h2>
         <div class="grid">
           <label>板材
@@ -159,6 +150,9 @@
       <section>
         <h2>Others</h2>
         <div class="grid">
+          <label>开料件数
+            <input name="panel_boards" type="number" step="1" value="{{ values.panel_boards }}">
+          </label>
           <label>Overheads (%)
             <input name="overheads_pct" type="number" step="1" min="0" value="{{ params_values.overheads_pct }}">
           </label>
@@ -172,9 +166,7 @@
       </section>
 
     </form>
-
-    <h1>PCB Panelizer</h1>
-
+    <hr>
     {% set pv = panelizer_values or {} %}
     {% set panelizer_set_options = [
       {"field": "include_set_A", "input": "SET_A", "label": "A: 1245 x 1041"},
@@ -184,13 +176,25 @@
       {"field": "include_set_E", "input": "SET_E", "label": "E: 1295 x 2184"},
     ] %}
     <form id="panelizer-form" method="get" novalidate>
+
       <section>
-        <h2>Single PCB</h2>
+        <h2>Panel Sets</h2>
         <div class="grid">
-          <label>Single width (SPW, mm)
+          {% for option in panelizer_set_options %}
+          <label>{{ option.label }}
+            <input type="checkbox" name="{{ option.input }}" id="{{ option.input }}" {% if pv.get(option.field) %}checked{% endif %}>
+          </label>
+          {% endfor %}
+        </div>
+      </section>
+      
+      <section>
+        <h2>PCB尺寸</h2>
+        <div class="grid">
+          <label>Width (SPW, mm)
             <input type="number" step="0.1" name="SPW" id="SPW" value="{{ pv.single_pcb_width_max|default('', false) }}">
           </label>
-          <label>Single length (SPL, mm)
+          <label>Length (SPL, mm)
             <input type="number" step="0.1" name="SPL" id="SPL" value="{{ pv.single_pcb_length_max|default('', false) }}">
           </label>
           <label>Allow rotate single
@@ -262,17 +266,6 @@
           <label>Kerf （all gaps, mm)
             <input type="number" step="0.1" name="KERF" id="KERF" value="{{ pv.kerf_allowance|default('', false) }}">
           </label>
-        </div>
-      </section>
-
-      <section>
-        <h2>Panel Sets</h2>
-        <div class="grid">
-          {% for option in panelizer_set_options %}
-          <label>{{ option.label }}
-            <input type="checkbox" name="{{ option.input }}" id="{{ option.input }}" {% if pv.get(option.field) %}checked{% endif %}>
-          </label>
-          {% endfor %}
         </div>
       </section>
 
