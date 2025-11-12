@@ -384,54 +384,43 @@ def deduplicate_rows(rows: List[Dict]) -> List[Dict]:
 
 def page(cfg: Dict[str, float], rows: List[Dict]) -> str:
     total = len(rows)
+    limit = int(cfg.get("limit", 10))
     max_pcbs_jumbo = max((r["pcbs_per_jumbo"] for r in rows), default=None)
 
-    # Build results HTML
-    parts: List[str] = []
+    row_html: List[str] = []
     if rows:
-        parts.append(
-            f"<p class='small'>Found {total} feasible layouts. Showing top {min(total, int(cfg['limit']))} by PCBs per Jumbo.</p>"
+        shown = min(total, limit)
+        results_message = (
+            f"Found {total} feasible layouts. Showing top {shown} by PCBs per Jumbo."
         )
-        parts.append("<table>")
-        parts.append(
-            "<tr>"
-            "<th class='l'>Rank</th>"
-            "<th>PCBs/Jumbo</th>"
-            "<th>PCBs/Panel</th>"
-            "<th>Panel WxL</th>"
-            "<th>Board WxL</th>"
-            "<th>Board size (mm)</th>"
-            "<th>Panel style</th>"
-            "<th>Panel size (mm)</th>"
-            "<th>Utilization</th>"
-            "<th>Rotation</th>"
-            "</tr>"
-        )
-        for idx, r in enumerate(rows[: int(cfg["limit"])]):
+        for idx, r in enumerate(rows[:shown]):
             star = " ★" if max_pcbs_jumbo is not None and r["pcbs_per_jumbo"] == max_pcbs_jumbo else ""
             util = f"{r['utilization'] * 100:.2f}%"
             board_sz = f"{r['board_w']:.1f}×{r['board_l']:.1f}"
-            panel_style = r['panel_style']
+            panel_style = r["panel_style"]
             panel_size = f"{r['panel_width']:.1f}×{r['panel_length']:.1f}"
             rot = ("B" if r["board_rot"] else "") + ("S" if r["single_rot"] else "")
             rot = rot if rot else "—"
-            parts.append("<tr>")
-            parts.append(f"<td class='l'>{idx+1}{star}</td>")
-            parts.append(f"<td>{r['pcbs_per_jumbo']}</td>")
-            parts.append(f"<td>{r['total_single_pcbs']}</td>")
-            parts.append(f"<td>{r['nbw']}×{r['nbl']}</td>")
-            parts.append(f"<td>{r['nw']}×{r['nl']}</td>")
-            parts.append(f"<td>{board_sz}</td>")
-            parts.append(f"<td>{panel_style}</td>")
-            parts.append(f"<td>{panel_size}</td>")
-            parts.append(f"<td>{util}</td>")
-            parts.append(f"<td>{rot}</td>")
-            parts.append("</tr>")
-        parts.append("</table>")
+            row_html.append(
+                "<tr>"
+                f"<td class='l'>{idx+1}{star}</td>"
+                f"<td>{r['pcbs_per_jumbo']}</td>"
+                f"<td>{r['total_single_pcbs']}</td>"
+                f"<td>{r['nbw']}×{r['nbl']}</td>"
+                f"<td>{r['nw']}×{r['nl']}</td>"
+                f"<td>{board_sz}</td>"
+                f"<td>{panel_style}</td>"
+                f"<td>{panel_size}</td>"
+                f"<td>{util}</td>"
+                f"<td>{rot}</td>"
+                "</tr>"
+            )
+        table_attrs = ""
     else:
-        parts.append("<p class='small'>No feasible layouts under current constraints.</p>")
+        results_message = "No feasible layouts under current constraints."
+        table_attrs = 'style="display:none"'
 
-    results_html = "".join(parts)
+    results_rows = "".join(row_html)
 
     # Simple template substitution
     tmpl_path = os.path.join(os.path.dirname(__file__), "templates", "index_p.html")
@@ -464,9 +453,11 @@ def page(cfg: Dict[str, float], rows: List[Dict]) -> str:
         "{{VAL_SW}}": str(cfg["inter_single_gap_w"]),
         "{{VAL_SL}}": str(cfg["inter_single_gap_l"]),
         "{{VAL_KERF}}": str(cfg["kerf_allowance"]),
-        "{{VAL_LIMIT}}": str(int(cfg.get("limit", 10))),
+        "{{VAL_LIMIT}}": str(limit),
         "{{STAR_BADGE}}": ("Highest PCBs per Jumbo shown with ★" if max_pcbs_jumbo is not None else ""),
-        "{{RESULTS_HTML}}": results_html,
+        "{{RESULTS_MESSAGE}}": results_message,
+        "{{RESULTS_ROWS}}": results_rows,
+        "{{RESULTS_TABLE_ATTRS}}": table_attrs,
     }
 
     for k, v in repl.items():
