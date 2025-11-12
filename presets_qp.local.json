@@ -1,8 +1,6 @@
 {
   "defaults": {
     "units": "mm",
-    "width": 80.0,
-    "height": 60.0,
     "layers": 2,
     "panel_boards": 200,
     "stack_qty": 3,

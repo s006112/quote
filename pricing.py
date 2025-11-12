@@ -4,8 +4,6 @@ from typing import Mapping
 
 @dataclass
 class Inputs:
-    width: float
-    height: float
     layers: int
     panel_boards: int
     stack_qty: int

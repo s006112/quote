@@ -137,8 +137,6 @@ def _to_int(name: str, default: int) -> int:
 
 def _validate(d: dict[str, Any]) -> list[str]:
     errs = []
-    if not (5 <= d["width"] <= 650): errs.append("Width must be 5–650 mm.")
-    if not (5 <= d["height"] <= 650): errs.append("Height must be 5–650 mm.")
     if not (1 <= d["layers"] <= 40): errs.append("Layers must be 1–40.")
     if d["panel_boards"] < 1: errs.append("Boards per panel must be >= 1.")
     if d.get("stack_qty", 1) < 1: errs.append("Stack quantity must be >= 1.")
