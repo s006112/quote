@@ -166,13 +166,23 @@ def _defaults_map(key: str) -> dict[str, Any]:
 PRICED_DEFAULT_MAPS = {field.name: _defaults_map(field.map_key) for field in PRICED_FIELDS}
 SELECT_OPTIONS = {field.name: tuple(PRICED_DEFAULT_MAPS[field.name].keys()) for field in PRICED_FIELDS}
 
-def _persist_defaults(inputs: Inputs, params: Params) -> None:
-    updated_defaults = DEFAULTS.copy()
-    updated_defaults.update(asdict(inputs))
-    updated_defaults.update(asdict(params))
+def _refresh_priced_defaults() -> None:
+    global PCB_THICKNESS_OPTIONS, CNC_HOLE_DIMENSION_OPTIONS
+    PCB_THICKNESS_OPTIONS = _options_from_defaults("pcb_thickness_options")
+    CNC_HOLE_DIMENSION_OPTIONS = _options_from_defaults("cnc_hole_dimension_options")
+    for field in PRICED_FIELDS:
+        defaults_map = _defaults_map(field.map_key)
+        PRICED_DEFAULT_MAPS[field.name] = defaults_map
+        SELECT_OPTIONS[field.name] = tuple(defaults_map.keys())
 
+
+def _apply_default_updates(updates: dict[str, Any], *, refresh_pricing: bool = False) -> None:
+    if not updates:
+        return
+    merged_defaults = DEFAULTS.copy()
+    merged_defaults.update(updates)
     try:
-        PRESETS_OVERRIDE["defaults"] = updated_defaults
+        PRESETS_OVERRIDE["defaults"] = merged_defaults
         with open(LOCAL_PRESETS_PATH, "w", encoding="utf-8") as f:
             json.dump(PRESETS_OVERRIDE, f, indent=2, ensure_ascii=False)
             f.write("\n")
@@ -180,17 +190,21 @@ def _persist_defaults(inputs: Inputs, params: Params) -> None:
         raise RuntimeError(f"Failed to update presets: {exc}") from exc
 
     DEFAULTS.clear()
-    DEFAULTS.update(updated_defaults)
+    DEFAULTS.update(merged_defaults)
     PRESETS["defaults"] = DEFAULTS
+    if refresh_pricing:
+        _refresh_priced_defaults()
 
-    global PCB_THICKNESS_OPTIONS, CNC_HOLE_DIMENSION_OPTIONS
-    PCB_THICKNESS_OPTIONS = _options_from_defaults("pcb_thickness_options")
-    CNC_HOLE_DIMENSION_OPTIONS = _options_from_defaults("cnc_hole_dimension_options")
 
-    for field in PRICED_FIELDS:
-        defaults_map = _defaults_map(field.map_key)
-        PRICED_DEFAULT_MAPS[field.name] = defaults_map
-        SELECT_OPTIONS[field.name] = tuple(defaults_map.keys())
+def _persist_defaults(inputs: Inputs, params: Params) -> None:
+    updates = asdict(inputs)
+    updates.update(asdict(params))
+    _apply_default_updates(updates, refresh_pricing=True)
+
+
+def _persist_panelizer_defaults(cfg: Dict[str, Any]) -> None:
+    updates = {key: cfg[key] for key in PANELIZER_CONFIG_KEYS if key in cfg}
+    _apply_default_updates(updates)
 
 def _to_float(name: str, default: float) -> float:
     v = request.form.get(name, str(default)).strip()
@@ -633,6 +647,17 @@ def _panelizer_summary(rows: List[Dict[str, Any]], cfg: Dict[str, Any]) -> Dict[
         "star_message": star_message,
         "table_attrs": table_attrs,
     }
+
+
+@app.route("/panelizer/presets", methods=["POST"])
+def save_panelizer_defaults():
+    try:
+        cfg = _panelizer_config(request.form)
+        _persist_panelizer_defaults(cfg)
+    except Exception as exc:
+        return {"error": str(exc)}, 400
+    return ("", 204)
+
 
 @app.route("/", methods=["GET", "POST"])
 def index():

@@ -175,7 +175,7 @@
       {"field": "include_set_D", "input": "SET_D", "label": "D: 1245 x 2082"},
       {"field": "include_set_E", "input": "SET_E", "label": "E: 1295 x 2184"},
     ] %}
-    <form id="panelizer-form" method="get" novalidate>
+    <form id="panelizer-form" method="get" novalidate data-persist-url="{{ url_for('save_panelizer_defaults') }}">
 
       <section>
         <h2>Panel Sets</h2>
@@ -524,7 +524,10 @@
   if (!panelForm) {
     return;
   }
+  const persistUrl = panelForm.dataset.persistUrl;
   let scheduled = false;
+  let persistTimeoutId;
+  let persistController;
   const submit = () => {
     scheduled = false;
     if (typeof panelForm.requestSubmit === 'function') {
@@ -534,15 +537,46 @@
     }
   };
   const queue = window.requestAnimationFrame || function (cb) { return setTimeout(cb, 0); };
-  const schedule = () => {
+  const scheduleSubmit = () => {
     if (scheduled) {
       return;
     }
     scheduled = true;
     queue(submit);
   };
-  panelForm.addEventListener('input', schedule);
-  panelForm.addEventListener('change', schedule);
+  const persist = () => {
+    if (!persistUrl) {
+      return;
+    }
+    if (persistController) {
+      persistController.abort();
+    }
+    persistController = new AbortController();
+    fetch(persistUrl, {
+      method: 'POST',
+      body: new FormData(panelForm),
+      headers: { 'X-Requested-With': 'fetch' },
+      signal: persistController.signal,
+    }).catch((error) => {
+      if (error.name === 'AbortError') {
+        return;
+      }
+      console.error('Failed to persist panelizer defaults', error);
+    });
+  };
+  const schedulePersist = () => {
+    if (!persistUrl) {
+      return;
+    }
+    clearTimeout(persistTimeoutId);
+    persistTimeoutId = setTimeout(persist, 200);
+  };
+  const handleChange = () => {
+    scheduleSubmit();
+    schedulePersist();
+  };
+  panelForm.addEventListener('input', handleChange);
+  panelForm.addEventListener('change', handleChange);
 })();
 </script>
 </body>
