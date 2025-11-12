@@ -1,6 +1,11 @@
 @import url("./style.css");
 
 :root {
+    --fg:#111;
+    --bg:#fff;
+    --muted:#666;
+    --accent:#1b6ef3;
+    --bad:#a33;
     --line:#ddd;
     --accent:#0b6;
     --font-body: clamp(0.95rem, 0.65vw + 0.9rem, 1.05rem);
@@ -9,20 +14,21 @@
     --font-input: clamp(1rem, 0.9vw + 0.95rem, 1.3rem);
     --font-small: clamp(0.8rem, 0.45vw + 0.75rem, 1rem);
     --font-badge: clamp(0.75rem, 0.35vw + 0.7rem, 0.9rem);
+
 }
 
 body {
-    margin: 0;
-    padding: 24px;
+    margin:8px;
+    padding: 8px;
     font-size: var(--font-body);
-    line-height: 1.55;
+    line-height: 1.5;
     font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial;
 }
 
-h1 {
-    margin: 0 0 8px 0;
-    font-size: var(--font-heading);
-    line-height: 1.2;
+h1,
+h2,
+h3 {
+    margin:8px 0;
 }
 
 p.note {
