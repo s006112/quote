@@ -292,13 +292,6 @@ def compute_panelizer_rows(
     Returns:
         List of layout dictionaries, sorted by optimality
     """
-    # enforce internal minimum for single PCB dimensions (must be > 10 mm)
-    # This clamps values coming from the UI or presets so enumeration
-    # never attempts layouts with impractically small single-PCBs which
-    # would cause excessive permutations. We mutate cfg in-place but
-    # preserve other keys unchanged.
-    _panelizer_enforce_min_single(cfg)
-
     enabled_sets = {
         letter for letter in "ABCDE" if cfg.get(f"include_set_{letter}", False)
     }
@@ -321,36 +314,6 @@ def compute_panelizer_rows(
         )
     )
     return _panelizer_deduplicate_rows(rows)
-
-
-def _panelizer_enforce_min_single(cfg: Dict[str, Any], min_size_mm: float = 10.001) -> bool:
-    """Ensure single PCB width/length are strictly greater than 10 mm.
-
-    If incoming config values for `single_pcb_width_max` or
-    `single_pcb_length_max` are <= 10.0, clamp them to `min_size_mm`.
-    Returns True if any clamping was performed.
-
-    This helper lives in the computational layer so the HTML/form stays
-    unchanged while enumeration uses safe, constrained dimensions.
-    """
-    clamped = False
-    try:
-        spw = float(cfg.get("single_pcb_width_max", 0.0))
-    except (TypeError, ValueError):
-        spw = 0.0
-    try:
-        spl = float(cfg.get("single_pcb_length_max", 0.0))
-    except (TypeError, ValueError):
-        spl = 0.0
-
-    if spw <= 10.0:
-        cfg["single_pcb_width_max"] = float(min_size_mm)
-        clamped = True
-    if spl <= 10.0:
-        cfg["single_pcb_length_max"] = float(min_size_mm)
-        clamped = True
-
-    return clamped
 
 
 def summarize_panelizer_results(
