@@ -1,3 +1,5 @@
+/* qp.css - Refactored for Minimalism & Clarity */
+
 body {
   margin: 8px;
   padding: 8px;
@@ -8,11 +10,13 @@ body {
   box-sizing: border-box;
 }
 
-.grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, max-content));
-  gap: 10px;
-  justify-content: start;
+/* Core form layout & spacing */
+input,
+select {
+  font: inherit;
+  padding: 8px;
+  border: 1px solid #ccc;
+  border-radius: 6px;
 }
 
 label {
@@ -29,24 +33,25 @@ label select {
   max-width: 100%;
 }
 
-label input[type="checkbox"],
-label input[type="radio"] {
+label input[type="checkbox"] {
   width: auto;
   padding: 0;
 }
 
-input,
-select {
-  font: inherit;
-  padding: 8px;
-  border: 1px solid #ccc;
-  border-radius: 6px;
+/* Grid layout for form groups */
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(200px, max-content));
+  gap: 10px;
+  justify-content: start;
 }
 
+/* Section default spacing */
 section {
   margin: 12px 0;
 }
 
+/* Form section layout: labels on left, inputs on right */
 form section {
   display: grid;
   grid-template-columns: 180px minmax(0, 1fr);
@@ -65,12 +70,14 @@ form section .grid {
   grid-column: 2;
 }
 
+/* Page layout: main content + sidebar */
 .page-layout {
   display: grid;
   gap: 24px;
   align-items: start;
 }
 
+/* Summary card styling */
 .summary-card {
   border: 1px solid #ddd;
   border-radius: 10px;
@@ -87,7 +94,7 @@ form section .grid {
   margin: 0;
 }
 
-/* Panelizer summary */
+/* Panelizer results table */
 .panelizer-results {
   --line: #ddd;
   margin-top: 20px;
@@ -113,21 +120,33 @@ form section .grid {
   font-weight: 600;
 }
 
-.panelizer-results .l {
-  text-align: center;
-}
-
 .panelizer-results .small {
   font-size: 0.85rem;
   color: #4b5563;
 }
 
+/* Error/alert styling */
+.alert {
+  border: 1px solid #b91c1c;
+  color: #b91c1c;
+  padding: 8px;
+  border-radius: 6px;
+  margin: 10px 0;
+}
+
+/* Monospace font for data display */
+.mono {
+  font-family: ui-monospace, Consolas, monospace;
+}
+
+/* Desktop layout: form + sidebar */
 @media (min-width: 960px) {
   .page-layout {
     grid-template-columns: minmax(0, 1fr) 360px;
   }
 }
 
+/* Mobile: stack everything vertically */
 @media (max-width: 640px) {
   form section {
     grid-template-columns: 1fr;
@@ -150,16 +169,4 @@ form section .grid {
   label select {
     width: 100%;
   }
-}
-
-.alert {
-  border: 1px solid #b91c1c;
-  color: #b91c1c;
-  padding: 8px;
-  border-radius: 6px;
-  margin: 10px 0;
-}
-
-.mono {
-  font-family: ui-monospace, Consolas, monospace;
 }
