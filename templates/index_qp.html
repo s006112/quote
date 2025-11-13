@@ -390,166 +390,122 @@
 
 <script>
 (function () {
-  const costsDataEl = document.getElementById('priced-costs-data');
-  const fieldsConfigEl = document.getElementById('priced-fields-config');
-  const pricedCosts = costsDataEl ? JSON.parse(costsDataEl.textContent || '{}') : {};
-  const pricedFields = fieldsConfigEl ? JSON.parse(fieldsConfigEl.textContent || '[]') : [];
-  const stackQtyMapEl = document.getElementById('stack-qty-map');
-  const stackQtyMap = stackQtyMapEl ? JSON.parse(stackQtyMapEl.textContent || '{}') : {};
+  // Parse data from DOM
+  const parse = (id) => JSON.parse(document.getElementById(id)?.textContent || '{}');
+  const pricedCosts = parse('priced-costs-data');
+  const pricedFields = parse('priced-fields-config');
+  const stackQtyMap = parse('stack-qty-map');
 
+  // Core elements
   const form = document.getElementById('quote-form');
   const panelForm = document.getElementById('panelizer-form');
   const summary = document.getElementById('live-summary');
   const panelizerResults = document.getElementById('panelizer-results');
-  if (!form || !summary) {
-    return;
-  }
 
-  const fallbackFor = (name) => {
-    const datasetKey = `default${name.charAt(0).toUpperCase()}${name.slice(1)}`;
-    return form.dataset[datasetKey] || '';
-  };
+  if (!form || !summary) return;
 
-  const toDash = (value) => value.replace(/_/g, '-');
+  // Helpers
+  const toDash = (s) => s.replace(/_/g, '-');
+  const getDefault = (name) => form.dataset[`default${name[0].toUpperCase()}${name.slice(1)}`] || '';
+  const getId = (base) => document.getElementById(base);
 
   let controller;
 
-  const attachPriceField = ({ selectId, inputId, labelId, defaults, fallback }) => {
-    const select = document.getElementById(selectId);
-    const input = document.getElementById(inputId);
-    const label = document.getElementById(labelId);
-    if (!select || !input || !label) {
-      return;
+  // Fetch and update DOM with response
+  const updateDOM = (htmlText) => {
+    const doc = new DOMParser().parseFromString(htmlText, 'text/html');
+    
+    // Update summary
+    const newSummary = doc.getElementById('live-summary');
+    if (newSummary) summary.innerHTML = newSummary.innerHTML;
+    
+    // Update panelizer results
+    if (panelizerResults) {
+      const newResults = doc.getElementById('panelizer-results');
+      if (newResults) panelizerResults.innerHTML = newResults.innerHTML;
     }
-
-    const applyDefaults = (force = false) => {
-      const selected = select.value || fallback;
-      label.textContent = selected || fallback;
-      if (!force && input.value) {
-        return;
-      }
-      const base = defaults[selected];
-      input.value = base === undefined ? '' : base;
-    };
-
-    select.addEventListener('change', () => applyDefaults(true));
-    applyDefaults();
-  };
-
-  pricedFields.forEach(({ name, priceField }) => {
-    const dashName = toDash(priceField);
-    attachPriceField({
-      selectId: `${name}-select`,
-      inputId: `${dashName}-input`,
-      labelId: `${dashName}-label`,
-      defaults: pricedCosts[name] || {},
-      fallback: fallbackFor(name),
-    });
-  });
-
-  const buildPayload = () => {
-    const formData = new FormData(form);
-    if (panelForm) {
-      const panelData = new FormData(panelForm);
-      panelData.forEach((value, key) => {
-        formData.set(key, value);
-      });
+    
+    // Sync panel_boards from response
+    const panelBoardsInput = form.querySelector('input[name="panel_boards"]');
+    const newPanelBoardsInput = doc.querySelector('#quote-form input[name="panel_boards"]');
+    if (panelBoardsInput && newPanelBoardsInput) {
+      panelBoardsInput.value = newPanelBoardsInput.value;
     }
-    return new URLSearchParams(formData);
   };
 
   const submitForm = () => {
-    const payload = buildPayload();
-
-    if (controller) {
-      controller.abort();
+    const formData = new FormData(form);
+    if (panelForm) {
+      new FormData(panelForm).forEach((v, k) => formData.set(k, v));
     }
+
+    if (controller) controller.abort();
     controller = new AbortController();
 
     fetch(form.action || window.location.pathname, {
       method: 'POST',
-      body: payload,
+      body: new URLSearchParams(formData),
       headers: { 'X-Requested-With': 'fetch' },
       signal: controller.signal,
     })
-      .then((response) => response.text())
-      .then((htmlText) => {
-        const parser = new DOMParser();
-        const doc = parser.parseFromString(htmlText, 'text/html');
-        const newSummary = doc.getElementById('live-summary');
-        if (newSummary) {
-          summary.innerHTML = newSummary.innerHTML;
-        }
-        if (panelizerResults) {
-          const newPanelizerResults = doc.getElementById('panelizer-results');
-          if (newPanelizerResults) {
-            panelizerResults.innerHTML = newPanelizerResults.innerHTML;
-          }
-        }
-        const panelBoardsInput = form.querySelector('input[name="panel_boards"]');
-        const newPanelBoardsInput = doc.querySelector('#quote-form input[name="panel_boards"]');
-        if (panelBoardsInput && newPanelBoardsInput) {
-          panelBoardsInput.value = newPanelBoardsInput.value;
-        }
-      })
-      .catch((error) => {
-        if (error.name === 'AbortError') {
-          return;
-        }
-        console.error('Failed to refresh summary', error);
+      .then((r) => r.text())
+      .then(updateDOM)
+      .catch((e) => {
+        if (e.name !== 'AbortError') console.error('Fetch failed', e);
       });
   };
 
-  const initStackQtySync = () => {
-    const thicknessSelect = document.getElementById('pcb-thickness-select');
-    const drillSelect = document.getElementById('cnc-hole-select');
-    const stackQtyInput = document.getElementById('stack-qty-input');
-    if (!thicknessSelect || !drillSelect || !stackQtyInput) {
-      return;
-    }
-    const lookup = (thickness, drill) => {
-      const byThickness = stackQtyMap[thickness];
-      return byThickness ? byThickness[drill] : undefined;
-    };
-    const apply = () => {
-      const derived = lookup(thicknessSelect.value, drillSelect.value);
-      if (derived) {
-        stackQtyInput.value = derived;
-      }
-    };
-    thicknessSelect.addEventListener('change', apply);
-    drillSelect.addEventListener('change', apply);
-    apply();
-  };
-
-  initStackQtySync();
-
+  // Debounced submit
   const debouncedSubmit = (() => {
-    let timeoutId;
+    let tid;
     return () => {
-      clearTimeout(timeoutId);
-      timeoutId = setTimeout(submitForm, 200);
+      clearTimeout(tid);
+      tid = setTimeout(submitForm, 200);
     };
   })();
 
-  const handlePanelizerEvent = () => {
-    debouncedSubmit();
-  };
+  // Attach price field listeners
+  pricedFields.forEach(({ name, priceField }) => {
+    const sel = getId(`${name}-select`);
+    const inp = getId(toDash(priceField) + '-input');
+    const lbl = getId(toDash(priceField) + '-label');
+    if (!sel || !inp || !lbl) return;
 
-  form.addEventListener('input', debouncedSubmit);
-  form.addEventListener('change', debouncedSubmit);
-  form.addEventListener('submit', (event) => {
-    event.preventDefault();
-    submitForm();
+    const sync = (force) => {
+      const val = sel.value || getDefault(name);
+      lbl.textContent = val;
+      if (force || !inp.value) {
+        inp.value = pricedCosts[name]?.[val] ?? '';
+      }
+    };
+
+    sel.addEventListener('change', () => sync(true));
+    sync();
   });
-  if (panelForm) {
-    panelForm.addEventListener('input', handlePanelizerEvent);
-    panelForm.addEventListener('change', handlePanelizerEvent);
-    panelForm.addEventListener('submit', (event) => {
-      event.preventDefault();
+
+  // Stack quantity auto-derive
+  const thickSel = getId('pcb-thickness-select');
+  const holesSel = getId('cnc-hole-select');
+  const stackInp = getId('stack-qty-input');
+  if (thickSel && holesSel && stackInp) {
+    const updateStack = () => {
+      const derived = stackQtyMap[thickSel.value]?.[holesSel.value];
+      if (derived) stackInp.value = derived;
+    };
+    thickSel.addEventListener('change', updateStack);
+    holesSel.addEventListener('change', updateStack);
+    updateStack();
+  }
+
+  // Unified event listeners
+  [form, panelForm].filter(Boolean).forEach((f) => {
+    f.addEventListener('input', debouncedSubmit);
+    f.addEventListener('change', debouncedSubmit);
+    f.addEventListener('submit', (e) => {
+      e.preventDefault();
       submitForm();
     });
-  }
+  });
 
   submitForm();
 })();
