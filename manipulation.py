@@ -292,6 +292,13 @@ def compute_panelizer_rows(
     Returns:
         List of layout dictionaries, sorted by optimality
     """
+    # enforce internal minimum for single PCB dimensions (must be > 10 mm)
+    # This clamps values coming from the UI or presets so enumeration
+    # never attempts layouts with impractically small single-PCBs which
+    # would cause excessive permutations. We mutate cfg in-place but
+    # preserve other keys unchanged.
+    _panelizer_enforce_min_single(cfg)
+
     enabled_sets = {
         letter for letter in "ABCDE" if cfg.get(f"include_set_{letter}", False)
     }
@@ -314,6 +321,36 @@ def compute_panelizer_rows(
         )
     )
     return _panelizer_deduplicate_rows(rows)
+
+
+def _panelizer_enforce_min_single(cfg: Dict[str, Any], min_size_mm: float = 10.001) -> bool:
+    """Ensure single PCB width/length are strictly greater than 10 mm.
+
+    If incoming config values for `single_pcb_width_max` or
+    `single_pcb_length_max` are <= 10.0, clamp them to `min_size_mm`.
+    Returns True if any clamping was performed.
+
+    This helper lives in the computational layer so the HTML/form stays
+    unchanged while enumeration uses safe, constrained dimensions.
+    """
+    clamped = False
+    try:
+        spw = float(cfg.get("single_pcb_width_max", 0.0))
+    except (TypeError, ValueError):
+        spw = 0.0
+    try:
+        spl = float(cfg.get("single_pcb_length_max", 0.0))
+    except (TypeError, ValueError):
+        spl = 0.0
+
+    if spw <= 10.0:
+        cfg["single_pcb_width_max"] = float(min_size_mm)
+        clamped = True
+    if spl <= 10.0:
+        cfg["single_pcb_length_max"] = float(min_size_mm)
+        clamped = True
+
+    return clamped
 
 
 def summarize_panelizer_results(
@@ -490,6 +527,10 @@ def _panelizer_enumerate_layouts(
     board_rot_options = [False, True] if allow_rotate_board else [False]
     single_rot_options = [False, True] if allow_rotate_single else [False]
 
+    # Jumbo multiplier is fixed for this panel_style; track best for branch-and-bound.
+    jmul = jumbo_multiplier.get(panel_style, 1)
+    best_pcbs_per_jumbo = 0
+
     for board_rot in board_rot_options:
         if board_rot:
             CBW_eff, CBL_eff = CBL, CBW
@@ -538,6 +579,12 @@ def _panelizer_enumerate_layouts(
                     if ub_nbw == 0 or ub_nbl == 0:
                         continue
 
+                    # Branch & bound: for這組 (nw, nl)，在理論最多放滿 ub_nbw × ub_nbl 塊大板的情況下，
+                    # 仍然無法達到目前 best_pcbs_per_jumbo，就不需要再枚舉 nbw, nbl。
+                    max_pcbs_this = ub_nbw * ub_nbl * nw * nl * jmul
+                    if max_pcbs_this < best_pcbs_per_jumbo:
+                        continue
+
                     for nbw in range(1, ub_nbw + 1):
                         panel_used_w = nbw * board_w + (nbw - 1) * CWi + 2.0 * EW_w
                         if not _panelizer_almost_le(panel_used_w, WPW):
@@ -553,7 +600,6 @@ def _panelizer_enumerate_layouts(
                             util = _panelizer_utilization(
                                 total_single_pcbs, SPW, SPL, WPW, WPL
                             )
-                            jmul = jumbo_multiplier.get(panel_style, 1)
                             pcbs_per_jumbo = total_single_pcbs * jmul
                             unused_area = panel_area - panel_used_w * panel_used_l
                             rotations_count = (
@@ -592,9 +638,8 @@ def _panelizer_enumerate_layouts(
                             failure: Optional[str] = None
 
                             if all_ok:
-                                spw_e, spl_e = (
-                                    (SPL, SPW) if single_rot else (SPW, SPL)
-                                )
+                                # 這裡直接重用 spw_eff, spl_eff，避免重複計算。
+                                spw_e, spl_e = spw_eff, spl_eff
                                 single_rects = []
                                 for so in single_origins:
                                     sx, sy = so["x"], so["y"]
@@ -616,6 +661,11 @@ def _panelizer_enumerate_layouts(
                                     single_rects
                                 ):
                                     all_ok, failure = False, "Singles overlap"
+
+                            # 只有在「幾何完全可行」時，才更新 best_pcbs_per_jumbo，
+                            # 確保剪枝只根據真正可行解的上界，不會漏掉最優可行解。
+                            if all_ok and pcbs_per_jumbo > best_pcbs_per_jumbo:
+                                best_pcbs_per_jumbo = pcbs_per_jumbo
 
                             layouts.append(
                                 {

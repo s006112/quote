@@ -192,10 +192,10 @@
         <h2>PCB尺寸</h2>
         <div class="grid">
           <label>Width (SPW, mm)
-            <input type="number" step="0.1" name="SPW" id="SPW" value="{{ pv.single_pcb_width_max|default('', false) }}">
+            <input type="number" step="1" name="SPW" id="SPW" value="{{ pv.single_pcb_width_max|default('', false) }}">
           </label>
           <label>Length (SPL, mm)
-            <input type="number" step="0.1" name="SPL" id="SPL" value="{{ pv.single_pcb_length_max|default('', false) }}">
+            <input type="number" step="1" name="SPL" id="SPL" value="{{ pv.single_pcb_length_max|default('', false) }}">
           </label>
           <label>Allow rotate single
             <input type="checkbox" name="ARS" id="ARS" {% if pv.allow_rotate_single_pcb|default(false) %}checked{% endif %}>
@@ -207,10 +207,10 @@
         <h2>工作板</h2>
         <div class="grid">
           <label>Edge Width (EW_w, mm)
-            <input type="number" step="0.1" name="EW_w" id="EW_w" value="{{ pv.panel_edge_margin_w|default('', false) }}">
+            <input type="number" step="0.2" name="EW_w" id="EW_w" value="{{ pv.panel_edge_margin_w|default('', false) }}">
           </label>
           <label>Edge Length (EW_l, mm)
-            <input type="number" step="0.1" name="EW_l" id="EW_l" value="{{ pv.panel_edge_margin_l|default('', false) }}">
+            <input type="number" step="0.2" name="EW_l" id="EW_l" value="{{ pv.panel_edge_margin_l|default('', false) }}">
           </label>
         </div>
       </section>
@@ -219,10 +219,10 @@
         <h2>大料</h2>
         <div class="grid">
           <label>Edge Width (BMW, mm)
-            <input type="number" step="0.1" name="BMW" id="BMW" value="{{ pv.board_edge_margin_w|default('', false) }}">
+            <input type="number" step="0.2" name="BMW" id="BMW" value="{{ pv.board_edge_margin_w|default('', false) }}">
           </label>
           <label>Edge Length (BML, mm)
-            <input type="number" step="0.1" name="BML" id="BML" value="{{ pv.board_edge_margin_l|default('', false) }}">
+            <input type="number" step="0.2" name="BML" id="BML" value="{{ pv.board_edge_margin_l|default('', false) }}">
           </label>
         </div>
       </section>
@@ -252,19 +252,19 @@
         <h2>Gaps</h2>
         <div class="grid">
           <label>拼板 gap W (CW, mm)
-            <input type="number" step="0.1" name="CW" id="CW" value="{{ pv.inter_board_gap_w|default('', false) }}">
+            <input type="number" step="0.2" name="CW" id="CW" value="{{ pv.inter_board_gap_w|default('', false) }}">
           </label>
           <label>拼板 gap L (CL, mm)
-            <input type="number" step="0.1" name="CL" id="CL" value="{{ pv.inter_board_gap_l|default('', false) }}">
+            <input type="number" step="0.2" name="CL" id="CL" value="{{ pv.inter_board_gap_l|default('', false) }}">
           </label>
           <label>单板 gap W (SW, mm)
-            <input type="number" step="0.1" name="SW" id="SW" value="{{ pv.inter_single_gap_w|default('', false) }}">
+            <input type="number" step="0.2" name="SW" id="SW" value="{{ pv.inter_single_gap_w|default('', false) }}">
           </label>
           <label>单板 gap L (SL, mm)
-            <input type="number" step="0.1" name="SL" id="SL" value="{{ pv.inter_single_gap_l|default('', false) }}">
+            <input type="number" step="0.2" name="SL" id="SL" value="{{ pv.inter_single_gap_l|default('', false) }}">
           </label>
           <label>Kerf （all gaps, mm)
-            <input type="number" step="0.1" name="KERF" id="KERF" value="{{ pv.kerf_allowance|default('', false) }}">
+            <input type="number" step="0.2" name="KERF" id="KERF" value="{{ pv.kerf_allowance|default('', false) }}">
           </label>
         </div>
       </section>

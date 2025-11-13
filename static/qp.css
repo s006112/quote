@@ -1,170 +1,91 @@
-body {
-  margin: 8px;
-  padding: 8px;
-  font: 14px/1.5 ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, sans-serif;
+:root{--bg:#ffffff;--muted:#6b7280;--line:#e5e7eb;--accent:#0f172a;--card:#f8fbff;--danger:#b91c1c;--radius:10px}
+
+/* Mobile-first base */
+*{box-sizing:border-box}
+body{margin:10px;padding:10px;font-family:ui-sans-serif,system-ui,-apple-system,"Segoe UI",Roboto,Arial,sans-serif;font-size:15px;line-height:1.45;color:var(--accent);background:var(--bg)}
+
+/* Inputs / controls - larger touch targets */
+input,select,textarea,button{font:inherit;padding:12px 10px;min-height:42px;border:1px solid var(--line);border-radius:8px;background:#fff}
+input:focus,select:focus,textarea:focus,button:focus{outline:none;box-shadow:0 0 0 3px rgba(59,130,246,0.12)}
+
+/* Labels: compact but accessible; stack on narrow viewports */
+label{display:grid;grid-template-columns:1fr;gap:6px;align-items:center;font-size:0.95rem}
+label .label-text{font-weight:600;color:var(--accent)}
+label input[type="checkbox"],label input[type="radio"]{min-height:unset;padding:0;width:auto}
+
+/* Form group grid: stack by default, expand at wider widths */
+.grid{display:grid;grid-template-columns:1fr;gap:12px}
+
+section{margin:14px 0}
+
+/* Form sections: stack on small, two-column from 750px */
+form section{display:grid;grid-template-columns:1fr;gap:10px}
+form section h2,form section h3{margin:0}
+.form-note{color:var(--muted);font-size:0.95rem}
+
+/* Ensure labeled controls occupy full width on small screens */
+label input,label select,label textarea{width:100%}
+
+/* Page layout: single column by default; add a sidebar at >=750px while preserving desktop at 960px */
+.page-layout{display:grid;gap:20px;align-items:start}
+
+@media (min-width:750px){
+  /* two-column layout for tablets / large phones */
+  form section{grid-template-columns:180px 1fr;align-items:start}
+  form section .grid{grid-column:2}
+  label{grid-template-columns:120px 1fr;align-items:center}
+  .grid{grid-template-columns:repeat(auto-fit,minmax(220px,1fr))}
+  .page-layout{grid-template-columns:1fr 320px}
 }
 
-* {
-  box-sizing: border-box;
-}
-
-/* Core form layout & spacing */
-input,
-select {
-  font: inherit;
-  padding: 8px;
-  border: 1px solid #ccc;
-  border-radius: 6px;
-}
-
-label {
-  display: grid;
-  grid-template-columns: 100px auto;
-  align-items: center;
-  gap: 4px;
-  justify-items: start;
-}
-
-label input,
-label select {
-  width: 100px;
-  max-width: 100%;
-}
-
-label input[type="checkbox"] {
-  width: auto;
-  padding: 0;
-}
-
-/* Grid layout for form groups */
-.grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(200px, max-content));
-  gap: 10px;
-  justify-content: start;
-}
-
-/* Section default spacing */
-section {
-  margin: 12px 0;
-}
-
-/* Form section layout: labels on left, inputs on right */
-form section {
-  display: grid;
-  grid-template-columns: 180px minmax(0, 1fr);
-  align-items: start;
-  gap: 8px 18px;
-  padding: 0;
-}
-
-form section h2,
-form section h3 {
-  margin: 0;
-  align-self: start;
-}
-
-form section .grid {
-  grid-column: 2;
-}
-
-/* Page layout: main content + sidebar */
-.page-layout {
-  display: grid;
-  gap: 24px;
-  align-items: start;
+@media (min-width:960px){
+  /* preserve original desktop layout with minimal changes */
+  .page-layout{grid-template-columns:minmax(0,1fr) 360px}
+  form section{grid-template-columns:180px minmax(0,1fr)}
+  label{grid-template-columns:100px auto}
 }
 
 /* Summary card styling */
-.summary-card {
-  border: 1px solid #ddd;
-  border-radius: 10px;
-  padding: 18px;
-  background: #f8fbff;
+.summary-card{border:1px solid var(--line);border-radius:var(--radius);padding:18px;background:var(--card)}
+.summary-card h2{margin-top:0}
+.summary-placeholder{color:var(--muted);margin:0}
+
+/* Panelizer results: make tables scrollable on small screens */
+.panelizer-results{--line:var(--line);margin-top:18px}
+.panelizer-results .panelizer-table{display:block;width:100%;overflow:auto;-webkit-overflow-scrolling:touch;border-collapse:collapse;margin-top:12px}
+.panelizer-results th,.panelizer-results td{border-bottom:1px solid var(--line);padding:10px 8px;text-align:center;font-variant-numeric:tabular-nums;white-space:nowrap}
+.panelizer-results th{background:#f8f8f8;font-weight:600}
+.panelizer-results .small{font-size:0.85rem;color:#4b5563}
+
+/* Allow cell wrapping when there's space (>=750) to reduce horizontal scroll */
+@media (min-width:750px){
+  .panelizer-results .panelizer-table{display:table;width:100%;overflow:visible}
+  .panelizer-results th,.panelizer-results td{display:table-cell;white-space:normal;padding:10px 12px}
 }
 
-.summary-card h2 {
-  margin-top: 0;
+/* Alerts */
+.alert{border:1px solid var(--danger);color:var(--danger);padding:10px;border-radius:8px;margin:10px 0}
+
+/* Monospace helper */
+.mono{font-family:ui-monospace,Consolas,monospace}
+
+/* Small visual tweaks */
+.muted{color:var(--muted)}
+.tight{gap:6px}
+
+/* Utility: ensure large clickable rows for touch */
+.clickable{cursor:pointer}
+
+/* Ensure inputs in label don't overflow */
+label > *{max-width:100%}
+
+/* Minor responsive typography adjustments for 750-900px range */
+@media (min-width:750px) and (max-width:900px){
+  body{font-size:15px}
+  .panelizer-results th,.panelizer-results td{font-size:0.95rem}
+  input,select,textarea,button{padding:12px}
 }
 
-.summary-placeholder {
-  color: #6b7280;
-  margin: 0;
-}
+/* Preserve any existing small-size util class names used in markup */
+.small{font-size:0.85rem}
 
-/* Panelizer results table */
-.panelizer-results {
-  --line: #ddd;
-  margin-top: 20px;
-}
-
-.panelizer-results .panelizer-table {
-  width: 100%;
-  border-collapse: collapse;
-  margin-top: 12px;
-  font-size: 0.95rem;
-}
-
-.panelizer-results th,
-.panelizer-results td {
-  border-bottom: 1px solid var(--line);
-  padding: 8px 6px;
-  text-align: center;
-  font-variant-numeric: tabular-nums;
-}
-
-.panelizer-results th {
-  background: #f8f8f8;
-  font-weight: 600;
-}
-
-.panelizer-results .small {
-  font-size: 0.85rem;
-  color: #4b5563;
-}
-
-/* Error/alert styling */
-.alert {
-  border: 1px solid #b91c1c;
-  color: #b91c1c;
-  padding: 8px;
-  border-radius: 6px;
-  margin: 10px 0;
-}
-
-/* Monospace font for data display */
-.mono {
-  font-family: ui-monospace, Consolas, monospace;
-}
-
-/* Desktop layout: form + sidebar */
-@media (min-width: 960px) {
-  .page-layout {
-    grid-template-columns: minmax(0, 1fr) 360px;
-  }
-}
-
-/* Mobile: stack everything vertically */
-@media (max-width: 640px) {
-  form section {
-    grid-template-columns: 1fr;
-  }
-
-  form section h2,
-  form section .grid {
-    grid-column: 1;
-  }
-
-  .grid {
-    grid-template-columns: 1fr;
-  }
-
-  label {
-    grid-template-columns: 1fr;
-  }
-
-  label input,
-  label select {
-    width: 100%;
-  }
-}
