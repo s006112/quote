@@ -231,16 +231,16 @@
         <h2>拼板</h2>
         <div class="grid">
           <label>Max Width (CBW, mm)
-            <input type="number" step="0.1" name="CBW" id="CBW" value="{{ pv.customer_board_width_max|default('', false) }}">
+            <input type="number" step="1" name="CBW" id="CBW" value="{{ pv.customer_board_width_max|default('', false) }}">
           </label>
           <label>Max Length (CBL, mm)
-            <input type="number" step="0.1" name="CBL" id="CBL" value="{{ pv.customer_board_length_max|default('', false) }}">
+            <input type="number" step="1" name="CBL" id="CBL" value="{{ pv.customer_board_length_max|default('', false) }}">
           </label>
           <label>Min Width (CBWM, mm)
-            <input type="number" step="0.1" name="CBWM" id="CBWM" value="{{ pv.customer_board_width_min|default('', false) }}">
+            <input type="number" step="1" name="CBWM" id="CBWM" value="{{ pv.customer_board_width_min|default('', false) }}">
           </label>
           <label>Min Length (CBLM, mm)
-            <input type="number" step="0.1" name="CBLM" id="CBLM" value="{{ pv.customer_board_length_min|default('', false) }}">
+            <input type="number" step="1" name="CBLM" id="CBLM" value="{{ pv.customer_board_length_min|default('', false) }}">
           </label>
           <label>Allow rotate board
             <input type="checkbox" name="ARB" id="ARB" {% if pv.allow_rotate_board|default(false) %}checked{% endif %}>

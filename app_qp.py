@@ -8,9 +8,14 @@ from typing import Any, Dict, List, NamedTuple, Optional, Tuple, get_type_hints
 
 from flask import Flask, render_template, request, send_file
 
-from pricing import Inputs, Params, price_quote
+from manipulation import Inputs, Params, price_quote
 
 app = Flask(__name__)
+
+
+# ---------------------------------------------------------------------------
+# Configuration & preset loading
+# ---------------------------------------------------------------------------
 
 ICON_FILENAME = "lt.png"
 ICON_PATH = os.path.join(os.path.dirname(__file__), ICON_FILENAME)
@@ -50,36 +55,7 @@ PRESETS = _deep_merge(PRESETS_BASE, PRESETS_OVERRIDE)
 DEFAULTS = PRESETS["defaults"]
 INPUT_TYPE_HINTS = get_type_hints(Inputs)
 PARAM_TYPE_HINTS = get_type_hints(Params)
-
 INPUT_FIELD_NAMES = tuple(f.name for f in fields(Inputs))
-
-
-def _panelizer_section(key: str) -> Dict[str, Any]:
-    value = DEFAULTS.get(key, {})
-    return value.copy() if isinstance(value, dict) else {}
-
-
-def _load_panelizer_panel_options() -> Dict[str, Tuple[float, float]]:
-    section = _panelizer_section("panelizer_panel_options")
-    if not section:
-        raise RuntimeError("panelizer_panel_options is missing from defaults.")
-    options: Dict[str, Tuple[float, float]] = {}
-    for style, dims in section.items():
-        if not isinstance(dims, (list, tuple)) or len(dims) != 2:
-            raise ValueError(f"Invalid panel dimensions for {style!r}")
-        options[style] = (float(dims[0]), float(dims[1]))
-    return options
-
-
-def _load_panelizer_jumbo_multiplier() -> Dict[str, int]:
-    section = _panelizer_section("panelizer_jumbo_multiplier")
-    if not section:
-        raise RuntimeError("panelizer_jumbo_multiplier is missing from defaults.")
-    multipliers: Dict[str, int] = {}
-    for style, value in section.items():
-        multipliers[style] = int(value)
-    return multipliers
-
 
 PANELIZER_CONFIG_KEYS: tuple[str, ...] = (
     "customer_board_width_max",
@@ -108,40 +84,9 @@ PANELIZER_CONFIG_KEYS: tuple[str, ...] = (
 )
 
 
-def _panelizer_default_config() -> Dict[str, Any]:
-    missing = [key for key in PANELIZER_CONFIG_KEYS if key not in DEFAULTS]
-    if missing:
-        missing_csv = ", ".join(sorted(missing))
-        raise RuntimeError(f"Panelizer defaults missing from presets: {missing_csv}")
-    return {key: DEFAULTS[key] for key in PANELIZER_CONFIG_KEYS}
-
-
-PANELIZER_PANEL_OPTIONS = _load_panelizer_panel_options()
-PANELIZER_JUMBO_MULTIPLIER = _load_panelizer_jumbo_multiplier()
-
-
-def _stack_qty_lookup(thickness: str | None, hole_dimension: str | None) -> int | None:
-    mapping = DEFAULTS.get("stack_qty_map")
-    if not isinstance(mapping, dict):
-        return None
-    thickness_map = mapping.get(thickness)
-    if not isinstance(thickness_map, dict):
-        return None
-    value = thickness_map.get(hole_dimension)
-    if value is None:
-        return None
-    try:
-        return max(1, int(value))
-    except (TypeError, ValueError):
-        return None
-
-def _options_from_defaults(map_key: str) -> tuple[str, ...]:
-    mapping = DEFAULTS.get(map_key, {})
-    return tuple(mapping.keys()) if isinstance(mapping, dict) else tuple()
-
-PCB_THICKNESS_OPTIONS = _options_from_defaults("pcb_thickness_options")
-CNC_HOLE_DIMENSION_OPTIONS = _options_from_defaults("cnc_hole_dimension_options")
-
+# ---------------------------------------------------------------------------
+# Data structures & default-derived options
+# ---------------------------------------------------------------------------
 
 class PricedField(NamedTuple):
     name: str
@@ -163,8 +108,37 @@ def _defaults_map(key: str) -> dict[str, Any]:
     return value.copy() if isinstance(value, dict) else {}
 
 
+def _options_from_defaults(map_key: str) -> tuple[str, ...]:
+    mapping = DEFAULTS.get(map_key, {})
+    return tuple(mapping.keys()) if isinstance(mapping, dict) else tuple()
+
+
 PRICED_DEFAULT_MAPS = {field.name: _defaults_map(field.map_key) for field in PRICED_FIELDS}
 SELECT_OPTIONS = {field.name: tuple(PRICED_DEFAULT_MAPS[field.name].keys()) for field in PRICED_FIELDS}
+PCB_THICKNESS_OPTIONS = _options_from_defaults("pcb_thickness_options")
+CNC_HOLE_DIMENSION_OPTIONS = _options_from_defaults("cnc_hole_dimension_options")
+
+
+# ---------------------------------------------------------------------------
+# Shared utilities
+# ---------------------------------------------------------------------------
+
+
+def _stack_qty_lookup(thickness: str | None, hole_dimension: str | None) -> int | None:
+    mapping = DEFAULTS.get("stack_qty_map")
+    if not isinstance(mapping, dict):
+        return None
+    thickness_map = mapping.get(thickness)
+    if not isinstance(thickness_map, dict):
+        return None
+    value = thickness_map.get(hole_dimension)
+    if value is None:
+        return None
+    try:
+        return max(1, int(value))
+    except (TypeError, ValueError):
+        return None
+
 
 def _persist_defaults(
     inputs: Inputs,
@@ -200,94 +174,52 @@ def _persist_defaults(
         PRICED_DEFAULT_MAPS[field.name] = defaults_map
         SELECT_OPTIONS[field.name] = tuple(defaults_map.keys())
 
-def _to_float(name: str, default: float) -> float:
-    v = request.form.get(name, str(default)).strip()
-    try:
-        return float(v)
-    except ValueError:
-        raise ValueError(f"{name} must be a number")
-
-def _to_int(name: str, default: int) -> int:
-    v = request.form.get(name, str(default)).strip()
-    try:
-        return int(v)
-    except ValueError:
-        raise ValueError(f"{name} must be an integer")
-
-def _validate(d: dict[str, Any]) -> list[str]:
-    errs = []
-    if not (1 <= d["layers"] <= 40): errs.append("Layers must be 1–40.")
-    if d["panel_boards"] < 1: errs.append("Boards per panel must be >= 1.")
-    if d.get("stack_qty", 1) < 1: errs.append("Stack quantity must be >= 1.")
-    if d.get("cnc_pth_holes", 0) < 0: errs.append("CNC PTH holes must be >= 0.")
-    if d.get("cutting_cost", 0.0) < 0: errs.append("Cutting cost must be >= 0.")
-    if d.get("routing_length", 0.0) < 0: errs.append("Routing length must be >= 0.")
-    if d.get("stamping_cost", 0.0) < 0: errs.append("Stamping cost must be >= 0.")
-    if d.get("post_process_cost", 0.0) < 0: errs.append("Post Process cost must be >= 0.")
-    return errs
-
-def _make_inputs() -> Inputs:
-    payload: dict[str, Any] = {}
-    for name, hint in INPUT_TYPE_HINTS.items():
-        default = DEFAULTS[name]
-        if hint is int:
-            payload[name] = _to_int(name, int(default))
-        elif hint is float:
-            payload[name] = _to_float(name, float(default))
-        else:
-            payload[name] = request.form.get(name, str(default))
-    derived_stack_qty = _stack_qty_lookup(
-        payload.get("pcb_thickness"),
-        payload.get("cnc_hole_dimension"),
-    )
-    if derived_stack_qty is not None:
-        payload["stack_qty"] = derived_stack_qty
-    else:
-        payload["stack_qty"] = max(1, int(payload.get("stack_qty", 1)))
-    return Inputs(**payload)
-
-def _make_params() -> Params:
-    payload: dict[str, Any] = {}
-    for name, hint in PARAM_TYPE_HINTS.items():
-        default = DEFAULTS.get(name)
-        if hint is float and default is not None:
-            payload[name] = _to_float(name, float(default))
-        elif hint is int and default is not None:
-            payload[name] = _to_int(name, int(default))
-        else:
-            value = default
-            if isinstance(value, dict):
-                value = value.copy()
-            payload[name] = value
-
-    selected_choices = {
-        field.name: request.form.get(field.name, DEFAULTS.get(field.name))
-        for field in PRICED_FIELDS
-    }
-
-    def _apply_override(price_field: str, map_key: str, selected: str | None, err_msg: str) -> None:
-        raw = request.form.get(price_field)
-        if raw in (None, ""):
-            return
-        try:
-            value = float(raw)
-        except ValueError:
-            raise ValueError(err_msg)
-        if not selected:
-            return
-        price_map = payload.get(map_key)
-        if price_map is None:
-            price_map = {}
-            payload[map_key] = price_map
-        price_map[selected] = value
-
-    for field in PRICED_FIELDS:
-        form_key = field.price_field
-        _apply_override(form_key, field.map_key, selected_choices.get(field.name), field.error)
-    return Params(**payload)
+    # NOTE: Mutates DEFAULTS/PRESETS in place so later requests see the new defaults.
 
 
-# ------------------------------ Panelizer ------------------------------------
+# ---------------------------------------------------------------------------
+# Panelizer configuration & layout search
+# ---------------------------------------------------------------------------
+
+
+def _panelizer_section(key: str) -> Dict[str, Any]:
+    value = DEFAULTS.get(key, {})
+    return value.copy() if isinstance(value, dict) else {}
+
+
+def _load_panelizer_panel_options() -> Dict[str, Tuple[float, float]]:
+    section = _panelizer_section("panelizer_panel_options")
+    if not section:
+        raise RuntimeError("panelizer_panel_options is missing from defaults.")
+    options: Dict[str, Tuple[float, float]] = {}
+    for style, dims in section.items():
+        if not isinstance(dims, (list, tuple)) or len(dims) != 2:
+            raise ValueError(f"Invalid panel dimensions for {style!r}")
+        options[style] = (float(dims[0]), float(dims[1]))
+    return options
+
+
+def _load_panelizer_jumbo_multiplier() -> Dict[str, int]:
+    section = _panelizer_section("panelizer_jumbo_multiplier")
+    if not section:
+        raise RuntimeError("panelizer_jumbo_multiplier is missing from defaults.")
+    multipliers: Dict[str, int] = {}
+    for style, value in section.items():
+        multipliers[style] = int(value)
+    return multipliers
+
+
+PANELIZER_PANEL_OPTIONS = _load_panelizer_panel_options()
+PANELIZER_JUMBO_MULTIPLIER = _load_panelizer_jumbo_multiplier()
+
+
+def _panelizer_default_config() -> Dict[str, Any]:
+    missing = [key for key in PANELIZER_CONFIG_KEYS if key not in DEFAULTS]
+    if missing:
+        missing_csv = ", ".join(sorted(missing))
+        raise RuntimeError(f"Panelizer defaults missing from presets: {missing_csv}")
+    return {key: DEFAULTS[key] for key in PANELIZER_CONFIG_KEYS}
+
 
 def _panelizer_parse_bool(value: Any) -> bool:
     if isinstance(value, str):
@@ -498,24 +430,6 @@ def _panelizer_enumerate_layouts(cfg: Dict[str, float], panel_w: float, panel_l:
 
                             all_ok = True
                             failure: Optional[str] = None
-                            if not _panelizer_almost_le(board_w, (CBL if board_rot else CBW)):
-                                all_ok, failure = False, "Board width exceeds limit"
-                            if all_ok and not _panelizer_almost_le(board_l, (CBW if board_rot else CBL)):
-                                all_ok, failure = False, "Board length exceeds limit"
-                            if all_ok and not _panelizer_almost_ge(board_w, CBW_min_eff):
-                                all_ok, failure = False, "Board width below minimum"
-                            if all_ok and not _panelizer_almost_ge(board_l, CBL_min_eff):
-                                all_ok, failure = False, "Board length below minimum"
-
-                            board_rects = []
-                            for bo in board_origins:
-                                x, y = bo["x"], bo["y"]
-                                board_rects.append((x, y, x + board_w, y + board_l))
-                                if x < 0 or y < 0 or (x + board_w) > WPW or (y + board_l) > WPL:
-                                    all_ok, failure = False, "Board out of panel bounds"
-                                    break
-                            if all_ok and not _panelizer_pairwise_no_overlap(board_rects):
-                                all_ok, failure = False, "Boards overlap"
 
                             if all_ok:
                                 spw_e, spl_e = ((SPL, SPW) if single_rot else (SPW, SPL))
@@ -642,6 +556,116 @@ def _panelizer_summary(rows: List[Dict[str, Any]], cfg: Dict[str, Any]) -> Dict[
         "table_attrs": table_attrs,
     }
 
+
+# ---------------------------------------------------------------------------
+# Form parsing & validation
+# ---------------------------------------------------------------------------
+
+
+def _to_float(name: str, default: float) -> float:
+    v = request.form.get(name, str(default)).strip()
+    try:
+        return float(v)
+    except ValueError:
+        raise ValueError(f"{name} must be a number")
+
+
+def _to_int(name: str, default: int) -> int:
+    v = request.form.get(name, str(default)).strip()
+    try:
+        return int(v)
+    except ValueError:
+        raise ValueError(f"{name} must be an integer")
+
+
+def _make_inputs() -> Inputs:
+    payload: dict[str, Any] = {}
+    for name, hint in INPUT_TYPE_HINTS.items():
+        default = DEFAULTS[name]
+        if hint is int:
+            payload[name] = _to_int(name, int(default))
+        elif hint is float:
+            payload[name] = _to_float(name, float(default))
+        else:
+            payload[name] = request.form.get(name, str(default))
+    derived_stack_qty = _stack_qty_lookup(
+        payload.get("pcb_thickness"),
+        payload.get("cnc_hole_dimension"),
+    )
+    if derived_stack_qty is not None:
+        payload["stack_qty"] = derived_stack_qty
+    else:
+        payload["stack_qty"] = max(1, int(payload.get("stack_qty", 1)))
+    return Inputs(**payload)
+
+
+def _make_params() -> Params:
+    payload: dict[str, Any] = {}
+    for name, hint in PARAM_TYPE_HINTS.items():
+        default = DEFAULTS.get(name)
+        if hint is float and default is not None:
+            payload[name] = _to_float(name, float(default))
+        elif hint is int and default is not None:
+            payload[name] = _to_int(name, int(default))
+        else:
+            value = default
+            if isinstance(value, dict):
+                value = value.copy()
+            payload[name] = value
+
+    selected_choices = {
+        field.name: request.form.get(field.name, DEFAULTS.get(field.name))
+        for field in PRICED_FIELDS
+    }
+
+    def _apply_override(price_field: str, map_key: str, selected: str | None, err_msg: str) -> None:
+        raw = request.form.get(price_field)
+        if raw in (None, ""):
+            return
+        try:
+            value = float(raw)
+        except ValueError:
+            raise ValueError(err_msg)
+        if not selected:
+            return
+        price_map = payload.get(map_key)
+        if price_map is None:
+            price_map = {}
+            payload[map_key] = price_map
+        price_map[selected] = value
+
+    for field in PRICED_FIELDS:
+        form_key = field.price_field
+        _apply_override(form_key, field.map_key, selected_choices.get(field.name), field.error)
+    return Params(**payload)
+
+
+def _validate(d: dict[str, Any]) -> list[str]:
+    errs = []
+    if not (1 <= d["layers"] <= 40):
+        errs.append("Layers must be 1–40.")
+    if d["panel_boards"] < 1:
+        errs.append("Boards per panel must be >= 1.")
+    if d.get("stack_qty", 1) < 1:
+        errs.append("Stack quantity must be >= 1.")
+    if d.get("cnc_pth_holes", 0) < 0:
+        errs.append("CNC PTH holes must be >= 0.")
+    if d.get("cutting_cost", 0.0) < 0:
+        errs.append("Cutting cost must be >= 0.")
+    if d.get("routing_length", 0.0) < 0:
+        errs.append("Routing length must be >= 0.")
+    if d.get("stamping_cost", 0.0) < 0:
+        errs.append("Stamping cost must be >= 0.")
+    if d.get("post_process_cost", 0.0) < 0:
+        errs.append("Post Process cost must be >= 0.")
+    return errs
+
+
+# ---------------------------------------------------------------------------
+# Flask routes
+# ---------------------------------------------------------------------------
+
+
 @app.route("/", methods=["GET", "POST"])
 def index():
     error_msgs, result = [], None
@@ -690,7 +714,7 @@ def index():
     }
     form_defaults = {
         name: DEFAULTS[name]
-        for name in INPUT_FIELD_NAMES 
+        for name in INPUT_FIELD_NAMES
         if name in DEFAULTS
     }
     form_values = {k: request.form.get(k, str(v)) for k, v in form_defaults.items()}
@@ -748,6 +772,12 @@ def index():
 @app.route("/favicon.ico")
 def serve_icon():
     return send_file(ICON_PATH, mimetype="image/png")
+
+
+# ---------------------------------------------------------------------------
+# Main entry point
+# ---------------------------------------------------------------------------
+
 
 if __name__ == "__main__":
     host = os.environ.get("HOST", "0.0.0.0")

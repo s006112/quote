@@ -4,7 +4,7 @@ from dataclasses import asdict, fields
 from typing import Any, NamedTuple, get_type_hints
 from flask import Flask, render_template, request, send_file
 
-from pricing import Inputs, Params, price_quote
+from manipulation import Inputs, Params, price_quote
 
 app = Flask(__name__)
 
