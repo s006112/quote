@@ -32,7 +32,7 @@ class Params:
     masking_costs: dict
     plating_costs: dict
     overheads_pct: float
-    yield_pct: float
+    loss_pct: float
     margin_pct: float
     cnc_pth_per_hole: float
     routing_per_inch: float
@@ -101,9 +101,10 @@ def price_quote(inp: Inputs, prm: Params) -> dict:
 
     # Other cost
     oh = base * _non_negative(prm.overheads_pct) / 100.0
-    yield_pct = _percent(prm.yield_pct)
-    yld = base * (100.0 - yield_pct) / 100.0
-    other_cost = oh + yld
+    loss_pct = _percent(prm.loss_pct)
+    # loss_pct already stores the fraction (in percent) not produced: loss = 1 - yield.
+    loss_cost = base * loss_pct / 100.0
+    other_cost = oh + loss_cost
 
     # Total COGs
     cogs = base + other_cost
@@ -139,7 +140,7 @@ def price_quote(inp: Inputs, prm: Params) -> dict:
         "others": {
             "total": round(other_cost, 2),
             "overhead": round(oh, 2),
-            "yield": round(yld, 2),
+            "loss": round(loss_cost, 2),
             "margin": round(margin_cost, 2),
         },
         "boards_per_panel": boards_per_panel,

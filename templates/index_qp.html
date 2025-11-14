@@ -156,11 +156,11 @@
           <label>Overheads (%)
             <input name="overheads_pct" type="number" step="1" min="0" value="{{ params_values.overheads_pct }}">
           </label>
-          <label>產出 (%)
-            <input name="yield_pct" type="number" step="1" min="0" max="100" value="{{ params_values.yield_pct }}">
+          <label>损耗 (%)
+            <input name="loss_pct" type="number" step="0.1" min="0" max="100" value="{{ params_values.loss_pct }}">
           </label>
           <label>利润 (%)
-            <input name="margin_pct" type="number" step="1" min="0" value="{{ params_values.margin_pct }}">
+            <input name="margin_pct" type="number" step="0.1" min="0" value="{{ params_values.margin_pct }}">
           </label>
         </div>
       </section>
@@ -178,7 +178,7 @@
     <form id="panelizer-form" method="get" novalidate>
 
       <section>
-        <h2>Panel Sets</h2>
+        <h2>大料规格</h2>
         <div class="grid">
           {% for option in panelizer_set_options %}
           <label>{{ option.label }}
@@ -189,13 +189,13 @@
       </section>
       
       <section>
-        <h2>PCB尺寸</h2>
+        <h2>单板尺寸</h2>
         <div class="grid">
           <label>Width (SPW, mm)
             <input type="number" step="0.01" name="SPW" id="SPW" value="{{ pv.single_pcb_width_max|default('', false) }}">
           </label>
           <label>Length (SPL, mm)
-            <input type="number" step="1" name="SPL" id="SPL" value="{{ pv.single_pcb_length_max|default('', false) }}">
+            <input type="number" step="0.01" name="SPL" id="SPL" value="{{ pv.single_pcb_length_max|default('', false) }}">
           </label>
           <label>Allow rotate single
             <input type="checkbox" name="ARS" id="ARS" {% if pv.allow_rotate_single_pcb|default(false) %}checked{% endif %}>
@@ -366,7 +366,7 @@
           <li>Others: {{ result.breakdown.others.total }}
             <ul>
               <li>OH: {{ result.breakdown.others.overhead }}</li>
-              <li>產出: {{ result.breakdown.others.yield }}</li>
+              <li>损耗: {{ result.breakdown.others.loss }}</li>
             </ul>
           </li>
           <li>开料件数: {{ result.breakdown.boards_per_panel }}</li>

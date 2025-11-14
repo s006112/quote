@@ -163,8 +163,8 @@
           <label>Overheads (%)
             <input name="overheads_pct" type="number" step="1" min="0" value="{{ params_values.overheads_pct }}">
           </label>
-          <label>產出 (%)
-            <input name="yield_pct" type="number" step="1" min="0" max="100" value="{{ params_values.yield_pct }}">
+          <label>损耗 (%)
+            <input name="loss_pct" type="number" step="1" min="0" max="100" value="{{ params_values.loss_pct }}">
           </label>
           <label>利润 (%)
             <input name="margin_pct" type="number" step="1" min="0" value="{{ params_values.margin_pct }}">
@@ -217,7 +217,7 @@
           <li>Others: {{ result.breakdown.others.total }}
             <ul>
               <li>OH: {{ result.breakdown.others.overhead }}</li>
-              <li>產出: {{ result.breakdown.others.yield }}</li>
+              <li>损耗: {{ result.breakdown.others.loss }}</li>
             </ul>
           </li>
           <li>开料件数: {{ result.breakdown.boards_per_panel }}</li>
