@@ -189,10 +189,10 @@
         <h2>单板尺寸</h2>
         <div class="grid">
           <label>Width (SPW)
-            <input type="number" step="0.01" name="SPW" id="SPW" value="{{ pv.single_pcb_width_max|default('', false) }}">
+            <input type="number" step="0.01" name="SPW" id="SPW" min="15" value="{{ pv.single_pcb_width_max|default('', false) }}">
           </label>
           <label>Length (SPL)
-            <input type="number" step="0.01" name="SPL" id="SPL" value="{{ pv.single_pcb_length_max|default('', false) }}">
+            <input type="number" step="0.01" name="SPL" id="SPL" min="15" value="{{ pv.single_pcb_length_max|default('', false) }}">
           </label>
         </div>
       </section>
@@ -429,6 +429,12 @@
   };
 
   const submitForm = () => {
+    // Enforce minimum single PCB dimensions to avoid very small values
+    const spw = document.getElementById('SPW');
+    const spl = document.getElementById('SPL');
+    if (spw && spw.value !== '') spw.value = Math.max(15, Number(spw.value));
+    if (spl && spl.value !== '') spl.value = Math.max(15, Number(spl.value));
+
     const formData = new FormData(form);
     if (panelForm) {
       new FormData(panelForm).forEach((v, k) => formData.set(k, v));
