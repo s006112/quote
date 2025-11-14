@@ -34,7 +34,6 @@
     "inter_single_gap_l": 0.0,
     "allow_rotate_board": true,
     "allow_rotate_single_pcb": true,
-    "kerf_allowance": 0.0,
     "limit": 13,
     "include_set_A": true,
     "include_set_B": false,

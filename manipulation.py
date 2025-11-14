@@ -174,7 +174,6 @@ PANELIZER_CONFIG_KEYS: tuple[str, ...] = (
     "inter_single_gap_l",
     "allow_rotate_board",
     "allow_rotate_single_pcb",
-    "kerf_allowance",
     "limit",
     "include_set_A",
     "include_set_B",
@@ -237,10 +236,10 @@ def build_panelizer_config(
         args, "SPL", cfg.get("single_pcb_length_max", 0.0)
     )
     cfg["panel_edge_margin_w"] = _panelizer_float(
-        args, "EW_w", cfg.get("panel_edge_margin_w", 0.0)
+        args, "PEW", cfg.get("panel_edge_margin_w", 0.0)
     )
     cfg["panel_edge_margin_l"] = _panelizer_float(
-        args, "EW_l", cfg.get("panel_edge_margin_l", 0.0)
+        args, "PEL", cfg.get("panel_edge_margin_l", 0.0)
     )
     cfg["board_edge_margin_w"] = _panelizer_float(
         args, "BMW", cfg.get("board_edge_margin_w", 0.0)
@@ -265,9 +264,6 @@ def build_panelizer_config(
     )
     cfg["allow_rotate_single_pcb"] = _panelizer_checkbox(
         args, "ARS", cfg.get("allow_rotate_single_pcb", False)
-    )
-    cfg["kerf_allowance"] = _panelizer_float(
-        args, "KERF", cfg.get("kerf_allowance", 0.0)
     )
     cfg["limit"] = _panelizer_int(args, "LIMIT", int(cfg.get("limit", 10)))
     for letter in "ABCDE":
@@ -470,8 +466,8 @@ def _panelizer_enumerate_layouts(
     CBL_min = float(cfg.get("customer_board_length_min", 0.0))
     SPW = float(cfg["single_pcb_width_max"])
     SPL = float(cfg["single_pcb_length_max"])
-    EW_w = float(cfg["panel_edge_margin_w"])
-    EW_l = float(cfg["panel_edge_margin_l"])
+    PEW = float(cfg["panel_edge_margin_w"])
+    PEL = float(cfg["panel_edge_margin_l"])
     BEW = float(cfg.get("board_edge_margin_w", 0.0))
     BEL = float(cfg.get("board_edge_margin_l", 0.0))
     CW = float(cfg["inter_board_gap_w"])
@@ -480,10 +476,8 @@ def _panelizer_enumerate_layouts(
     SL = float(cfg["inter_single_gap_l"])
     allow_rotate_board = bool(cfg.get("allow_rotate_board", False))
     allow_rotate_single = bool(cfg.get("allow_rotate_single_pcb", False))
-    kerf = float(cfg.get("kerf_allowance", 0.0))
-
-    CWi, CLi = CW + kerf, CL + kerf
-    SWi, SLi = SW + kerf, SL + kerf
+    CWi, CLi = CW, CL
+    SWi, SLi = SW, SL
 
     panel_area = WPW * WPL
 
@@ -533,8 +527,8 @@ def _panelizer_enumerate_layouts(
                         board_w, CBW_min_eff
                     ) or not _panelizer_almost_ge(board_l, CBL_min_eff):
                         continue
-                    avail_w = WPW - 2.0 * EW_w
-                    avail_l = WPL - 2.0 * EW_l
+                    avail_w = WPW - 2.0 * PEW
+                    avail_l = WPL - 2.0 * PEL
                     if avail_w <= 0 or avail_l <= 0:
                         continue
 
@@ -550,12 +544,12 @@ def _panelizer_enumerate_layouts(
                         continue
 
                     for nbw in range(1, ub_nbw + 1):
-                        panel_used_w = nbw * board_w + (nbw - 1) * CWi + 2.0 * EW_w
+                        panel_used_w = nbw * board_w + (nbw - 1) * CWi + 2.0 * PEW
                         if not _panelizer_almost_le(panel_used_w, WPW):
                             continue
                         for nbl in range(1, ub_nbl + 1):
                             panel_used_l = (
-                                nbl * board_l + (nbl - 1) * CLi + 2.0 * EW_l
+                                nbl * board_l + (nbl - 1) * CLi + 2.0 * PEL
                             )
                             if not _panelizer_almost_le(panel_used_l, WPL):
                                 continue
@@ -570,8 +564,8 @@ def _panelizer_enumerate_layouts(
                                 (1 if board_rot else 0)
                                 + (1 if single_rot else 0)
                             )
-                            left_margin = EW_w
-                            bottom_margin = EW_l
+                            left_margin = PEW
+                            bottom_margin = PEL
                             right_margin = WPW - panel_used_w
                             top_margin = WPL - panel_used_l
                             mu_score = abs(left_margin - right_margin) + abs(
@@ -579,7 +573,7 @@ def _panelizer_enumerate_layouts(
                             )
 
                             board_origins = []
-                            x0, y0 = EW_w, EW_l
+                            x0, y0 = PEW, PEL
                             for j in range(nbl):
                                 y = y0 + j * (board_l + CLi)
                                 for i in range(nbw):

@@ -108,8 +108,8 @@ def enumerate_layouts(cfg: Dict[str, float], panel_w: float, panel_l: float, pan
     CBL_min = float(cfg.get("customer_board_length_min", 0.0))
     SPW = float(cfg["single_pcb_width_max"])
     SPL = float(cfg["single_pcb_length_max"])
-    EW_w = float(cfg["panel_edge_margin_w"])
-    EW_l = float(cfg["panel_edge_margin_l"])
+    PEW = float(cfg["panel_edge_margin_w"])
+    PEL = float(cfg["panel_edge_margin_l"])
     BEW = float(cfg.get("board_edge_margin_w", 0.0))
     BEL = float(cfg.get("board_edge_margin_l", 0.0))
     CW = float(cfg["inter_board_gap_w"])
@@ -166,8 +166,8 @@ def enumerate_layouts(cfg: Dict[str, float], panel_w: float, panel_l: float, pan
                     board_l = single_grid_l + 2.0 * margin_l_eff
                     if not _almost_ge(board_w, CBW_min_eff) or not _almost_ge(board_l, CBL_min_eff):
                         continue
-                    avail_w = WPW - 2.0 * EW_w
-                    avail_l = WPL - 2.0 * EW_l
+                    avail_w = WPW - 2.0 * PEW
+                    avail_l = WPL - 2.0 * PEL
                     if avail_w <= 0 or avail_l <= 0:
                         continue
 
@@ -177,11 +177,11 @@ def enumerate_layouts(cfg: Dict[str, float], panel_w: float, panel_l: float, pan
                         continue
 
                     for nbw in range(1, ub_nbw + 1):
-                        panel_used_w = nbw * board_w + (nbw - 1) * CWi + 2.0 * EW_w
+                        panel_used_w = nbw * board_w + (nbw - 1) * CWi + 2.0 * PEW
                         if not _almost_le(panel_used_w, WPW):
                             continue
                         for nbl in range(1, ub_nbl + 1):
-                            panel_used_l = nbl * board_l + (nbl - 1) * CLi + 2.0 * EW_l
+                            panel_used_l = nbl * board_l + (nbl - 1) * CLi + 2.0 * PEL
                             if not _almost_le(panel_used_l, WPL):
                                 continue
 
@@ -191,15 +191,15 @@ def enumerate_layouts(cfg: Dict[str, float], panel_w: float, panel_l: float, pan
                             pcbs_per_jumbo = total_single_pcbs * jumbo_multiplier
                             unused_area = panel_area - panel_used_w * panel_used_l
                             rotations_count = (1 if board_rot else 0) + (1 if single_rot else 0)
-                            left_margin = EW_w
-                            bottom_margin = EW_l
+                            left_margin = PEW
+                            bottom_margin = PEL
                             right_margin = WPW - panel_used_w
                             top_margin = WPL - panel_used_l
                             mu_score = abs(left_margin - right_margin) + abs(bottom_margin - top_margin)
 
                             # Placements (for first N rows we display summary; full JSON available)
                             board_origins = []
-                            x0, y0 = EW_w, EW_l
+                            x0, y0 = PEW, PEL
                             for j in range(nbl):
                                 y = y0 + j * (board_l + CLi)
                                 for i in range(nbw):
@@ -341,8 +341,8 @@ def parse_cfg(qs: dict) -> Dict[str, float]:
     d["customer_board_length_min"] = parse_float(qs, "CBLM", d["customer_board_length_min"])
     d["single_pcb_width_max"]  = parse_float(qs, "SPW", d["single_pcb_width_max"])
     d["single_pcb_length_max"] = parse_float(qs, "SPL", d["single_pcb_length_max"])
-    d["panel_edge_margin_w"] = parse_float(qs, "EW_w", d["panel_edge_margin_w"])
-    d["panel_edge_margin_l"] = parse_float(qs, "EW_l", d["panel_edge_margin_l"])
+    d["panel_edge_margin_w"] = parse_float(qs, "PEW", d["panel_edge_margin_w"])
+    d["panel_edge_margin_l"] = parse_float(qs, "PEL", d["panel_edge_margin_l"])
     d["board_edge_margin_w"] = parse_float(qs, "BMW", d["board_edge_margin_w"])
     d["board_edge_margin_l"] = parse_float(qs, "BML", d["board_edge_margin_l"])
     d["inter_board_gap_w"] = parse_float(qs, "CW", d["inter_board_gap_w"])
@@ -448,8 +448,8 @@ def page(cfg: Dict[str, float], rows: List[Dict]) -> str:
         "{{VAL_SPW}}": str(cfg["single_pcb_width_max"]),
         "{{VAL_SPL}}": str(cfg["single_pcb_length_max"]),
         "{{CHK_ARS}}": chk(cfg.get("allow_rotate_single_pcb", False)),
-        "{{VAL_EW_w}}": str(cfg["panel_edge_margin_w"]),
-        "{{VAL_EW_l}}": str(cfg["panel_edge_margin_l"]),
+        "{{VAL_PEW}}": str(cfg["panel_edge_margin_w"]),
+        "{{VAL_PEL}}": str(cfg["panel_edge_margin_l"]),
         "{{CHK_SET_A}}": chk(cfg.get("include_set_A", False)),
         "{{CHK_SET_B}}": chk(cfg.get("include_set_B", False)),
         "{{CHK_SET_C}}": chk(cfg.get("include_set_C", False)),
