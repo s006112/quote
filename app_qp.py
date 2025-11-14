@@ -316,6 +316,8 @@ def _validate(d: dict[str, Any]) -> list[str]:
         errs.append("Stamping cost must be >= 0.")
     if d.get("post_process_cost", 0.0) < 0:
         errs.append("Post Process cost must be >= 0.")
+    if d.get("labor_cost", 0.0) < 0:
+        errs.append("Labor cost must be >= 0.")
     return errs
 
 

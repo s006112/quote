@@ -14,7 +14,7 @@
     "sewage_water": 7.14,
     "sewage_electricity": 38.0,
     "margin_pct": 0.0,
-    "overheads_pct": 12.2,
+    "labor_cost": 12.2,
     "loss_pct": 4.3,
     "cnc_pth_per_hole": 0.00136,
     "routing_per_inch": 0.008,

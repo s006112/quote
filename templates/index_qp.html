@@ -153,8 +153,8 @@
           <label>开料件数
             <input name="panel_boards" type="number" step="1" value="{{ values.panel_boards }}">
           </label>
-          <label>Overheads (%)
-            <input name="overheads_pct" type="number" step="1" min="0" value="{{ params_values.overheads_pct }}">
+          <label>人工
+            <input name="labor_cost" type="number" step="1" min="0" value="{{ params_values.labor_cost }}">
           </label>
           <label>损耗 (%)
             <input name="loss_pct" type="number" step="0.1" min="0" max="100" value="{{ params_values.loss_pct }}">
@@ -365,7 +365,7 @@
           </li>
           <li>Others: {{ result.breakdown.others.total }}
             <ul>
-              <li>OH: {{ result.breakdown.others.overhead }}</li>
+              <li>Labor cost: {{ result.breakdown.others.labor_cost }}</li>
               <li>损耗: {{ result.breakdown.others.loss }}</li>
             </ul>
           </li>
