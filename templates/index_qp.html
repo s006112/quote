@@ -192,10 +192,10 @@
         <h2>PCB尺寸</h2>
         <div class="grid">
           <label>Width (SPW, mm)
-            <input type="number" step="1" name="SPW" id="SPW" min="15" value="{{ pv.single_pcb_width_max|default('', false) }}">
+            <input type="number" step="0.01" name="SPW" id="SPW" value="{{ pv.single_pcb_width_max|default('', false) }}">
           </label>
           <label>Length (SPL, mm)
-            <input type="number" step="1" name="SPL" id="SPL" min="15" value="{{ pv.single_pcb_length_max|default('', false) }}">
+            <input type="number" step="1" name="SPL" id="SPL" value="{{ pv.single_pcb_length_max|default('', false) }}">
           </label>
           <label>Allow rotate single
             <input type="checkbox" name="ARS" id="ARS" {% if pv.allow_rotate_single_pcb|default(false) %}checked{% endif %}>
@@ -204,7 +204,7 @@
       </section>
 
       <section>
-        <h2>工作板</h2>
+        <h2>工作板边</h2>
         <div class="grid">
           <label>Edge Width (EW_w, mm)
             <input type="number" step="0.2" name="EW_w" id="EW_w" value="{{ pv.panel_edge_margin_w|default('', false) }}">
@@ -216,7 +216,7 @@
       </section>
 
       <section>
-        <h2>大料</h2>
+        <h2>连片板边</h2>
         <div class="grid">
           <label>Edge Width (BMW, mm)
             <input type="number" step="0.2" name="BMW" id="BMW" value="{{ pv.board_edge_margin_w|default('', false) }}">
@@ -249,7 +249,7 @@
       </section>
 
       <section>
-        <h2>Gaps</h2>
+        <h2>间隔</h2>
         <div class="grid">
           <label>拼板 gap W (CW, mm)
             <input type="number" step="0.2" name="CW" id="CW" value="{{ pv.inter_board_gap_w|default('', false) }}">
@@ -434,12 +434,6 @@
   };
 
   const submitForm = () => {
-    // Enforce minimum single PCB dimensions to avoid very small values
-    const spw = document.getElementById('SPW');
-    const spl = document.getElementById('SPL');
-    if (spw && spw.value !== '') spw.value = Math.max(15, Number(spw.value));
-    if (spl && spl.value !== '') spl.value = Math.max(15, Number(spl.value));
-
     const formData = new FormData(form);
     if (panelForm) {
       new FormData(panelForm).forEach((v, k) => formData.set(k, v));
