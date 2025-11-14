@@ -7,7 +7,6 @@
     "cnc_pth_holes": 128834,
     "silkscreen_cost": 0.0,
     "etching_cost": 11.52,
-    "cutting_cost": 0.0,
     "routing_length": 3790.0,
     "stamping_cost": 0.0,
     "post_process_cost": 0.0,

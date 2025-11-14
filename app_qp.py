@@ -308,8 +308,6 @@ def _validate(d: dict[str, Any]) -> list[str]:
         errs.append("Stack quantity must be >= 1.")
     if d.get("cnc_pth_holes", 0) < 0:
         errs.append("CNC PTH holes must be >= 0.")
-    if d.get("cutting_cost", 0.0) < 0:
-        errs.append("Cutting cost must be >= 0.")
     if d.get("routing_length", 0.0) < 0:
         errs.append("Routing length must be >= 0.")
     if d.get("stamping_cost", 0.0) < 0:

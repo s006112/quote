@@ -18,7 +18,6 @@ class Inputs:
     etching_cost: float
     masking: str
     silkscreen_cost: float
-    cutting_cost: float
     routing_length: float
     stamping_cost: float
     post_process_cost: float
@@ -48,6 +47,11 @@ def _component_total(components: Mapping[str, float]) -> float:
 
 def _rounded(components: Mapping[str, float], digits: int) -> dict:
     return {name: round(amount, digits) for name, amount in components.items()}
+
+
+def _component_section(total: float, components: Mapping[str, float], digits: int) -> dict:
+    """Prepare a rounded breakdown entry for a cost category."""
+    return {"total": round(total, digits), "components": _rounded(components, digits)}
 
 def price_quote(inp: Inputs, prm: Params) -> dict:
 
@@ -83,66 +87,59 @@ def price_quote(inp: Inputs, prm: Params) -> dict:
     routing_rate = _non_negative(prm.routing_per_inch)
     process_components = {
         "plating": prm.plating_costs.get(inp.plating, 0.0),
-        "cutting": _non_negative(inp.cutting_cost),
         "routing": routing_length * routing_rate,
         "stamping": _non_negative(inp.stamping_cost),
         "post_process": _non_negative(inp.post_process_cost),
     }
     process_cost = _component_total(process_components)
 
-    # Sewage cost
-    sewage_components = {
-        "water": inp.sewage_water,
-        "electricity": inp.sewage_electricity,
-    }
-    sewage_cost = _component_total(sewage_components)
-
-    base = material_cost + treatment_cost + cnc_cost + process_cost + sewage_cost
-
-    # Other cost
+    # Overhead cost (formerly Sewage) now includes labor
     labor_cost = _non_negative(prm.labor_cost)
-    loss_pct = _percent(prm.loss_pct)
-    # loss_pct already stores the fraction (in percent) not produced: loss = 1 - yield.
-    loss_cost = base * loss_pct / 100.0
-    other_cost = labor_cost + loss_cost
+    overhead_components = {
+        "water": _non_negative(inp.sewage_water),
+        "electricity": _non_negative(inp.sewage_electricity),
+        "labor": labor_cost,
+    }
+    overhead_cost = _component_total(overhead_components)
 
-    # Total COGs
-    cogs = base + other_cost
+    base = (
+        material_cost
+        + treatment_cost
+        + cnc_cost
+        + process_cost
+        + overhead_cost
+    )
+
+    loss_pct = _percent(prm.loss_pct)
+    cogs = base * (1 + loss_pct / 100.0)
+    loss_cost = cogs - base
 
     cogs_unit = cogs / boards_per_panel if boards_per_panel else 0.0
     margin_pct = _non_negative(prm.margin_pct)
     price_unit = cogs_unit * (1 + margin_pct / 100.0)
     margin_cost = cogs * margin_pct / 100.0
 
+    overhead_section = _component_section(overhead_cost, overhead_components, 2)
+    loss_rounded = round(loss_cost, 2)
+    rounded_others = {
+        "total": loss_rounded,
+        "overhead": overhead_section["total"],
+        "loss": loss_rounded,
+        "margin": round(margin_cost, 2),
+    }
+
     breakdown = {
-        "material": {
-            "total": round(material_cost, 2),
-            "components": _rounded(material_components, 2),
-        },
-        "treatment": {
-            "total": round(treatment_cost, 2),
-            "components": _rounded(treatment_components, 2),
-        },
+        "material": _component_section(material_cost, material_components, 2),
+        "treatment": _component_section(treatment_cost, treatment_components, 2),
         "cnc": {
             "total": round(cnc_cost, 1),
             "cnd_cost_panel": round(cnd_cost_panel, 1),
             "stack_qty": stack_qty,
             "components": _rounded(cnc_components, 1),
         },
-        "process": {
-            "total": round(process_cost, 1),
-            "components": _rounded(process_components, 1),
-        },
-        "sewage": {
-            "total": round(sewage_cost, 2),
-            "components": _rounded(sewage_components, 2),
-        },
-        "others": {
-            "total": round(other_cost, 2),
-            "labor_cost": round(labor_cost, 2),
-            "loss": round(loss_cost, 2),
-            "margin": round(margin_cost, 2),
-        },
+        "process": _component_section(process_cost, process_components, 1),
+        "overhead": overhead_section,
+        "others": rounded_others,
         "boards_per_panel": boards_per_panel,
     }
     return {
