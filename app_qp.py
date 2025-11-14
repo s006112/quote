@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import os
+from copy import deepcopy
 from dataclasses import asdict, fields
 from typing import Any, Dict, List, NamedTuple, Optional, Tuple, get_type_hints
 
@@ -86,7 +87,7 @@ PRICED_FIELDS: tuple[PricedField, ...] = (
 
 def _defaults_map(key: str) -> dict[str, Any]:
     value = DEFAULTS.get(key, {})
-    return value.copy() if isinstance(value, dict) else {}
+    return deepcopy(value) if isinstance(value, dict) else {}
 
 
 def _options_from_defaults(map_key: str) -> tuple[str, ...]:
@@ -98,6 +99,8 @@ PRICED_DEFAULT_MAPS = {field.name: _defaults_map(field.map_key) for field in PRI
 SELECT_OPTIONS = {field.name: tuple(PRICED_DEFAULT_MAPS[field.name].keys()) for field in PRICED_FIELDS}
 PCB_THICKNESS_OPTIONS = _options_from_defaults("pcb_thickness_options")
 CNC_HOLE_DIMENSION_OPTIONS = _options_from_defaults("cnc_hole_dimension_options")
+SUBSTRATE_THICKNESS_OPTIONS = _options_from_defaults("substrate_thickness_options")
+CU_THICKNESS_OPTIONS = _options_from_defaults("cu_thickness_options")
 
 
 # ---------------------------------------------------------------------------
@@ -203,9 +206,11 @@ def _persist_defaults(
     DEFAULTS.update(updated_defaults)
     PRESETS["defaults"] = DEFAULTS
 
-    global PCB_THICKNESS_OPTIONS, CNC_HOLE_DIMENSION_OPTIONS
+    global PCB_THICKNESS_OPTIONS, CNC_HOLE_DIMENSION_OPTIONS, SUBSTRATE_THICKNESS_OPTIONS, CU_THICKNESS_OPTIONS
     PCB_THICKNESS_OPTIONS = _options_from_defaults("pcb_thickness_options")
     CNC_HOLE_DIMENSION_OPTIONS = _options_from_defaults("cnc_hole_dimension_options")
+    SUBSTRATE_THICKNESS_OPTIONS = _options_from_defaults("substrate_thickness_options")
+    CU_THICKNESS_OPTIONS = _options_from_defaults("cu_thickness_options")
 
     for field in PRICED_FIELDS:
         defaults_map = _defaults_map(field.map_key)
@@ -266,9 +271,7 @@ def _make_params() -> Params:
         elif hint is int and default is not None:
             payload[name] = _to_int(name, int(default))
         else:
-            value = default
-            if isinstance(value, dict):
-                value = value.copy()
+            value = deepcopy(default) if isinstance(default, dict) else default
             payload[name] = value
 
     selected_choices = {
@@ -290,7 +293,23 @@ def _make_params() -> Params:
         if price_map is None:
             price_map = {}
             payload[map_key] = price_map
-        price_map[selected] = value
+        keys = [selected]
+        if map_key == "material_costs":
+            substrate = request.form.get("substrate_thickness") or DEFAULTS.get("substrate_thickness")
+            cu = request.form.get("cu_thickness") or DEFAULTS.get("cu_thickness")
+            if substrate:
+                keys.append(substrate)
+            if cu:
+                keys.append(cu)
+
+        current: dict[str, Any] = price_map
+        for key in keys[:-1]:
+            next_level = current.get(key)
+            if not isinstance(next_level, dict):
+                next_level = {}
+                current[key] = next_level
+            current = next_level
+        current[keys[-1]] = value
 
     for field in PRICED_FIELDS:
         form_key = field.price_field
@@ -386,18 +405,30 @@ def index():
         for field in PRICED_FIELDS
     }
 
-    def _form_price_value(field_name: str, defaults_map: dict[str, Any], selected: str) -> str:
+    def _form_price_value(
+        field_name: str,
+        defaults_map: dict[str, Any],
+        selected: str,
+        values_map: dict[str, str],
+    ) -> str:
         raw = request.form.get(field_name)
         if raw not in (None, ""):
             return raw
-        default_value = defaults_map.get(selected)
+        default_value: Any = defaults_map.get(selected)
+        if field_name == "material_price" and isinstance(defaults_map, dict):
+            nested = defaults_map.get(selected)
+            if isinstance(nested, dict):
+                substrate = values_map.get("substrate_thickness") or DEFAULTS.get("substrate_thickness")
+                cu = values_map.get("cu_thickness") or DEFAULTS.get("cu_thickness")
+                if substrate and cu:
+                    default_value = nested.get(substrate, {}).get(cu)
         return "" if default_value in (None, "") else str(default_value)
 
     price_value_kwargs = {}
     for field in PRICED_FIELDS:
         defaults_map = PRICED_DEFAULT_MAPS[field.name]
         price_value_kwargs[f"{field.price_field}_value"] = _form_price_value(
-            field.price_field, defaults_map, selected_choices[field.name]
+            field.price_field, defaults_map, selected_choices[field.name], form_values
         )
 
     if resolved_inputs is None and computed_panel_boards is not None:
@@ -411,6 +442,8 @@ def index():
         params_values=param_values,
         pcb_thickness_options=PCB_THICKNESS_OPTIONS,
         cnc_hole_dimension_options=CNC_HOLE_DIMENSION_OPTIONS,
+        substrate_thickness_options=SUBSTRATE_THICKNESS_OPTIONS,
+        cu_thickness_options=CU_THICKNESS_OPTIONS,
         error_msgs=error_msgs,
         result=result,
         priced_fields=PRICED_FIELDS,

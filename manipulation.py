@@ -13,6 +13,8 @@ class Inputs:
     cnc_hole_dimension: str
     cnc_pth_holes: int
     material: str
+    substrate_thickness: str
+    cu_thickness: str
     finish: str
     plating: str
     etching_cost: float
@@ -26,7 +28,7 @@ class Inputs:
 
 @dataclass
 class Params:
-    material_costs: dict
+    material_costs: dict[str, dict[str, dict[str, float]]]
     finish_costs: dict
     masking_costs: dict
     plating_costs: dict
@@ -59,8 +61,14 @@ def price_quote(inp: Inputs, prm: Params) -> dict:
     stack_qty = max(1, int(inp.stack_qty) if inp.stack_qty else 1)
 
     # Material cost
+    laminate_cost = 15.0
+    material_map = prm.material_costs.get(inp.material)
+    if isinstance(material_map, dict):
+        substrate_map = material_map.get(inp.substrate_thickness)
+        if isinstance(substrate_map, dict):
+            laminate_cost = substrate_map.get(inp.cu_thickness, laminate_cost)
     material_components = {
-        "laminate": prm.material_costs.get(inp.material, 15.0),
+        "laminate": laminate_cost,
     }
     material_cost = _component_total(material_components)
 

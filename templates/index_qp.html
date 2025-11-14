@@ -19,7 +19,7 @@
     </div>
     {% endif %}
 
-    <form id="quote-form" method="post" novalidate data-default-material="{{ defaults.material|e }}" data-default-finish="{{ defaults.finish|e }}" data-default-masking="{{ defaults.masking|e }}" data-default-plating="{{ defaults.plating|e }}">
+    <form id="quote-form" method="post" novalidate data-default-material="{{ defaults.material|e }}" data-default-finish="{{ defaults.finish|e }}" data-default-masking="{{ defaults.masking|e }}" data-default-plating="{{ defaults.plating|e }}" data-default-substrate_thickness="{{ defaults.substrate_thickness|e }}" data-default-cu_thickness="{{ defaults.cu_thickness|e }}">
       <section>
         <h2>Materials</h2>
         <div class="grid">
@@ -27,6 +27,20 @@
             <select name="material" id="material-select">
               {% for m in priced_options.material %}
               <option value="{{ m }}" {% if values.material==m %}selected{% endif %}>{{ m }}</option>
+              {% endfor %}
+            </select>
+          </label>
+          <label>基材厚度
+            <select name="substrate_thickness" id="substrate-thickness-select">
+              {% for option in substrate_thickness_options %}
+              <option value="{{ option }}" {% if values.substrate_thickness==option %}selected{% endif %}>{{ option }}</option>
+              {% endfor %}
+            </select>
+          </label>
+          <label>铜厚度
+            <select name="cu_thickness" id="cu-thickness-select">
+              {% for option in cu_thickness_options %}
+              <option value="{{ option }}" {% if values.cu_thickness==option %}selected{% endif %}>{{ option }}</option>
               {% endfor %}
             </select>
           </label>
@@ -466,23 +480,46 @@
   })();
 
   // Attach price field listeners
+  const substrateSel = getId('substrate-thickness-select');
+  const cuSel = getId('cu-thickness-select');
+  const defaultSubstrate = getDefault('substrate_thickness');
+  const defaultCu = getDefault('cu_thickness');
+  let materialFieldSync;
+
   pricedFields.forEach(({ name, priceField }) => {
     const sel = getId(`${name}-select`);
     const inp = getId(toDash(priceField) + '-input');
     const lbl = getId(toDash(priceField) + '-label');
     if (!sel || !inp || !lbl) return;
 
+    const isMaterialField = name === 'material';
     const sync = (force) => {
       const val = sel.value || getDefault(name);
       lbl.textContent = val;
       if (force || !inp.value) {
-        inp.value = pricedCosts[name]?.[val] ?? '';
+        let priceValue = pricedCosts[name]?.[val];
+        if (isMaterialField) {
+          const substrate = substrateSel?.value || defaultSubstrate;
+          const cu = cuSel?.value || defaultCu;
+          priceValue = pricedCosts[name]?.[val]?.[substrate]?.[cu];
+        }
+        inp.value = priceValue ?? '';
       }
     };
 
     sel.addEventListener('change', () => sync(true));
     sync();
+
+    if (isMaterialField) {
+      materialFieldSync = sync;
+    }
   });
+
+  if (materialFieldSync) {
+    [substrateSel, cuSel].filter(Boolean).forEach((select) => {
+      select.addEventListener('change', () => materialFieldSync(true));
+    });
+  }
 
   // Stack quantity auto-derive
   const thickSel = getId('pcb-thickness-select');
