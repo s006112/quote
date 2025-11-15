@@ -5,4 +5,6 @@ panel.log
 .cache/
 presets.local.json
 presets_qp.local.json
+presets_q.local.json
+*.local.json
 wheelhouse/
