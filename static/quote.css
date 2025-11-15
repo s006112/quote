@@ -145,10 +145,10 @@ form section .grid {
   }
 }
 
-/* Mobile: stack everything vertically */
-@media {
+/* Mobile:  */
+@media (max-width: 640px) {
   form section {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: repeat(3);
   }
 
   form section h2,
@@ -157,7 +157,7 @@ form section .grid {
   }
 
   .grid {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: repeat(3);
   }
 
   label {
