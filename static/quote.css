@@ -146,7 +146,7 @@ form section .grid {
 }
 
 /* Mobile: stack everything vertically */
-@media (max-width: 640px) {
+@media {
   form section {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
