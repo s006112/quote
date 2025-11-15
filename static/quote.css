@@ -148,19 +148,24 @@ form section .grid {
 /* Mobile: stack everything vertically */
 @media (max-width: 640px) {
   form section {
-    grid-template-columns: 4fr;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
   }
 
   form section h2,
   form section .grid {
-    grid-column: 4;
+    grid-column: 1 / -1;
   }
 
   .grid {
-    grid-template-columns: 4fr;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
   }
 
   label {
-    grid-template-columns: 4fr;
+    grid-template-columns: 1fr;
+  }
+
+  label input,
+  label select {
+    width: 100%;
   }
 }
