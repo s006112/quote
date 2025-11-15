@@ -27,6 +27,8 @@ panelizer_app = Flask(
     static_url_path=app.static_url_path,
 )
 panelizer_app.config.update(app.config)
+_panelizer_server_started = False
+_panelizer_server_lock = threading.Lock()
 
 
 # ---------------------------------------------------------------------------
@@ -535,6 +537,11 @@ panelizer_app.add_url_rule("/favicon.ico", endpoint="panelizer_favicon", view_fu
 # ---------------------------------------------------------------------------
 
 
+@app.before_request
+def _bootstrap_panelizer_server() -> None:
+    _ensure_panelizer_server()
+
+
 def _start_panelizer_thread(host: str, port: int, debug: bool) -> None:
     def _run() -> None:
         panelizer_app.run(host=host, port=port, debug=debug, use_reloader=False)
@@ -542,6 +549,43 @@ def _start_panelizer_thread(host: str, port: int, debug: bool) -> None:
     thread = threading.Thread(target=_run, name="panelizer-only", daemon=True)
     thread.start()
     print(f" * Panelizer-only server running on http://{host}:{port}")
+
+
+def _panelizer_host(default_host: str | None = None) -> str:
+    return os.environ.get("PANELIZER_HOST") or default_host or os.environ.get("HOST", "0.0.0.0")
+
+
+def _panelizer_port() -> int:
+    return int(os.environ.get("PANELIZER_PORT", "5001"))
+
+
+def _main_port() -> int:
+    return int(os.environ.get("PORT", "5000"))
+
+
+def _should_run_panelizer(debug: bool) -> bool:
+    if not debug:
+        return True
+    return os.environ.get("WERKZEUG_RUN_MAIN") == "true"
+
+
+def _ensure_panelizer_server(*, host: str | None = None, debug: Optional[bool] = None) -> None:
+    global _panelizer_server_started
+    if _panelizer_server_started:
+        return
+    panelizer_port = _panelizer_port()
+    if panelizer_port == _main_port():
+        return
+    if debug is None:
+        debug = app.debug
+    if not _should_run_panelizer(bool(debug)):
+        return
+    with _panelizer_server_lock:
+        if _panelizer_server_started:
+            return
+        bind_host = _panelizer_host(host)
+        _start_panelizer_thread(bind_host, panelizer_port, bool(debug))
+        _panelizer_server_started = True
 
 
 # ---------------------------------------------------------------------------
@@ -552,11 +596,7 @@ def _start_panelizer_thread(host: str, port: int, debug: bool) -> None:
 if __name__ == "__main__":
     host = os.environ.get("HOST", "0.0.0.0")
     port = int(os.environ.get("PORT", "5000"))
-    panelizer_port = int(os.environ.get("PANELIZER_PORT", "5001"))
     debug = os.environ.get("DEBUG", "0") in ["1", "true", "True"]
-    should_start_panelizer = panelizer_port != port
-    if should_start_panelizer:
-        run_main = os.environ.get("WERKZEUG_RUN_MAIN") == "true" if debug else True
-        if run_main:
-            _start_panelizer_thread(host, panelizer_port, debug)
+    os.environ.setdefault("PANELIZER_PORT", "5001")
+    _ensure_panelizer_server(host=host, debug=debug)
     app.run(host=host, port=port, debug=debug)
