@@ -27,10 +27,10 @@ app = Flask(__name__)
 
 ICON_FILENAME = "lt.png"
 ICON_PATH = os.path.join(os.path.dirname(__file__), ICON_FILENAME)
-BASE_PRESETS_PATH = os.path.join(os.path.dirname(__file__), "presets_qp.json")
+BASE_PRESETS_PATH = os.path.join(os.path.dirname(__file__), "presets_q.json")
 LOCAL_PRESETS_PATH = os.environ.get(
     "PRESETS_OVERRIDE_PATH",
-    os.path.join(os.path.dirname(__file__), "presets_qp.local.json"),
+    os.path.join(os.path.dirname(__file__), "presets_q.local.json"),
 )
 
 
@@ -435,7 +435,7 @@ def index():
         form_values["panel_boards"] = str(computed_panel_boards)
 
     return render_template(
-        "index_qp.html",
+        "index_q.html",
         defaults=form_defaults,
         values=form_values,
         params_defaults=param_defaults,
