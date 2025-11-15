@@ -28,7 +28,9 @@ label {
 label input,
 label select {
   width: 100px;
+  max-width: 100%;
 }
+
 
 label input[type="checkbox"] {
   width: auto;
@@ -160,10 +162,5 @@ form section .grid {
 
   label {
     grid-template-columns: 1fr;
-  }
-
-  label input,
-  label select {
-    width: 100%;
   }
 }
