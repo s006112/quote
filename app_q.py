@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import json
 import os
+import threading
 from copy import deepcopy
 from dataclasses import asdict, fields
 from typing import Any, Dict, List, NamedTuple, Optional, Tuple, get_type_hints
@@ -19,6 +20,13 @@ from manipulation import (
 )
 
 app = Flask(__name__)
+panelizer_app = Flask(
+    __name__,
+    template_folder=app.template_folder,
+    static_folder=app.static_folder,
+    static_url_path=app.static_url_path,
+)
+panelizer_app.config.update(app.config)
 
 
 # ---------------------------------------------------------------------------
@@ -158,6 +166,27 @@ def _panelizer_all_rows(cfg: Dict[str, Any]) -> List[Dict[str, Any]]:
 def _panelizer_summary(rows: List[Dict[str, Any]], cfg: Dict[str, Any]) -> Dict[str, Any]:
     """Create panelizer summary using manipulation module."""
     return summarize_panelizer_results(rows, cfg)
+
+
+class PanelizerState(NamedTuple):
+    config: Dict[str, Any]
+    rows: List[Dict[str, Any]]
+    summary: Optional[Dict[str, Any]]
+    error: Optional[str]
+
+
+def _resolve_panelizer_state(source: Any) -> PanelizerState:
+    cfg = _panelizer_default_config()
+    rows: List[Dict[str, Any]] = []
+    summary: Optional[Dict[str, Any]] = None
+    error: Optional[str] = None
+    try:
+        cfg = _panelizer_config(source)
+        rows = _panelizer_all_rows(cfg)
+        summary = _panelizer_summary(rows, cfg)
+    except Exception as exc:  # pylint: disable=broad-except
+        error = str(exc)
+    return PanelizerState(cfg, rows, summary, error)
 
 
 # ---------------------------------------------------------------------------
@@ -348,17 +377,11 @@ def index():
     error_msgs, result = [], None
     resolved_inputs: Inputs | None = None
 
-    panelizer_error = None
-    panelizer_cfg = _panelizer_default_config()
-    panelizer_rows: List[Dict[str, Any]] = []
-    panelizer_summary = None
-    panelizer_source = request.values
-    try:
-        panelizer_cfg = _panelizer_config(panelizer_source)
-        panelizer_rows = _panelizer_all_rows(panelizer_cfg)
-        panelizer_summary = _panelizer_summary(panelizer_rows, panelizer_cfg)
-    except Exception as exc:
-        panelizer_error = str(exc)
+    panelizer_state = _resolve_panelizer_state(request.values)
+    panelizer_cfg = panelizer_state.config
+    panelizer_rows = panelizer_state.rows
+    panelizer_summary = panelizer_state.summary
+    panelizer_error = panelizer_state.error
 
     computed_panel_boards: int | None = None
     if panelizer_summary:
@@ -460,14 +483,65 @@ def index():
         panelizer_summary=panelizer_summary,
         panelizer_rows=panelizer_rows,
         panelizer_error=panelizer_error,
+        panelizer_only=False,
         **price_value_kwargs,
     )
+
+
+@app.route("/panelizer-only", methods=["GET", "POST"])
+def panelizer_only() -> str:
+    panelizer_state = _resolve_panelizer_state(request.values)
+    return render_template(
+        "index_q.html",
+        defaults={},
+        values={},
+        params_defaults={},
+        params_values={},
+        error_msgs=[],
+        result=None,
+        priced_fields=PRICED_FIELDS,
+        priced_options=SELECT_OPTIONS,
+        priced_costs=PRICED_DEFAULT_MAPS,
+        priced_client_config=[{"name": field.name, "priceField": field.price_field} for field in PRICED_FIELDS],
+        stack_qty_map=DEFAULTS.get("stack_qty_map", {}),
+        panelizer_values=panelizer_state.config,
+        panelizer_summary=panelizer_state.summary,
+        panelizer_rows=panelizer_state.rows,
+        panelizer_error=panelizer_state.error,
+        panelizer_only=True,
+    )
+
+
+panelizer_app.add_url_rule("/", endpoint="panelizer_only", view_func=panelizer_only, methods=["GET", "POST"])
+panelizer_app.add_url_rule(
+    "/panelizer-only",
+    endpoint="panelizer_only_alias",
+    view_func=panelizer_only,
+    methods=["GET", "POST"],
+)
 
 
 @app.route("/lt.png")
 @app.route("/favicon.ico")
 def serve_icon():
     return send_file(ICON_PATH, mimetype="image/png")
+
+panelizer_app.add_url_rule("/lt.png", endpoint="panelizer_icon", view_func=serve_icon)
+panelizer_app.add_url_rule("/favicon.ico", endpoint="panelizer_favicon", view_func=serve_icon)
+
+
+# ---------------------------------------------------------------------------
+# Dual server helpers
+# ---------------------------------------------------------------------------
+
+
+def _start_panelizer_thread(host: str, port: int, debug: bool) -> None:
+    def _run() -> None:
+        panelizer_app.run(host=host, port=port, debug=debug, use_reloader=False)
+
+    thread = threading.Thread(target=_run, name="panelizer-only", daemon=True)
+    thread.start()
+    print(f" * Panelizer-only server running on http://{host}:{port}")
 
 
 # ---------------------------------------------------------------------------
@@ -478,5 +552,11 @@ def serve_icon():
 if __name__ == "__main__":
     host = os.environ.get("HOST", "0.0.0.0")
     port = int(os.environ.get("PORT", "5000"))
+    panelizer_port = int(os.environ.get("PANELIZER_PORT", "5001"))
     debug = os.environ.get("DEBUG", "0") in ["1", "true", "True"]
+    should_start_panelizer = panelizer_port != port
+    if should_start_panelizer:
+        run_main = os.environ.get("WERKZEUG_RUN_MAIN") == "true" if debug else True
+        if run_main:
+            _start_panelizer_thread(host, panelizer_port, debug)
     app.run(host=host, port=port, debug=debug)
