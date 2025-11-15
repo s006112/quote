@@ -171,7 +171,7 @@
             <input name="loss_pct" type="number" step="0.1" min="0" max="100" value="{{ params_values.loss_pct }}">
           </label>
           <label>利润 (%)
-            <input name="margin_pct" type="number" step="0.1" min="0" value="{{ params_values.margin_pct }}">
+            <input name="margin_pct" type="number" step="0.5" min="0" value="{{ params_values.margin_pct }}">
           </label>
         </div>
       </section>
@@ -238,16 +238,16 @@
       <section>
         <h2>拼板</h2>
         <div class="grid">
-          <label>Max Width (CBW)
+          <label>Max W (CBW)
             <input type="number" step="1" name="CBW" id="CBW" value="{{ pv.customer_board_width_max|default('', false) }}">
           </label>
-          <label>Max Length (CBL)
+          <label>Max L (CBL)
             <input type="number" step="1" name="CBL" id="CBL" value="{{ pv.customer_board_length_max|default('', false) }}">
           </label>
-          <label>Min Width (CBWM)
+          <label>Min W (CBWM)
             <input type="number" step="1" name="CBWM" id="CBWM" value="{{ pv.customer_board_width_min|default('', false) }}">
           </label>
-          <label>Min Length (CBLM)
+          <label>Min L (CBLM)
             <input type="number" step="1" name="CBLM" id="CBLM" value="{{ pv.customer_board_length_min|default('', false) }}">
           </label>
 
@@ -257,16 +257,16 @@
       <section>
         <h2>间隔</h2>
         <div class="grid">
-          <label>拼板 gap W (CW)
+          <label>拼板 W (CW)
             <input type="number" step="0.2" name="CW" id="CW" value="{{ pv.inter_board_gap_w|default('', false) }}">
           </label>
-          <label>拼板 gap L (CL)
+          <label>拼板 L (CL)
             <input type="number" step="0.2" name="CL" id="CL" value="{{ pv.inter_board_gap_l|default('', false) }}">
           </label>
-          <label>单板 gap W (SW)
+          <label>单板 W (SW)
             <input type="number" step="0.2" name="SW" id="SW" value="{{ pv.inter_single_gap_w|default('', false) }}">
           </label>
-          <label>单板 gap L (SL)
+          <label>单板 L (SL)
             <input type="number" step="0.2" name="SL" id="SL" value="{{ pv.inter_single_gap_l|default('', false) }}">
           </label>
         </div>
