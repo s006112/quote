@@ -310,8 +310,8 @@ def compute_panelizer_rows(
 
     rows.sort(
         key=lambda r: (
-            -r["pcbs_per_jumbo"],
             -r["utilization"],
+            -r["pcbs_per_jumbo"],
             r["objective_key"],
         )
     )
@@ -338,14 +338,14 @@ def summarize_panelizer_results(
 
     if rows:
         message = (
-            f"Found {total} feasible layouts. Showing top {shown} by PCBs per Jumbo."
+            f"Found {total} feasible layouts. Showing top {shown} by Utilization."
         )
     else:
         message = "No feasible layouts under current constraints."
 
-    max_pcbs = max((r["pcbs_per_jumbo"] for r in rows), default=None)
+    max_util = max((r["utilization"] for r in rows), default=None)
     star_message = (
-        "Highest PCBs per Jumbo shown with ★" if max_pcbs is not None else ""
+        "Highest utilization shown with ★" if max_util is not None else ""
     )
     table_attrs = "" if display_rows else 'style="display:none"'
 
@@ -355,7 +355,7 @@ def summarize_panelizer_results(
         "limit": limit,
         "total": total,
         "shown": shown,
-        "max_pcbs_per_jumbo": max_pcbs,
+        "highest_ultilization_per_jumbo": max_util,
         "star_message": star_message,
         "table_attrs": table_attrs,
     }

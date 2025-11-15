@@ -312,7 +312,7 @@
         <tbody>
           {% for row in panelizer_summary.rows %}
           {% set rotation = (('B' if row.board_rot else '') + ('S' if row.single_rot else '')) or '—' %}
-          {% set star = ' ★' if panelizer_summary.max_pcbs_per_jumbo is not none and row.pcbs_per_jumbo == panelizer_summary.max_pcbs_per_jumbo else '' %}
+          {% set star = ' ★' if panelizer_summary.highest_ultilization_per_jumbo is not none and row.utilization == panelizer_summary.highest_ultilization_per_jumbo else '' %}
           <tr>
             <td class="l">{{ loop.index }}{{ star }}</td>
             <td>{{ row.pcbs_per_jumbo }}</td>
