@@ -148,19 +148,19 @@ form section .grid {
 /* Mobile: stack everything vertically */
 @media (max-width: 640px) {
   form section {
-    grid-template-columns: 1fr;
+    grid-template-columns: 4fr;
   }
 
   form section h2,
   form section .grid {
-    grid-column: 1;
+    grid-column: 4;
   }
 
   .grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: 4fr;
   }
 
   label {
-    grid-template-columns: 1fr;
+    grid-template-columns: 4fr;
   }
 }
