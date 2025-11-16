@@ -151,11 +151,6 @@ form section .grid {
     grid-template-columns: repeat(3);
   }
 
-  form section h2,
-  form section .grid {
-    grid-column: 1 / -1;
-  }
-
   .grid {
     grid-template-columns: repeat(3);
   }
