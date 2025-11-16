@@ -8,7 +8,7 @@
 <link href="{{ url_for('static', filename='quote.css') }}" rel="stylesheet">
 </head>
 {% set panelizer_only = panelizer_only|default(false) %}
-<body data-panelizer-only="{{ 1 if panelizer_only else 0 }}">
+<body>
 
 <div class="page-layout">
   <div class="page-main">
@@ -406,181 +406,150 @@
 
 <script>
 (function () {
-  const panelizerOnly = document.body?.dataset.panelizerOnly === '1';
+  const quoteForm = document.getElementById('quote-form');
   const panelForm = document.getElementById('panelizer-form');
+  const liveSummary = document.getElementById('live-summary');
   const panelizerResults = document.getElementById('panelizer-results');
-  const parse = (id) => JSON.parse(document.getElementById(id)?.textContent || '{}');
 
-  if (panelizerOnly) {
-    if (!panelForm || !panelizerResults) return;
-    let controller;
+  const parseJSON = (id, fallback) => {
+    const element = document.getElementById(id);
+    if (!element) return fallback;
+    try {
+      const parsed = JSON.parse(element.textContent || 'null');
+      return parsed == null ? fallback : parsed;
+    } catch (error) {
+      console.error(`Failed to parse ${id}`, error);
+      return fallback;
+    }
+  };
 
-    const updatePanelizerDOM = (htmlText) => {
-      const doc = new DOMParser().parseFromString(htmlText, 'text/html');
-      const newForm = doc.getElementById('panelizer-form');
-      if (newForm) panelForm.innerHTML = newForm.innerHTML;
-      const newResults = doc.getElementById('panelizer-results');
-      if (newResults) panelizerResults.innerHTML = newResults.innerHTML;
-    };
+  const pricedCosts = parseJSON('priced-costs-data', {});
+  const pricedFields = parseJSON('priced-fields-config', []);
+  const stackQtyMap = parseJSON('stack-qty-map', {});
+  if (!quoteForm && !panelForm) return;
 
-    const submitPanelizer = () => {
-      const action = panelForm.getAttribute('action') || window.location.pathname;
-      const body = new URLSearchParams(new FormData(panelForm));
-      if (controller) controller.abort();
-      controller = new AbortController();
-
-      fetch(action, {
-        method: 'POST',
-        headers: { 'X-Requested-With': 'fetch' },
-        body,
-        signal: controller.signal,
-      })
-        .then((r) => r.text())
-        .then(updatePanelizerDOM)
-        .catch((e) => {
-          if (e.name !== 'AbortError') console.error('Fetch failed', e);
-        });
-    };
-
-    const debouncedSubmit = (() => {
-      let tid;
-      return () => {
-        clearTimeout(tid);
-        tid = setTimeout(submitPanelizer, 200);
-      };
-    })();
-
-    panelForm.addEventListener('input', debouncedSubmit);
-    panelForm.addEventListener('change', debouncedSubmit);
-    panelForm.addEventListener('submit', (e) => {
-      e.preventDefault();
-      submitPanelizer();
-    });
-
-    submitPanelizer();
-    return;
-  }
-
-  const pricedCosts = parse('priced-costs-data');
-  const pricedFields = parse('priced-fields-config');
-  const stackQtyMap = parse('stack-qty-map');
-
-  const form = document.getElementById('quote-form');
-  const summary = document.getElementById('live-summary');
-  if (!form || !summary) return;
-
-  const toDash = (s) => s.replace(/_/g, '-');
-  const getDefault = (name) => form.dataset[`default${name[0].toUpperCase()}${name.slice(1)}`] || '';
-  const getId = (base) => document.getElementById(base);
   let controller;
 
   const updateDOM = (htmlText) => {
     const doc = new DOMParser().parseFromString(htmlText, 'text/html');
-    const newSummary = doc.getElementById('live-summary');
-    if (newSummary) summary.innerHTML = newSummary.innerHTML;
+    if (liveSummary) {
+      const newSummary = doc.getElementById('live-summary');
+      if (newSummary) liveSummary.innerHTML = newSummary.innerHTML;
+    }
     if (panelizerResults) {
       const newResults = doc.getElementById('panelizer-results');
       if (newResults) panelizerResults.innerHTML = newResults.innerHTML;
     }
-    const panelBoardsInput = form.querySelector('input[name="panel_boards"]');
-    const newPanelBoardsInput = doc.querySelector('#quote-form input[name="panel_boards"]');
-    if (panelBoardsInput && newPanelBoardsInput) {
-      panelBoardsInput.value = newPanelBoardsInput.value;
+    if (quoteForm) {
+      const panelBoardsInput = quoteForm.querySelector('input[name="panel_boards"]');
+      const newPanelBoardsInput = doc.querySelector('#quote-form input[name="panel_boards"]');
+      if (panelBoardsInput && newPanelBoardsInput) {
+        panelBoardsInput.value = newPanelBoardsInput.value;
+      }
     }
   };
 
   const submitForm = () => {
-    const formData = new FormData(form);
-    if (panelForm) {
-      new FormData(panelForm).forEach((v, k) => formData.set(k, v));
+    const targetForm = quoteForm || panelForm;
+    if (!targetForm) return;
+
+    const formData = new FormData(targetForm);
+    if (quoteForm && panelForm) {
+      new FormData(panelForm).forEach((value, key) => formData.set(key, value));
     }
 
     if (controller) controller.abort();
     controller = new AbortController();
 
-    fetch(form.action || window.location.pathname, {
+    fetch(targetForm.action || window.location.pathname, {
       method: 'POST',
       body: new URLSearchParams(formData),
       headers: { 'X-Requested-With': 'fetch' },
       signal: controller.signal,
     })
-      .then((r) => r.text())
+      .then((response) => response.text())
       .then(updateDOM)
-      .catch((e) => {
-        if (e.name !== 'AbortError') console.error('Fetch failed', e);
+      .catch((error) => {
+        if (error.name !== 'AbortError') console.error('Fetch failed', error);
       });
   };
 
   const debouncedSubmit = (() => {
-    let tid;
+    let timer;
     return () => {
-      clearTimeout(tid);
-      tid = setTimeout(submitForm, 200);
+      clearTimeout(timer);
+      timer = setTimeout(submitForm, 200);
     };
   })();
 
-  const substrateSel = getId('substrate-thickness-select');
-  const cuSel = getId('cu-thickness-select');
-  const defaultSubstrate = getDefault('substrate_thickness');
-  const defaultCu = getDefault('cu_thickness');
-  let materialFieldSync;
-
-  pricedFields.forEach(({ name, priceField }) => {
-    const sel = getId(`${name}-select`);
-    const inp = getId(toDash(priceField) + '-input');
-    const lbl = getId(toDash(priceField) + '-label');
-    if (!sel || !inp || !lbl) return;
-
-    const isMaterialField = name === 'material';
-    const sync = (force) => {
-      const val = sel.value || getDefault(name);
-      lbl.textContent = val;
-      if (force || !inp.value) {
-        let priceValue = pricedCosts[name]?.[val];
-        if (isMaterialField) {
-          const substrate = substrateSel?.value || defaultSubstrate;
-          const cu = cuSel?.value || defaultCu;
-          priceValue = pricedCosts[name]?.[val]?.[substrate]?.[cu];
-        }
-        inp.value = priceValue ?? '';
-      }
-    };
-
-    sel.addEventListener('change', () => sync(true));
-    sync();
-
-    if (isMaterialField) {
-      materialFieldSync = sync;
-    }
-  });
-
-  if (materialFieldSync) {
-    [substrateSel, cuSel].filter(Boolean).forEach((select) => {
-      select.addEventListener('change', () => materialFieldSync(true));
-    });
-  }
-
-  const thickSel = getId('pcb-thickness-select');
-  const holesSel = getId('cnc-hole-select');
-  const stackInp = getId('stack-qty-input');
-  if (thickSel && holesSel && stackInp) {
-    const updateStack = () => {
-      const derived = stackQtyMap[thickSel.value]?.[holesSel.value];
-      if (derived) stackInp.value = derived;
-    };
-    thickSel.addEventListener('change', updateStack);
-    holesSel.addEventListener('change', updateStack);
-    updateStack();
-  }
-
-  [form, panelForm].filter(Boolean).forEach((f) => {
-    f.addEventListener('input', debouncedSubmit);
-    f.addEventListener('change', debouncedSubmit);
-    f.addEventListener('submit', (e) => {
-      e.preventDefault();
+  [quoteForm, panelForm].filter(Boolean).forEach((formElement) => {
+    formElement.addEventListener('input', debouncedSubmit);
+    formElement.addEventListener('change', debouncedSubmit);
+    formElement.addEventListener('submit', (event) => {
+      event.preventDefault();
       submitForm();
     });
   });
+
+  if (quoteForm) {
+    const toDash = (s) => s.replace(/_/g, '-');
+    const getDefault = (name) =>
+      quoteForm.dataset[`default${name[0].toUpperCase()}${name.slice(1)}`] || '';
+    const getId = (base) => document.getElementById(base);
+    const substrateSel = getId('substrate-thickness-select');
+    const cuSel = getId('cu-thickness-select');
+    const defaultSubstrate = getDefault('substrate_thickness');
+    const defaultCu = getDefault('cu_thickness');
+    let materialFieldSync;
+
+    pricedFields.forEach(({ name, priceField }) => {
+      const sel = getId(`${name}-select`);
+      const inp = getId(toDash(priceField) + '-input');
+      const lbl = getId(toDash(priceField) + '-label');
+      if (!sel || !inp || !lbl) return;
+
+      const isMaterialField = name === 'material';
+      const sync = (force) => {
+        const val = sel.value || getDefault(name);
+        lbl.textContent = val;
+        if (force || !inp.value) {
+          let priceValue = pricedCosts[name]?.[val];
+          if (isMaterialField) {
+            const substrate = substrateSel?.value || defaultSubstrate;
+            const cu = cuSel?.value || defaultCu;
+            priceValue = pricedCosts[name]?.[val]?.[substrate]?.[cu];
+          }
+          inp.value = priceValue ?? '';
+        }
+      };
+
+      sel.addEventListener('change', () => sync(true));
+      sync();
+
+      if (isMaterialField) {
+        materialFieldSync = sync;
+      }
+    });
+
+    if (materialFieldSync) {
+      [substrateSel, cuSel].filter(Boolean).forEach((select) => {
+        select.addEventListener('change', () => materialFieldSync(true));
+      });
+    }
+
+    const thickSel = getId('pcb-thickness-select');
+    const holesSel = getId('cnc-hole-select');
+    const stackInp = getId('stack-qty-input');
+    if (thickSel && holesSel && stackInp) {
+      const updateStack = () => {
+        const derived = stackQtyMap[thickSel.value]?.[holesSel.value];
+        if (derived) stackInp.value = derived;
+      };
+      thickSel.addEventListener('change', updateStack);
+      holesSel.addEventListener('change', updateStack);
+      updateStack();
+    }
+  }
 
   submitForm();
 })();
