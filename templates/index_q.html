@@ -189,7 +189,7 @@
       {"field": "include_set_D", "input": "SET_D", "label": "D: 1245 x 2082"},
       {"field": "include_set_E", "input": "SET_E", "label": "E: 1295 x 2184"},
     ] %}
-    <form id="panelizer-form" method="get" novalidate {% if panelizer_only %}action="{{ url_for('panelizer_only') }}"{% endif %}>
+    <form id="panelizer-form" method="post" novalidate {% if panelizer_only %}action="{{ url_for('panelizer_only') }}"{% endif %}>
 
       <section>
         <h2>大料规格</h2>
@@ -430,16 +430,15 @@
     const submitPanelizer = () => {
       clampField('SPW', 15);
       clampField('SPL', 15);
-      const params = new URLSearchParams(new FormData(panelForm));
       const action = panelForm.getAttribute('action') || window.location.pathname;
-      const search = params.toString();
-      const url = search ? `${action}?${search}` : action;
+      const body = new URLSearchParams(new FormData(panelForm));
       if (controller) controller.abort();
       controller = new AbortController();
 
-      fetch(url, {
-        method: 'GET',
+      fetch(action, {
+        method: 'POST',
         headers: { 'X-Requested-With': 'fetch' },
+        body,
         signal: controller.signal,
       })
         .then((r) => r.text())
