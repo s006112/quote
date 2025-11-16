@@ -148,11 +148,18 @@ form section .grid {
 /* Mobile:  */
 @media (max-width: 640px) {
   form section {
-    grid-template-columns: repeat(3);
+    grid-template-columns: minmax(0, 1fr);
+    gap: 6px 10px;
+  }
+
+  form section h2,
+  form section .grid {
+    grid-column: 1 / -1;
   }
 
   .grid {
-    grid-template-columns: repeat(3);
+    grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+    gap: 6px;
   }
 
   label {
