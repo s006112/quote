@@ -387,14 +387,9 @@ def index():
 
     computed_panel_boards: int | None = None
     if panelizer_summary:
-        # Prefer panelizer layout with highest utilization (rows sorted by utilization)
-        best_util = panelizer_summary.get("highest_ultilization_per_jumbo")
-        rows = panelizer_summary.get("rows") or []
-        if best_util is not None and rows:
-            top_row = rows[0]
-            pcbs = top_row.get("pcbs_per_jumbo")
-            if pcbs is not None:
-                computed_panel_boards = max(1, int(pcbs))
+        max_pcbs = panelizer_summary.get("max_pcbs_per_jumbo")
+        if max_pcbs is not None:
+            computed_panel_boards = max(1, int(max_pcbs))
 
     if request.method == "POST":
         try:
