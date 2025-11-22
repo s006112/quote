@@ -410,7 +410,7 @@ def index():
                 prm = _make_params()
                 result = price_quote(inp, prm)
                 persist_panelizer = None if panelizer_error else panelizer_cfg
-                _persist_defaults(inp, prm, persist_panelizer)
+                # _persist_defaults(inp, prm, persist_panelizer)
         except Exception as e:
             error_msgs = [str(e)]
             result = None

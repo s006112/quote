@@ -17,6 +17,11 @@ select {
   border-radius: 6px;
 }
 
+.changed {
+  border-color: #dc2626;
+  color: #b91c1c;
+}
+
 label {
   display: grid;
   grid-template-columns: 100px auto;

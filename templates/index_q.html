@@ -21,7 +21,7 @@
       </div>
       {% endif %}
 
-      <form id="quote-form" method="post" novalidate data-default-material="{{ defaults.material|e }}" data-default-finish="{{ defaults.finish|e }}" data-default-masking="{{ defaults.masking|e }}" data-default-plating="{{ defaults.plating|e }}" data-default-substrate_thickness="{{ defaults.substrate_thickness|e }}" data-default-cu_thickness="{{ defaults.cu_thickness|e }}">
+      <form id="quote-form" method="post" novalidate data-default-json="{{ defaults|tojson|forceescape }}" data-default-material="{{ defaults.material|e }}" data-default-finish="{{ defaults.finish|e }}" data-default-masking="{{ defaults.masking|e }}" data-default-plating="{{ defaults.plating|e }}" data-default-substrate_thickness="{{ defaults.substrate_thickness|e }}" data-default-cu_thickness="{{ defaults.cu_thickness|e }}">
         <section>
           <h2>Materials</h2>
           <div class="grid">
@@ -524,6 +524,54 @@
   });
 
   if (quoteForm) {
+    const defaultsJson = quoteForm.dataset.defaultJson;
+    if (defaultsJson) {
+      let defaultsObj;
+      try {
+        defaultsObj = JSON.parse(defaultsJson);
+      } catch (error) {
+        console.error('Failed to parse form defaults', error);
+        defaultsObj = null;
+      }
+      if (defaultsObj) {
+        const normalizeString = (value) => (value == null ? '' : String(value).trim());
+        const parseNumber = (value) => {
+          if (value == null || value === '') return null;
+          const num = Number(value);
+          return Number.isFinite(num) ? num : null;
+        };
+        const isEqual = (current, original, inputType) => {
+          const currentNum = parseNumber(current);
+          const originalNum = parseNumber(original);
+          if (
+            inputType === 'number' &&
+            currentNum !== null &&
+            originalNum !== null
+          ) {
+            return currentNum === originalNum;
+          }
+          return normalizeString(current) === normalizeString(original);
+        };
+        const updateClass = (el) => {
+          if (!el.name || !Object.prototype.hasOwnProperty.call(defaultsObj, el.name)) {
+            el.classList.remove('changed');
+            return;
+          }
+          if (!isEqual(el.value, defaultsObj[el.name], el.type)) {
+            el.classList.add('changed');
+          } else {
+            el.classList.remove('changed');
+          }
+        };
+        quoteForm.querySelectorAll('input[name], select[name]').forEach((el) => {
+          const sync = () => updateClass(el);
+          el.addEventListener('input', sync);
+          el.addEventListener('change', sync);
+          sync();
+        });
+      }
+    }
+
     const toDash = (s) => s.replace(/_/g, '-');
     const getDefault = (name) =>
       quoteForm.dataset[`default${name[0].toUpperCase()}${name.slice(1)}`] || '';
