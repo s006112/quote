@@ -112,6 +112,28 @@ CNC_HOLE_DIMENSION_OPTIONS = _options_from_defaults("cnc_hole_dimension_options"
 SUBSTRATE_THICKNESS_OPTIONS = _options_from_defaults("substrate_thickness_options")
 CU_THICKNESS_OPTIONS = _options_from_defaults("cu_thickness_options")
 
+PANELIZER_FORM_FIELD_MAP = {
+    "CBW": "customer_board_width_max",
+    "CBL": "customer_board_length_max",
+    "CBWM": "customer_board_width_min",
+    "CBLM": "customer_board_length_min",
+    "SPW": "single_pcb_width_max",
+    "SPL": "single_pcb_length_max",
+    "PEW": "panel_edge_margin_w",
+    "PEL": "panel_edge_margin_l",
+    "BMW": "board_edge_margin_w",
+    "BML": "board_edge_margin_l",
+    "CW": "inter_board_gap_w",
+    "CL": "inter_board_gap_l",
+    "SW": "inter_single_gap_w",
+    "SL": "inter_single_gap_l",
+    "LIMIT": "limit",
+    "ARS": "allow_rotate_single_pcb",
+    "ARB": "allow_rotate_board",
+}
+for letter in "ABCDE":
+    PANELIZER_FORM_FIELD_MAP[f"SET_{letter}"] = f"include_set_{letter}"
+
 
 # ---------------------------------------------------------------------------
 # Panelizer helper functions (thin wrappers using app defaults)
@@ -189,6 +211,14 @@ def _resolve_panelizer_state(source: Any) -> PanelizerState:
     except Exception as exc:  # pylint: disable=broad-except
         error = str(exc)
     return PanelizerState(cfg, rows, summary, error)
+
+
+def _panelizer_form_defaults(cfg: Dict[str, Any]) -> Dict[str, Any]:
+    defaults: Dict[str, Any] = {}
+    for form_field, cfg_key in PANELIZER_FORM_FIELD_MAP.items():
+        if cfg_key in cfg:
+            defaults[form_field] = cfg[cfg_key]
+    return defaults
 
 
 # ---------------------------------------------------------------------------
@@ -433,6 +463,8 @@ def index():
         form_values["stack_qty"] = str(resolved_inputs.stack_qty)
         form_values["panel_boards"] = str(resolved_inputs.panel_boards)
     param_values = {k: request.form.get(k, str(v)) for k, v in param_defaults.items()}
+    panelizer_defaults_cfg = _panelizer_default_config()
+    panelizer_form_defaults = _panelizer_form_defaults(panelizer_defaults_cfg)
 
     selected_choices = {
         field.name: form_values.get(field.name, str(DEFAULTS.get(field.name, "")))
@@ -489,6 +521,7 @@ def index():
         priced_client_config=[{"name": field.name, "priceField": field.price_field} for field in PRICED_FIELDS],
         stack_qty_map=DEFAULTS.get("stack_qty_map", {}),
         panelizer_values=panelizer_cfg,
+        panelizer_defaults=panelizer_form_defaults,
         panelizer_summary=panelizer_summary,
         panelizer_rows=panelizer_rows,
         panelizer_error=panelizer_error,
@@ -500,6 +533,7 @@ def index():
 @app.route("/panelizer-only", methods=["GET", "POST"])
 def panelizer_only() -> str:
     panelizer_state = _resolve_panelizer_state(request.values)
+    panelizer_defaults_cfg = _panelizer_default_config()
     return render_template(
         "index_q.html",
         defaults={},
@@ -514,6 +548,7 @@ def panelizer_only() -> str:
         priced_client_config=[{"name": field.name, "priceField": field.price_field} for field in PRICED_FIELDS],
         stack_qty_map=DEFAULTS.get("stack_qty_map", {}),
         panelizer_values=panelizer_state.config,
+        panelizer_defaults=_panelizer_form_defaults(panelizer_defaults_cfg),
         panelizer_summary=panelizer_state.summary,
         panelizer_rows=panelizer_state.rows,
         panelizer_error=panelizer_state.error,

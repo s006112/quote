@@ -205,7 +205,7 @@
       {"field": "include_set_D", "input": "SET_D", "label": "D: 1245 x 2082"},
       {"field": "include_set_E", "input": "SET_E", "label": "E: 1295 x 2184"},
     ] %}
-    <form id="panelizer-form" method="post" novalidate {% if panelizer_only %}action="{{ url_for('panelizer_only') }}"{% endif %}>
+    <form id="panelizer-form" method="post" novalidate {% if panelizer_only %}action="{{ url_for('panelizer_only') }}"{% endif %} data-default-json="{{ panelizer_defaults|tojson|forceescape }}">
 
       <section>
         <h2>大料规格</h2>
@@ -524,75 +524,53 @@
     });
   });
 
-  if (quoteForm) {
-    const persistButton = document.getElementById('persist-defaults');
-    const defaultResolvers = Object.create(null);
-    const changeTrackers = new Map();
-
-    const getChangedFields = () =>
-      Array.from(quoteForm.querySelectorAll('.changed[name]')).map((el) => el.name);
-
-    const setButtonDisabled = (state) => {
-      if (!persistButton) return;
-      persistButton.disabled = state;
-    };
-
-    if (persistButton) {
-      persistButton.addEventListener('click', () => {
-        const changedFields = getChangedFields();
-        if (!changedFields.length) {
-          alert('没有检测到变化。');
-          return;
-        }
-        setButtonDisabled(true);
-        const formData = new FormData(quoteForm);
-        formData.set('persist_defaults', '1');
-        formData.append('changed_fields', changedFields.join(','));
-        fetch(quoteForm.action || window.location.pathname, {
-          method: 'POST',
-          body: new URLSearchParams(formData),
-          headers: { 'X-Requested-With': 'fetch' },
-        })
-          .then((response) => response.text())
-          .then((htmlText) => {
-            setButtonDisabled(false);
-            if (!changedFields.length) return;
-            window.location.reload();
-          })
-          .catch(() => {
-            setButtonDisabled(false);
-          });
-      });
+  const normalizeString = (value) => (value == null ? '' : String(value).trim());
+  const parseNumber = (value) => {
+    if (value == null || value === '') return null;
+    const num = Number(value);
+    return Number.isFinite(num) ? num : null;
+  };
+  const toBoolean = (value) => {
+    if (value === undefined) return false;
+    if (typeof value === 'boolean') return value;
+    if (typeof value === 'number') return value !== 0;
+    if (typeof value === 'string') {
+      const trimmed = value.trim().toLowerCase();
+      if (!trimmed) return false;
+      return trimmed === 'true' || trimmed === '1' || trimmed === 'yes' || trimmed === 'on';
     }
+    return Boolean(value);
+  };
+  const valuesEqual = (el, original) => {
+    if (el.type === 'checkbox') {
+      return toBoolean(original) === el.checked;
+    }
+    const currentNum = parseNumber(el.value);
+    const originalNum = parseNumber(original);
+    if (el.type === 'number' && currentNum !== null && originalNum !== null) {
+      return currentNum === originalNum;
+    }
+    return normalizeString(el.value) === normalizeString(original);
+  };
 
-    const defaultsJson = quoteForm.dataset.defaultJson;
+  const initChangeTracking = (form) => {
+    if (!form) return null;
+    const changeTrackers = new Map();
+    const defaultResolvers = Object.create(null);
     let defaultsObj = null;
+    const defaultsJson = form.dataset.defaultJson;
     if (defaultsJson) {
       try {
         defaultsObj = JSON.parse(defaultsJson);
       } catch (error) {
-        console.error('Failed to parse form defaults', error);
+        console.error(`Failed to parse defaults for ${form.id}`, error);
       }
     }
 
-    const normalizeString = (value) => (value == null ? '' : String(value).trim());
-    const parseNumber = (value) => {
-      if (value == null || value === '') return null;
-      const num = Number(value);
-      return Number.isFinite(num) ? num : null;
-    };
-    const valueEquals = (current, original, type) => {
-      const currentNum = parseNumber(current);
-      const originalNum = parseNumber(original);
-      if (type === 'number' && currentNum !== null && originalNum !== null) {
-        return currentNum === originalNum;
-      }
-      return normalizeString(current) === normalizeString(original);
-    };
-
-    const registerDefaultResolver = (name, resolver) => {
-      defaultResolvers[name] = resolver;
-      refreshChangedState(name);
+    const refreshField = (name) => {
+      if (!name) return;
+      const syncs = changeTrackers.get(name);
+      if (syncs) syncs.forEach((fn) => fn());
     };
 
     const getOriginalValue = (el) => {
@@ -611,11 +589,7 @@
         el.classList.remove('changed');
         return;
       }
-      if (valueEquals(el.value, original, el.type)) {
-        el.classList.remove('changed');
-      } else {
-        el.classList.add('changed');
-      }
+      el.classList.toggle('changed', !valuesEqual(el, original));
     };
 
     const trackElement = (el) => {
@@ -629,15 +603,67 @@
       changeTrackers.set(el.name, entries);
     };
 
-    function refreshChangedState(name) {
-      if (!name) return;
-      const syncs = changeTrackers.get(name);
-      if (syncs) syncs.forEach((fn) => fn());
-    }
+    form.querySelectorAll('input[name], select[name]').forEach(trackElement);
 
-    quoteForm.querySelectorAll('input[name], select[name]').forEach(trackElement);
-    const startTracking = (element) => trackElement(element);
+    return {
+      registerDefaultResolver: (name, resolver) => {
+        defaultResolvers[name] = resolver;
+        refreshField(name);
+      },
+      refreshField,
+      getChangedFields: () =>
+        Array.from(form.querySelectorAll('.changed[name]')).map((el) => el.name),
+    };
+  };
 
+  const quoteTracker = initChangeTracking(quoteForm);
+  const panelTracker = initChangeTracking(panelForm);
+  const persistButton = document.getElementById('persist-defaults');
+
+  if (persistButton && (quoteForm || panelForm)) {
+    const setButtonDisabled = (state) => {
+      persistButton.disabled = state;
+    };
+
+    persistButton.addEventListener('click', () => {
+      const changedFields = [
+        ...(quoteTracker?.getChangedFields() ?? []),
+        ...(panelTracker?.getChangedFields() ?? []),
+      ];
+      const uniqueFields = Array.from(new Set(changedFields));
+      if (!uniqueFields.length) {
+        alert('没有检测到变化。');
+        return;
+      }
+      const baseForm = quoteForm || panelForm;
+      if (!baseForm) return;
+      const formData = new FormData(baseForm);
+      if (quoteForm && panelForm) {
+        new FormData(panelForm).forEach((value, key) => formData.set(key, value));
+      }
+      formData.set('persist_defaults', '1');
+      formData.append('changed_fields', uniqueFields.join(','));
+      setButtonDisabled(true);
+      const targetAction =
+        (quoteForm && quoteForm.action) ||
+        (panelForm && panelForm.action) ||
+        window.location.pathname;
+      fetch(targetAction || window.location.pathname, {
+        method: 'POST',
+        body: new URLSearchParams(formData),
+        headers: { 'X-Requested-With': 'fetch' },
+      })
+        .then(() => {
+          setButtonDisabled(false);
+          window.location.reload();
+        })
+        .catch(() => {
+          setButtonDisabled(false);
+        });
+    });
+  }
+
+  if (quoteForm && quoteTracker) {
     const toDash = (s) => s.replace(/_/g, '-');
     const getDefault = (name) =>
       quoteForm.dataset[`default${name[0].toUpperCase()}${name.slice(1)}`] || '';
@@ -667,7 +693,7 @@
         return pricedCosts[name]?.[selected] ?? '';
       };
 
-      registerDefaultResolver(priceField, computeDefaultPrice);
+      quoteTracker.registerDefaultResolver(priceField, computeDefaultPrice);
 
       const sync = (force) => {
         const optionLabel = getSelection();
@@ -676,7 +702,7 @@
           const priceValue = computeDefaultPrice();
           inp.value = priceValue === undefined ? '' : priceValue;
         }
-        refreshChangedState(priceField);
+        quoteTracker.refreshField(priceField);
       };
 
       sel.addEventListener('change', () => sync(true));
