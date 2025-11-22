@@ -366,6 +366,12 @@ def _validate(d: dict[str, Any]) -> list[str]:
         errs.append("Post Process cost must be >= 0.")
     if d.get("labor_cost", 0.0) < 0:
         errs.append("Labor cost must be >= 0.")
+    if d.get("pp_cost", 0.0) < 0:
+        errs.append("PP cost must be >= 0.")
+    if d.get("inner_cost", 0.0) < 0:
+        errs.append("Inner cost must be >= 0.")
+    if d.get("stacking_cost", 0.0) < 0:
+        errs.append("Stacking cost must be >= 0.")
     return errs
 
 

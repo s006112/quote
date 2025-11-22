@@ -50,8 +50,23 @@
               <span id="material-price-label">{{ (values.material or defaults.material) }}</span>
               <input name="material_price" id="material-price-input" type="number" step="1" value="{{ material_price_value }}">
             </label>
+          </div>
+        </section>
+
+        <section>
+          <h2>Layers</h2>
+          <div class="grid">
             <label>层数
               <input name="layers" type="number" step="1" value="{{ values.layers }}">
+            </label>
+            <label>PP 层
+              <input name="pp_cost" type="number" step="1" min="0" value="{{ values.pp_cost }}">
+            </label>
+            <label>内层
+              <input name="inner_cost" type="number" step="1" min="0" value="{{ values.inner_cost }}">
+            </label>
+            <label>压合
+              <input name="stacking_cost" type="number" step="1" min="0" value="{{ values.stacking_cost }}">
             </label>
           </div>
         </section>
@@ -346,6 +361,13 @@
           <li>Material: {{ result.breakdown.material.total }}
             <ul>
               <li>{{ values.material or 'Laminate' }}: {{ result.breakdown.material.components.laminate }}</li>
+            </ul>
+          </li>
+          <li>Layers: {{ result.breakdown.multi_layer.total }}
+            <ul>
+              <li>PP 层: {{ result.breakdown.multi_layer.components.pp_cost }}</li>
+              <li>内层: {{ result.breakdown.multi_layer.components.inner_cost }}</li>
+              <li>压合: {{ result.breakdown.multi_layer.components.stacking_cost }}</li>
             </ul>
           </li>
           <li>Treatment: {{ result.breakdown.treatment.total }}

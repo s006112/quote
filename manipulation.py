@@ -7,6 +7,9 @@ from typing import Any, Dict, List, Mapping, Optional, Tuple
 @dataclass
 class Inputs:
     layers: int
+    pp_cost: float
+    inner_cost: float
+    stacking_cost: float
     panel_boards: int
     stack_qty: int
     pcb_thickness: str
@@ -72,6 +75,14 @@ def price_quote(inp: Inputs, prm: Params) -> dict:
     }
     material_cost = _component_total(material_components)
 
+    # Multi layer cost
+    multi_layer_components = {
+        "pp_cost": _non_negative(inp.pp_cost),
+        "inner_cost": _non_negative(inp.inner_cost),
+        "stacking_cost": _non_negative(inp.stacking_cost),
+    }
+    multi_layer_cost = _component_total(multi_layer_components)
+
     # Treatment cost
     treatment_components = {
         "finish": prm.finish_costs.get(inp.finish, 0.0),
@@ -112,6 +123,7 @@ def price_quote(inp: Inputs, prm: Params) -> dict:
 
     base = (
         material_cost
+        + multi_layer_cost
         + treatment_cost
         + cnc_cost
         + process_cost
@@ -138,6 +150,7 @@ def price_quote(inp: Inputs, prm: Params) -> dict:
 
     breakdown = {
         "material": _component_section(material_cost, material_components, 2),
+        "multi_layer": _component_section(multi_layer_cost, multi_layer_components, 2),
         "treatment": _component_section(treatment_cost, treatment_components, 2),
         "cnc": {
             "total": round(cnc_cost, 1),
