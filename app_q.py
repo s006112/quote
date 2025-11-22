@@ -465,9 +465,12 @@ def index():
     if resolved_inputs is None and computed_panel_boards is not None:
         form_values["panel_boards"] = str(computed_panel_boards)
 
+    template_defaults = form_defaults.copy()
+    template_defaults.update(param_defaults)
+
     return render_template(
         "index_q.html",
-        defaults=form_defaults,
+        defaults=template_defaults,
         values=form_values,
         params_defaults=param_defaults,
         params_values=param_values,
