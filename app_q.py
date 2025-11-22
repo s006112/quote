@@ -397,6 +397,8 @@ def index():
         if max_pcbs is not None:
             computed_panel_boards = max(1, int(max_pcbs))
 
+    persist_defaults_requested = request.form.get("persist_defaults") == "1"
+
     if request.method == "POST":
         try:
             inp = _make_inputs()
@@ -410,7 +412,8 @@ def index():
                 prm = _make_params()
                 result = price_quote(inp, prm)
                 persist_panelizer = None if panelizer_error else panelizer_cfg
-                # _persist_defaults(inp, prm, persist_panelizer)
+                if persist_defaults_requested:
+                    _persist_defaults(inp, prm, persist_panelizer)
         except Exception as e:
             error_msgs = [str(e)]
             result = None

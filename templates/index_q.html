@@ -191,6 +191,7 @@
               <input name="margin_pct" type="number" step="0.5" min="0" value="{{ params_values.margin_pct }}">
             </label>
           </div>
+          <button type="button" id="persist-defaults" class="update-button">更新</button>
         </section>
 
       </form>
@@ -524,6 +525,46 @@
   });
 
   if (quoteForm) {
+    const persistButton = document.getElementById('persist-defaults');
+    const defaultResolvers = Object.create(null);
+    const changeTrackers = new Map();
+
+    const getChangedFields = () =>
+      Array.from(quoteForm.querySelectorAll('.changed[name]')).map((el) => el.name);
+
+    const setButtonDisabled = (state) => {
+      if (!persistButton) return;
+      persistButton.disabled = state;
+    };
+
+    if (persistButton) {
+      persistButton.addEventListener('click', () => {
+        const changedFields = getChangedFields();
+        if (!changedFields.length) {
+          alert('没有检测到变化。');
+          return;
+        }
+        setButtonDisabled(true);
+        const formData = new FormData(quoteForm);
+        formData.set('persist_defaults', '1');
+        formData.append('changed_fields', changedFields.join(','));
+        fetch(quoteForm.action || window.location.pathname, {
+          method: 'POST',
+          body: new URLSearchParams(formData),
+          headers: { 'X-Requested-With': 'fetch' },
+        })
+          .then((response) => response.text())
+          .then((htmlText) => {
+            setButtonDisabled(false);
+            if (!changedFields.length) return;
+            window.location.reload();
+          })
+          .catch(() => {
+            setButtonDisabled(false);
+          });
+      });
+    }
+
     const defaultsJson = quoteForm.dataset.defaultJson;
     let defaultsObj = null;
     if (defaultsJson) {
@@ -549,7 +590,6 @@
       return normalizeString(current) === normalizeString(original);
     };
 
-    const defaultResolvers = Object.create(null);
     const registerDefaultResolver = (name, resolver) => {
       defaultResolvers[name] = resolver;
       refreshChangedState(name);
@@ -578,7 +618,6 @@
       }
     };
 
-    const changeTrackers = new Map();
     const trackElement = (el) => {
       const sync = () => updateClass(el);
       el.addEventListener('input', sync);
@@ -597,6 +636,7 @@
     }
 
     quoteForm.querySelectorAll('input[name], select[name]').forEach(trackElement);
+    const startTracking = (element) => trackElement(element);
 
     const toDash = (s) => s.replace(/_/g, '-');
     const getDefault = (name) =>

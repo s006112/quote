@@ -149,3 +149,19 @@ form section .grid {
     grid-template-columns: minmax(0, 1fr) 360px;
   }
 }
+
+.update-button {
+  grid-column: 2;
+  justify-self: start;
+  padding: 6px 14px;
+  border: 1px solid #2563eb;
+  background: #2563eb;
+  color: #fff;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.update-button[disabled] {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
