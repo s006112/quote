@@ -525,52 +525,78 @@
 
   if (quoteForm) {
     const defaultsJson = quoteForm.dataset.defaultJson;
+    let defaultsObj = null;
     if (defaultsJson) {
-      let defaultsObj;
       try {
         defaultsObj = JSON.parse(defaultsJson);
       } catch (error) {
         console.error('Failed to parse form defaults', error);
-        defaultsObj = null;
-      }
-      if (defaultsObj) {
-        const normalizeString = (value) => (value == null ? '' : String(value).trim());
-        const parseNumber = (value) => {
-          if (value == null || value === '') return null;
-          const num = Number(value);
-          return Number.isFinite(num) ? num : null;
-        };
-        const isEqual = (current, original, inputType) => {
-          const currentNum = parseNumber(current);
-          const originalNum = parseNumber(original);
-          if (
-            inputType === 'number' &&
-            currentNum !== null &&
-            originalNum !== null
-          ) {
-            return currentNum === originalNum;
-          }
-          return normalizeString(current) === normalizeString(original);
-        };
-        const updateClass = (el) => {
-          if (!el.name || !Object.prototype.hasOwnProperty.call(defaultsObj, el.name)) {
-            el.classList.remove('changed');
-            return;
-          }
-          if (!isEqual(el.value, defaultsObj[el.name], el.type)) {
-            el.classList.add('changed');
-          } else {
-            el.classList.remove('changed');
-          }
-        };
-        quoteForm.querySelectorAll('input[name], select[name]').forEach((el) => {
-          const sync = () => updateClass(el);
-          el.addEventListener('input', sync);
-          el.addEventListener('change', sync);
-          sync();
-        });
       }
     }
+
+    const normalizeString = (value) => (value == null ? '' : String(value).trim());
+    const parseNumber = (value) => {
+      if (value == null || value === '') return null;
+      const num = Number(value);
+      return Number.isFinite(num) ? num : null;
+    };
+    const valueEquals = (current, original, type) => {
+      const currentNum = parseNumber(current);
+      const originalNum = parseNumber(original);
+      if (type === 'number' && currentNum !== null && originalNum !== null) {
+        return currentNum === originalNum;
+      }
+      return normalizeString(current) === normalizeString(original);
+    };
+
+    const defaultResolvers = Object.create(null);
+    const registerDefaultResolver = (name, resolver) => {
+      defaultResolvers[name] = resolver;
+      refreshChangedState(name);
+    };
+
+    const getOriginalValue = (el) => {
+      if (!el || !el.name) return undefined;
+      const resolver = defaultResolvers[el.name];
+      if (resolver) return resolver();
+      if (defaultsObj && Object.prototype.hasOwnProperty.call(defaultsObj, el.name)) {
+        return defaultsObj[el.name];
+      }
+      return undefined;
+    };
+
+    const updateClass = (el) => {
+      const original = getOriginalValue(el);
+      if (original === undefined) {
+        el.classList.remove('changed');
+        return;
+      }
+      if (valueEquals(el.value, original, el.type)) {
+        el.classList.remove('changed');
+      } else {
+        el.classList.add('changed');
+      }
+    };
+
+    const changeTrackers = new Map();
+    const trackElement = (el) => {
+      const sync = () => updateClass(el);
+      el.addEventListener('input', sync);
+      el.addEventListener('change', sync);
+      sync();
+      if (!el.name) return;
+      const entries = changeTrackers.get(el.name) || [];
+      entries.push(sync);
+      changeTrackers.set(el.name, entries);
+    };
+
+    function refreshChangedState(name) {
+      if (!name) return;
+      const syncs = changeTrackers.get(name);
+      if (syncs) syncs.forEach((fn) => fn());
+    }
+
+    quoteForm.querySelectorAll('input[name], select[name]').forEach(trackElement);
 
     const toDash = (s) => s.replace(/_/g, '-');
     const getDefault = (name) =>
@@ -589,18 +615,28 @@
       if (!sel || !inp || !lbl) return;
 
       const isMaterialField = name === 'material';
-      const sync = (force) => {
-        const val = sel.value || getDefault(name);
-        lbl.textContent = val;
-        if (force || !inp.value) {
-          let priceValue = pricedCosts[name]?.[val];
-          if (isMaterialField) {
-            const substrate = substrateSel?.value || defaultSubstrate;
-            const cu = cuSel?.value || defaultCu;
-            priceValue = pricedCosts[name]?.[val]?.[substrate]?.[cu];
-          }
-          inp.value = priceValue ?? '';
+      const getSelection = () => sel.value || getDefault(name);
+      const computeDefaultPrice = () => {
+        const selected = getSelection();
+        if (!selected) return '';
+        if (isMaterialField) {
+          const substrate = substrateSel?.value || defaultSubstrate;
+          const cu = cuSel?.value || defaultCu;
+          return pricedCosts[name]?.[selected]?.[substrate]?.[cu] ?? '';
         }
+        return pricedCosts[name]?.[selected] ?? '';
+      };
+
+      registerDefaultResolver(priceField, computeDefaultPrice);
+
+      const sync = (force) => {
+        const optionLabel = getSelection();
+        lbl.textContent = optionLabel;
+        if (force || !inp.value) {
+          const priceValue = computeDefaultPrice();
+          inp.value = priceValue === undefined ? '' : priceValue;
+        }
+        refreshChangedState(priceField);
       };
 
       sel.addEventListener('change', () => sync(true));
