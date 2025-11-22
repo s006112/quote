@@ -363,11 +363,21 @@
               <li>{{ values.material or 'Laminate' }}: {{ result.breakdown.material.components.laminate }}</li>
             </ul>
           </li>
-          <li>Layers: {{ result.breakdown.multi_layer.total }}
+          {% set multi_layer = result.breakdown.multi_layer %}
+          {% set ml_details = multi_layer.details %}
+          {% set ml_raw = multi_layer.raw %}
+          <li>Layers: {{ multi_layer.total }}
             <ul>
-              <li>PP 层: {{ result.breakdown.multi_layer.components.pp_cost }}</li>
-              <li>内层: {{ result.breakdown.multi_layer.components.inner_cost }}</li>
-              <li>压合: {{ result.breakdown.multi_layer.components.stacking_cost }}</li>
+              <li>PP 层: {{ multi_layer.components.pp_cost }}
+                {% if ml_details.layers_lt_three %}(L&lt;3)
+                {% else %}(×{{ ml_details.pp_multiplier }}){% endif %}
+              </li>
+              <li>内层: {{ multi_layer.components.inner_cost }}
+                {% if ml_details.layers_lt_three %}(L&lt;3)
+                {% else %}(×{{ ml_details.inner_multiplier }}){% endif %}
+              </li>
+              <li>压合: {{ multi_layer.components.stacking_cost }}
+              </li>
             </ul>
           </li>
           <li>Treatment: {{ result.breakdown.treatment.total }}

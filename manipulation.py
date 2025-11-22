@@ -76,12 +76,37 @@ def price_quote(inp: Inputs, prm: Params) -> dict:
     material_cost = _component_total(material_components)
 
     # Multi layer cost
+    pp_base = _non_negative(inp.pp_cost)
+    inner_base = _non_negative(inp.inner_cost)
+    stacking_base = _non_negative(inp.stacking_cost)
+    if inp.layers >= 3:
+        layer_pairs = inp.layers / 2.0
+        pp_multiplier = max(layer_pairs - 1.0, 0.0)
+        inner_multiplier = layer_pairs
+        stacking_multiplier = 1.0
+    else:
+        pp_multiplier = 0.0
+        inner_multiplier = 0.0
+        stacking_multiplier = 0.0
     multi_layer_components = {
-        "pp_cost": _non_negative(inp.pp_cost),
-        "inner_cost": _non_negative(inp.inner_cost),
-        "stacking_cost": _non_negative(inp.stacking_cost),
+        "pp_cost": pp_base * pp_multiplier,
+        "inner_cost": inner_base * inner_multiplier,
+        "stacking_cost": stacking_base * stacking_multiplier,
     }
     multi_layer_cost = _component_total(multi_layer_components)
+    multi_layer_section = _component_section(multi_layer_cost, multi_layer_components, 2)
+    multi_layer_section["details"] = {
+        "pp_multiplier": round(pp_multiplier, 3),
+        "inner_multiplier": round(inner_multiplier, 3),
+        "stacking_multiplier": stacking_multiplier,
+        "layers": inp.layers,
+        "layers_lt_three": inp.layers < 3,
+    }
+    multi_layer_section["raw"] = {
+        "pp_cost": pp_base,
+        "inner_cost": inner_base,
+        "stacking_cost": stacking_base,
+    }
 
     # Treatment cost
     treatment_components = {
@@ -150,7 +175,7 @@ def price_quote(inp: Inputs, prm: Params) -> dict:
 
     breakdown = {
         "material": _component_section(material_cost, material_components, 2),
-        "multi_layer": _component_section(multi_layer_cost, multi_layer_components, 2),
+        "multi_layer": multi_layer_section,
         "treatment": _component_section(treatment_cost, treatment_components, 2),
         "cnc": {
             "total": round(cnc_cost, 1),
